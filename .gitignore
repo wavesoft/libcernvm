@@ -11,3 +11,9 @@
 *.lai
 *.la
 *.a
+
+# Exclude archives from the extern
+extern/zlib/archive*
+extern/jsoncpp/archive*
+extern/boost/archive*
+extern/crypto50/archive*

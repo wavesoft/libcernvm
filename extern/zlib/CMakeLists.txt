@@ -1,0 +1,263 @@
+cmake_minimum_required(VERSION 2.4.4)
+set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
+
+project(zlib C)
+
+set(VERSION "1.2.8")
+
+#############################################################
+# DOWNLOAD BOOTSTRAP 
+#############################################################
+
+# Setup archive
+set( ARCHIVE_URL "http://downloads.sourceforge.net/project/libpng/zlib/1.2.8/zlib-1.2.8.tar.gz" )
+set( ARCHIVE_EXT ".tar.gz" )
+set( ARCHIVE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/archive" )
+
+# Check if we have the archive
+if ( NOT EXISTS ${ARCHIVE_DIR} )
+    set( ARCHIVE_TEMP "${CMAKE_CURRENT_SOURCE_DIR}/~download-archive${ARCHIVE_EXT}" )
+
+    # Make the directory
+    FILE( MAKE_DIRECTORY ${ARCHIVE_DIR} )
+
+    # Download the archive
+    message( STATUS "Downloading ${PROJECT_NAME} archive" )
+    file(DOWNLOAD ${ARCHIVE_URL} ${ARCHIVE_TEMP}
+        SHOW_PROGRESS STATUS ARCHIVE_DOWNLOAD_STATUS)
+
+    # Check status
+    list( GET ARCHIVE_DOWNLOAD_STATUS 0 ARCHIVE_DOWLOAD_ERROR )
+    if( ARCHIVE_DOWLOAD_ERROR )
+
+        # Remove file and dir
+        file( REMOVE ${ARCHIVE_TEMP} )
+        file( REMOVE ${ARCHIVE_DIR} )
+
+        # Fatal error
+        message( FATAL_ERROR "Could not download ${PROJECT_NAME} archive!" )
+    endif()
+
+    # Extract archive
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xzf ${ARCHIVE_TEMP}
+        WORKING_DIRECTORY ${ARCHIVE_DIR}
+    )
+
+    # Remove the archive
+    file( REMOVE ${ARCHIVE_TEMP} )
+
+endif()
+
+# Get the first sub-directory in the archive
+FILE(GLOB _ARCHIVE_SUBDIRS ${ARCHIVE_DIR}/*)
+FOREACH( _ARCHIVE_SUBDIR ${_ARCHIVE_SUBDIRS} )
+    IF(IS_DIRECTORY ${_ARCHIVE_SUBDIR})
+        SET(ARCHIVE_DIR ${_ARCHIVE_SUBDIR})
+    ENDIF()
+ENDFOREACH()
+
+# Rebase
+set( CMAKE_CURRENT_SOURCE_DIR ${ARCHIVE_DIR} )
+
+# Log status
+message( STATUS "Using ${PROJECT_NAME} sources in: ${ARCHIVE_DIR}" )
+
+# Expose project variables to parent
+set (ZLIB_LIBRARIES zlibstatic PARENT_SCOPE)
+set (ZLIB_INCLUDE_DIR ${ARCHIVE_DIR} PARENT_SCOPE)
+
+#############################################################
+# BUILD SCRIPT 
+#############################################################
+
+
+option(ASM686 "Enable building i686 assembly implementation")
+option(AMD64 "Enable building amd64 assembly implementation")
+
+set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE PATH "Installation directory for executables")
+set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE PATH "Installation directory for libraries")
+set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "Installation directory for headers")
+set(INSTALL_MAN_DIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE PATH "Installation directory for manual pages")
+set(INSTALL_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH "Installation directory for pkgconfig (.pc) files")
+
+include(CheckTypeSize)
+include(CheckFunctionExists)
+include(CheckIncludeFile)
+include(CheckCSourceCompiles)
+enable_testing()
+
+check_include_file(sys/types.h HAVE_SYS_TYPES_H)
+check_include_file(stdint.h    HAVE_STDINT_H)
+check_include_file(stddef.h    HAVE_STDDEF_H)
+
+#
+# Check to see if we have large file support
+#
+set(CMAKE_REQUIRED_DEFINITIONS -D_LARGEFILE64_SOURCE=1)
+# We add these other definitions here because CheckTypeSize.cmake
+# in CMake 2.4.x does not automatically do so and we want
+# compatibility with CMake 2.4.x.
+if(HAVE_SYS_TYPES_H)
+    list(APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_SYS_TYPES_H)
+endif()
+if(HAVE_STDINT_H)
+    list(APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_STDINT_H)
+endif()
+if(HAVE_STDDEF_H)
+    list(APPEND CMAKE_REQUIRED_DEFINITIONS -DHAVE_STDDEF_H)
+endif()
+check_type_size(off64_t OFF64_T)
+if(HAVE_OFF64_T)
+   add_definitions(-D_LARGEFILE64_SOURCE=1)
+endif()
+set(CMAKE_REQUIRED_DEFINITIONS) # clear variable
+
+#
+# Check for fseeko
+#
+check_function_exists(fseeko HAVE_FSEEKO)
+if(NOT HAVE_FSEEKO)
+    add_definitions(-DNO_FSEEKO)
+endif()
+
+#
+# Check for unistd.h
+#
+check_include_file(unistd.h Z_HAVE_UNISTD_H)
+
+if(MSVC)
+    set(CMAKE_DEBUG_POSTFIX "d")
+    add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
+    add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
+    # If we're doing an out of source build and the user has a zconf.h
+    # in their source tree...
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/zconf.h)
+        message(STATUS "Renaming")
+        message(STATUS "    ${CMAKE_CURRENT_SOURCE_DIR}/zconf.h")
+        message(STATUS "to 'zconf.h.included' because this file is included with zlib")
+        message(STATUS "but CMake generates it automatically in the build directory.")
+        file(RENAME ${CMAKE_CURRENT_SOURCE_DIR}/zconf.h ${CMAKE_CURRENT_SOURCE_DIR}/zconf.h.included)
+  endif()
+endif()
+
+set(ZLIB_PC ${CMAKE_CURRENT_BINARY_DIR}/zlib.pc)
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/zlib.pc.cmakein
+		${ZLIB_PC} @ONLY)
+configure_file(	${CMAKE_CURRENT_SOURCE_DIR}/zconf.h.cmakein
+		${CMAKE_CURRENT_BINARY_DIR}/zconf.h @ONLY)
+include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+
+
+#============================================================================
+# zlib
+#============================================================================
+
+##MODIFIED: Adding CMAKE_CURRENT_SOURCE_DIR
+set(ZLIB_PUBLIC_HDRS
+    ${CMAKE_CURRENT_BINARY_DIR}/zconf.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/zlib.h
+)
+##MODIFIED: Adding CMAKE_CURRENT_SOURCE_DIR
+set(ZLIB_PRIVATE_HDRS
+    ${CMAKE_CURRENT_SOURCE_DIR}/crc32.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/deflate.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/gzguts.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/inffast.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/inffixed.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/inflate.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/inftrees.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/trees.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/zutil.h
+)
+##MODIFIED: Adding CMAKE_CURRENT_SOURCE_DIR
+set(ZLIB_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/adler32.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/compress.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/crc32.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/deflate.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/gzclose.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/gzlib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/gzread.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/gzwrite.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/inflate.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/infback.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/inftrees.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/inffast.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/trees.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/uncompr.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/zutil.c
+)
+
+if(NOT MINGW)
+    set(ZLIB_DLL_SRCS
+        win32/zlib1.rc # If present will override custom build rule below.
+    )
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCC)
+    if(ASM686)
+        set(ZLIB_ASMS contrib/asm686/match.S)
+    elseif (AMD64)
+        set(ZLIB_ASMS contrib/amd64/amd64-match.S)
+    endif ()
+
+	if(ZLIB_ASMS)
+		add_definitions(-DASMV)
+		set_source_files_properties(${ZLIB_ASMS} PROPERTIES LANGUAGE C COMPILE_FLAGS -DNO_UNDERLINE)
+	endif()
+endif()
+
+if(MSVC)
+    if(ASM686)
+		ENABLE_LANGUAGE(ASM_MASM)
+        set(ZLIB_ASMS
+			contrib/masmx86/inffas32.asm
+			contrib/masmx86/match686.asm
+		)
+    elseif (AMD64)
+		ENABLE_LANGUAGE(ASM_MASM)
+        set(ZLIB_ASMS
+			contrib/masmx64/gvmat64.asm
+			contrib/masmx64/inffasx64.asm
+		)
+    endif()
+
+	if(ZLIB_ASMS)
+		add_definitions(-DASMV -DASMINF)
+	endif()
+endif()
+
+# parse the full version number from zlib.h and include in ZLIB_FULL_VERSION
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/zlib.h _zlib_h_contents)
+string(REGEX REPLACE ".*#define[ \t]+ZLIB_VERSION[ \t]+\"([-0-9A-Za-z.]+)\".*"
+    "\\1" ZLIB_FULL_VERSION ${_zlib_h_contents})
+
+if(MINGW)
+    # This gets us DLL resource information when compiling on MinGW.
+    if(NOT CMAKE_RC_COMPILER)
+        set(CMAKE_RC_COMPILER windres.exe)
+    endif()
+
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/zlib1rc.obj
+                       COMMAND ${CMAKE_RC_COMPILER}
+                            -D GCC_WINDRES
+                            -I ${CMAKE_CURRENT_SOURCE_DIR}
+                            -I ${CMAKE_CURRENT_BINARY_DIR}
+                            -o ${CMAKE_CURRENT_BINARY_DIR}/zlib1rc.obj
+                            -i ${CMAKE_CURRENT_SOURCE_DIR}/win32/zlib1.rc)
+    set(ZLIB_DLL_SRCS ${CMAKE_CURRENT_BINARY_DIR}/zlib1rc.obj)
+endif(MINGW)
+
+##MODIFIED: Building only static
+add_library(zlibstatic STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+if(UNIX)
+   set_target_properties(zlibstatic PROPERTIES OUTPUT_NAME z)
+endif()
+
+##MODIFIED: Installation removed
+##MODIFIED: Example binaries removed
