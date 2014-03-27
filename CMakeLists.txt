@@ -91,9 +91,31 @@ else()
 endif()
 
 #
-# [CURL] libCURL is used for fetching metadata & disk images
+# [BOOST] We use various accelerators from boost
 #
-if ( NOT DEFINED(CURL_LIBRARIES) OR NOT DEFINED(CURL_INCLUDE_DIRS) )
+if ( NOT DEFINED(BOOST_LIBRARIES) OR NOT DEFINED(BOOST_INCLUDE_DIRS) )
+
+	# Try to find system boost
+	set(Boost_USE_STATIC_LIBS ON) 
+	set(Boost_USE_MULTITHREADED ON)  
+	set(Boost_USE_STATIC_RUNTIME ON) 
+	find_package(Boost COMPONENTS thread system filesystem regex) 
+	if(Boost_FOUND)
+		MESSAGE( STATUS "Using BOOST from system")
+
+	else()
+
+		# We are shipping zlib with the project
+		set( EXTERN_BOOST "extern/boost" )
+		add_subdirectory( ${EXTERN_BOOST} ${CMAKE_BINARY_DIR}/${EXTERN_BOOST} )
+
+		# Log
+		MESSAGE( STATUS "Using BOOST shipped with libcernvm")
+
+	endif()
+
+else()
+	MESSAGE( STATUS "Using BOOST from: ${BOOST_INCLUDE_DIRS}")
 
 endif()
 
@@ -101,94 +123,15 @@ endif()
 include_directories( 
 	${ZLIB_INCLUDE_DIR} 
 	${JSONCPP_INCLUDE_DIRS} 
+	${BOOST_INCLUDE_DIRS}
 )
 
 # Collect library names
 set( PROJECT_LIBRARIES 
 	${ZLIB_LIBRARIES}
 	${JSONCPP_LIBRARIES}
+	${BOOST_LIBRARIES}
 )
-
-
-# Check if we can use libCURL
-FIND_PACKAGE(CURL)
-IF(CURL_FOUND)
-	include_directories( ${CURL_INCLUDE_DIRS} )
-else()
-	if (EXISTS ${FB_LIB_DIR}/curl/curl/lib/libcurl.lib )
-		set( CURL_INCLUDE_DIRS ${FB_LIB_DIR}/curl/curl/include )
-		set( CURL_LIBRARIES ${FB_LIB_DIR}/curl/curl/lib/libcurl.lib )
-		include_directories( ${CURL_INCLUDE_DIRS} )
-		MESSAGE("Using cURL shipped with FireBreath")
-	else()
-		MESSAGE(SEND_ERROR "Could not find cURL on your system")
-	endif()
-	add_definitions (-DCURL_STATICLIB)
-ENDIF(CURL_FOUND)
-
-# Check if we can use OpenSSL
-FIND_PACKAGE(OpenSSL)
-IF (OPENSSL_FOUND)
-	include_directories( ${OPENSSL_INCLUDE_DIRS} )
-else()
-	if (EXISTS ${FB_LIB_DIR}/openssl/openssl/lib/libeay32.lib )
-		set( OPENSSL_INCLUDE_DIRS ${FB_LIB_DIR}/openssl/openssl/include )
-		set( OPENSSL_LIBRARIES 
-			${FB_LIB_DIR}/openssl/openssl/lib/libeay32.lib 
-			${FB_LIB_DIR}/openssl/openssl/lib/ssleay32.lib 
-			)
-		include_directories( ${OPENSSL_INCLUDE_DIRS} )
-		MESSAGE("Using OpenSSL shipped with FireBreath")
-	else()
-		MESSAGE(SEND_ERROR "Could not find OpenSSL on your system")
-	endif()
-ENDIF(OPENSSL_FOUND)
-
-# Use FireBreath (already built) boost libraries
-set(Boost_USE_STATIC_LIBS ON) 
-set(Boost_USE_MULTITHREADED ON)  
-set(Boost_USE_STATIC_RUNTIME ON) 
-find_package(Boost COMPONENTS thread system filesystem regex) 
-if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS}) 
-    set( BOOST_LIBRARIES "${Boost_LIBRARIES}" )
-else()
-	ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
-	INCLUDE_DIRECTORIES( ${FB_BOOST_INCLUDE_DIR} )
-	if (WIN32)
-		file ( GLOB BOOST_LIBRARIES 
-			${FB_BOOST_LIB_DIR}/thread/${CMAKE_BUILD_TYPE}/*.lib
-			${FB_BOOST_LIB_DIR}/system/${CMAKE_BUILD_TYPE}/*.lib
-			${FB_BOOST_LIB_DIR}/filesystem/${CMAKE_BUILD_TYPE}/*.lib
-			${FB_BOOST_LIB_DIR}/regex/${CMAKE_BUILD_TYPE}/*.lib )
-	elseif(APPLE)
-		file ( GLOB BOOST_LIBRARIES 
-			${FB_BOOST_LIB_DIR}/thread/${CMAKE_BUILD_TYPE}/*
-			${FB_BOOST_LIB_DIR}/system/${CMAKE_BUILD_TYPE}/*
-			${FB_BOOST_LIB_DIR}/filesystem/${CMAKE_BUILD_TYPE}/*
-			${FB_BOOST_LIB_DIR}/regex/${CMAKE_BUILD_TYPE}/* )
-
-		# Check if the user is using Make instead of XCodeBuild
-		IF("${BOOST_LIBRARIES}" STREQUAL "")
-			file ( GLOB BOOST_LIBRARIES 
-				${FB_BOOST_LIB_DIR}/thread/*.a
-				${FB_BOOST_LIB_DIR}/system/*.a
-				${FB_BOOST_LIB_DIR}/filesystem/*.a
-				${FB_BOOST_LIB_DIR}/regex/*.a )
-		ENDIF()
-
-	elseif(UNIX)
-		file ( GLOB BOOST_LIBRARIES 
-			${FB_BOOST_LIB_DIR}/thread/*.a
-			${FB_BOOST_LIB_DIR}/system/*.a
-			${FB_BOOST_LIB_DIR}/filesystem/*.a
-			${FB_BOOST_LIB_DIR}/regex/*.a )
-	ENDIF(WIN32)
-	IF("${BOOST_LIBRARIES}" STREQUAL "")
-		MESSAGE( FATAL_ERROR "No BOOST libraries were found for ${CMAKE_BUILD_TYPE} configuration! Please build the plugin first..." )
-	ENDIF()
-
-endif()
 
 #############################################################
 # PROJECT SOURCES 
@@ -196,13 +139,13 @@ endif()
 
 # Locate platform-dependant sources
 if (WIN32)
-	set ( PLATFORM_DIR ${PROJECT_SOURCE_DIR}/platform/win )
+	set ( PLATFORM_DIR ${PROJECT_SOURCE_DIR}/Platform/win )
 	file ( GLOB PLATFORM_SOURCES ${PLATFORM_DIR}/*.cpp  )
 elseif (APPLE)
-	set ( PLATFORM_DIR ${PROJECT_SOURCE_DIR}/platform/osx )
+	set ( PLATFORM_DIR ${PROJECT_SOURCE_DIR}/Platform/osx )
 	file ( GLOB PLATFORM_SOURCES ${PLATFORM_DIR}/*.mm  )
 elseif(UNIX)
-	set ( PLATFORM_DIR ${PROJECT_SOURCE_DIR}/platform/unix )
+	set ( PLATFORM_DIR ${PROJECT_SOURCE_DIR}/Platform/unix )
 	file ( GLOB PLATFORM_SOURCES ${PLATFORM_DIR}/*.cpp  )
 endif()
 

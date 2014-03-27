@@ -17,3 +17,6 @@ extern/zlib/archive*
 extern/jsoncpp/archive*
 extern/boost/archive*
 extern/crypto50/archive*
+
+# Exclude build dirs
+build
