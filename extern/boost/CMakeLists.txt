@@ -49,6 +49,12 @@ project(boost)
 set(BoostVersion 1.55.0)
 set(BoostSHA1 cef9a0cc7084b1d639e06cd3bc34e4251524c840)
 
+# Setup defaults
+if (NOT DEFINED(TARGET_ARCH))
+    set(TARGET_ARCH "x86")
+endif()
+
+
 # Helper function to convert underscores to CamelCase
 function(ms_underscores_to_camel_case VarIn VarOut)
   string(REPLACE "_" ";" Pieces ${VarIn})
@@ -166,9 +172,9 @@ if(MSVC)
               define=_BIND_TO_CURRENT_CRT_VERSION=1
               --layout=versioned
               )
-#  if(${TargetArchitecture} STREQUAL "x86_64")
-#    list(APPEND b2Args address-model=64)
-#  endif()
+  if("${TARGET_ARCH}" STREQUAL "x86_64")
+    list(APPEND b2Args address-model=64)
+  endif()
 elseif(UNIX)
   list(APPEND b2Args variant=release cxxflags=-fPIC cxxflags=-std=c++11 -sNO_BZIP2=1 --layout=tagged)
   if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")

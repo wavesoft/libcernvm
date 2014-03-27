@@ -8,7 +8,10 @@ set(VERSION "1.0.0")
 set( HV_NAMES Virtualbox )
 
 # Static build
-SET(BUILD_SHARED_LIBS OFF)
+SET(BUILD_SHARED_LIBS 	OFF)
+
+# Should we try to find system libs?
+SET(USE_SYSTEM_LIBS 	1)
 
 #############################################################
 # LIBRARIES 
@@ -25,6 +28,11 @@ SET(BUILD_SHARED_LIBS OFF)
 #	XXXXXX_INCLUDE 	 : Which contain the additiona include directories
 #
 
+# Common environment cleanups
+if (NOT DEFINED(USE_SYSTEM_LIBS))
+	set(USE_SYSTEM_LIBS 0)
+endif()
+
 #
 # [ZLib] For GZIP compression/decompression
 #
@@ -32,10 +40,10 @@ if ( NOT DEFINED(ZLIB_LIBRARIES) OR NOT DEFINED(ZLIB_INCLUDE_DIR) )
 
 	# Check if we can find ZLib in the system
 	find_package(ZLIB)
-	if(ZLIB_FOUND)
+	if(ZLIB_FOUND AND ${USE_SYSTEM_LIBS})
 
 		# Log
-		MESSAGE( STATUS "Using ZLib from system")
+		message( STATUS "Using ZLib from system")
 
 	else()
 
@@ -45,12 +53,12 @@ if ( NOT DEFINED(ZLIB_LIBRARIES) OR NOT DEFINED(ZLIB_INCLUDE_DIR) )
 		include_directories( ${CMAKE_BINARY_DIR}/${EXTERN_ZLIB} )
 
 		# Log
-		MESSAGE( STATUS "Using ZLib shipped with libcernvm")
+		message( STATUS "Using ZLib shipped with libcernvm")
 
 	endif()
 
 else()
-	MESSAGE( STATUS "Using ZLib from: ${ZLIB_INCLUDE_DIR}")
+	message( STATUS "Using ZLib from: ${ZLIB_INCLUDE_DIR}")
 
 endif()
 
@@ -64,10 +72,38 @@ if ( NOT DEFINED(JSONCPP_LIBRARIES) OR NOT DEFINED(JSONCPP_INCLUDE_DIRS) )
 	add_subdirectory( ${EXTERN_JSONCPP} ${CMAKE_BINARY_DIR}/${EXTERN_JSONCPP} )
 
 	# Log
-	MESSAGE( STATUS "Using JsonCPP shipped with libcernvm")
+	message( STATUS "Using JsonCPP shipped with libcernvm")
 
 else()
-	MESSAGE( STATUS "Using JsonCPP from: ${JSONCPP_INCLUDE_DIRS}")
+	message( STATUS "Using JsonCPP from: ${JSONCPP_INCLUDE_DIRS}")
+
+endif()
+
+#
+# [OpenSSL] For PKI functions
+#
+if ( NOT DEFINED(OPENSSL_LIBRARIES) OR NOT DEFINED(OPENSSL_INCLUDE_DIRS) )
+
+	# Check if we can find ZLib in the system
+	find_package(OpenSSL)
+	if(OPENSSL_FOUND AND ${USE_SYSTEM_LIBS})
+
+		# Log
+		message( STATUS "Using OpenSSL from system")
+
+	else()
+
+		# We are shipping jsoncpp with the project
+		set( EXTERN_OPENSSL "extern/openssl" )
+		add_subdirectory( ${EXTERN_OPENSSL} ${CMAKE_BINARY_DIR}/${EXTERN_OPENSSL} )
+
+		# Log
+		message( STATUS "Using OpenSSL shipped with libcernvm")
+
+	endif()
+
+else()
+	message( STATUS "Using OpenSSL from: ${OPENSSL_INCLUDE_DIRS}")
 
 endif()
 
@@ -78,14 +114,14 @@ set( BOOST_REQUIRE_LIBRARIES thread system filesystem regex )
 if ( NOT DEFINED(BOOST_LIBRARIES) OR NOT DEFINED(BOOST_INCLUDE_DIRS) )
 
 	# Try to find system boost
-	set(Boost_USE_STATIC_LIBS ON) 
 	set(Boost_USE_MULTITHREADED ON)  
-	set(Boost_USE_STATIC_RUNTIME ON) 
+	set(Boost_USE_STATIC_RUNTIME NOT BUILD_SHARED_LIBS) 
+	set(Boost_USE_STATIC_LIBS NOT BUILD_SHARED_LIBS) 
 	find_package(Boost COMPONENTS ${BOOST_REQUIRE_LIBRARIES}) 
-	if(Boost_FOUND)
+	if(Boost_FOUND AND ${USE_SYSTEM_LIBS})
 
 		# Log
-		MESSAGE( STATUS "Using BOOST from system")
+		message( STATUS "Using BOOST from system")
 
 	else()
 
@@ -95,28 +131,30 @@ if ( NOT DEFINED(BOOST_LIBRARIES) OR NOT DEFINED(BOOST_INCLUDE_DIRS) )
 
 		# Link targets and populate libraries/include dirs
 		set( BOOST_LIBRARIES "" )
+		set( BOOST_DEPEND_TARGETS "")
 		set( BOOST_INCLUDE_DIRS ${BoostSourceDir} )
 		foreach(LIB ${BOOST_REQUIRE_LIBRARIES}) 
 			# Depend target
-			add_dependencies(${PROJECT_NAME} boost_${LIB})
+			set( BOOST_DEPEND_TARGETS ${BOOST_DEPEND_TARGETS} boost_${LIB} )
 			# Use given library
 			set( BOOST_LIBRARIES ${BOOST_LIBRARIES} ${Boost${LIB}Libs} )
 		endforeach()
 
 		# Log
-		MESSAGE( STATUS "Using BOOST shipped with libcernvm")
+		message( STATUS "Using BOOST shipped with libcernvm")
 
 	endif()
 
 else()
-	MESSAGE( STATUS "Using BOOST from: ${BOOST_INCLUDE_DIRS}")
+	message( STATUS "Using BOOST from: ${BOOST_INCLUDE_DIRS}")
 
 endif()
 
 # Include libraries
 set( PROJECT_INCLUDES
-	${ZLIB_INCLUDE_DIR} 
-	${JSONCPP_INCLUDE_DIRS} 
+	${ZLIB_INCLUDE_DIR}
+	${JSONCPP_INCLUDE_DIRS}
+	${OPENSSL_INCLUDE_DIRS}
 	${BOOST_INCLUDE_DIRS}
 )
 
@@ -124,6 +162,7 @@ set( PROJECT_INCLUDES
 set( PROJECT_LIBRARIES 
 	${ZLIB_LIBRARIES}
 	${JSONCPP_LIBRARIES}
+	${OPENSSL_LIBRARIES}
 	${BOOST_LIBRARIES}
 )
 
@@ -196,6 +235,14 @@ add_library( ${PROJECT_NAME}
 	${HYPERVISOR_SOURCES}
 	${PLATFORM_SOURCES}
 )
+
+# Depend boost targets if we are building them
+# ourselves
+if (DEFINED(BOOST_DEPEND_TARGETS))
+	foreach(TARGET ${BOOST_DEPEND_TARGETS})
+		add_dependencies(${PROJECT_NAME} ${TARGET})
+	endforeach()
+endif()
 
 # Libraries
 target_link_libraries ( ${PROJECT_NAME} ${PROJECT_LIBRARIES} )

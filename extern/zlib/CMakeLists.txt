@@ -11,8 +11,8 @@ set(VERSION "1.2.8")
 
 # Setup archive
 set( ARCHIVE_URL "http://downloads.sourceforge.net/project/libpng/zlib/1.2.8/zlib-1.2.8.tar.gz" )
-set( ARCHIVE_EXT ".tar.gz" )
 set( ARCHIVE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/archive" )
+set( ARCHIVE_EXT ".tar.gz" )
 
 # Check if we have the archive
 if ( NOT EXISTS ${ARCHIVE_DIR} )
