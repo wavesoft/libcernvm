@@ -186,7 +186,11 @@ elseif(UNIX)
     list(APPEND b2Args toolset=gcc)
   endif()
 elseif(APPLE)
-  list(APPEND b2Args toolset=clang cxxflags=-fPIC cxxflags=-std=c++11 architecture=combined address-model=32_64 --layout=tagged)
+  if(${TARGET_ARCH} STREQUAL "x86_64")
+    list(APPEND b2Args toolset=clang cxxflags=-fPIC cxxflags=-std=c++11 architecture=combined address-model=64 --layout=tagged)
+  else()
+    list(APPEND b2Args toolset=clang cxxflags=-fPIC cxxflags=-std=c++11 architecture=combined address-model=32 --layout=tagged)
+  endif()
 endif()
 
 # Get list of components
