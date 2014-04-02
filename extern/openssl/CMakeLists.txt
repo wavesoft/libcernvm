@@ -189,7 +189,6 @@ if (WIN32 AND MSVC)
         LOG_INSTALL ON
     )
 else()
-    message( ">>> Doing crap on " ${OPENSSL_BIN_DIR} )
     # Any other POSIX system uses make
     ExternalProject_Add(
         openssl
@@ -205,7 +204,6 @@ else()
 endif()
 
 # Configure is an intermediate step
-message(">>> Working on " ${OPENSSL_SRC_DIR})
 ExternalProject_Add_Step(
     openssl
     build_configure
