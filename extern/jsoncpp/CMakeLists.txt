@@ -61,8 +61,13 @@ ENDFOREACH()
 set( CMAKE_CURRENT_SOURCE_DIR ${ARCHIVE_DIR} )
 
 # Expose project variables to parent
-set (JSONCPP_LIBRARIES ${PROJECT_NAME} PARENT_SCOPE)
-set (JSONCPP_INCLUDE_DIRS ${ARCHIVE_DIR}/include PARENT_SCOPE)
+set (JSONCPP_LIBRARIES 
+	${PROJECT_NAME} 
+	PARENT_SCOPE)
+set (JSONCPP_INCLUDE_DIRS 
+	${ARCHIVE_DIR}/src/lib_json
+	${ARCHIVE_DIR}/include 
+	PARENT_SCOPE)
 
 #############################################################
 # BUILD SCRIPT 
