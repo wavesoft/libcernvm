@@ -141,6 +141,12 @@ if(NOT b2Path)
 endif()
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${BoostSourceDir}/Build)
 
+##MODIFIED: Mark the build directory part of clean process
+set_directory_properties( 
+    PROPERTIES
+    ADDITIONAL_MAKE_CLEAN_FILES
+    ${BoostSourceDir}/Build )
+
 # Expose BoostSourceDir to parent scope
 set(BoostSourceDir ${BoostSourceDir} PARENT_SCOPE)
 

@@ -77,6 +77,12 @@ endif()
 set( OPENSSL_SRC_DIR ${ARCHIVE_DIR})
 set( OPENSSL_BIN_DIR ${ARCHIVE_DIR}/Build )
 
+# Mark the build directory part of clean process
+set_directory_properties( 
+    PROPERTIES
+    ADDITIONAL_MAKE_CLEAN_FILES
+    ${OPENSSL_BIN_DIR} )
+
 # Pick openssl variables according to target
 set( OPENSSL_TARGET "" )
 set( OPENSSL_CONFIG_ARGS "" )
@@ -203,6 +209,7 @@ else()
 endif()
 
 # Configure is an intermediate step
+message( STATUS "Building OpenSSL for ${OPENSSL_TARGET} (${TARGET_ARCH})")
 ExternalProject_Add_Step(
     openssl
     build_configure

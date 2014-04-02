@@ -11,8 +11,9 @@ set( HV_NAMES Virtualbox )
 SET(BUILD_SHARED_LIBS 	OFF)
 
 # Target architecture
-set(TARGET_ARCH ${OSX_ARCHITECTURES})
-if(NOT "${TARGET_ARCH}")
+if (CMAKE_OSX_ARCHITECTURES)
+	set(TARGET_ARCH ${CMAKE_OSX_ARCHITECTURES})
+else()
 	set(TARGET_ARCH "i386")
 endif()
 
@@ -346,5 +347,5 @@ set( CERNVM_LIBRARIES
 	PARENT_SCOPE )
 set( CERNVM_INCLUDE_DIRS
 	${PROJECT_SOURCE_DIR}/include 	# Library includes
-	${JSONCPP_INCLUDE_DIRS}			# JSON includes are found in the headers
+	${PROJECT_INCLUDES}				# All includes are for the project too
 	PARENT_SCOPE )
