@@ -173,20 +173,25 @@ option(HTTP_ONLY "disables all protocols except HTTP (This overrides all CURL_DI
 mark_as_advanced(HTTP_ONLY)
 option(CURL_DISABLE_FTP "disables FTP" OFF)
 mark_as_advanced(CURL_DISABLE_FTP)
-option(CURL_DISABLE_LDAP "disables LDAP" OFF)
+##MODIFIED: We don't need LDAP
+option(CURL_DISABLE_LDAP "disables LDAP" ON)
 mark_as_advanced(CURL_DISABLE_LDAP)
-option(CURL_DISABLE_TELNET "disables Telnet" OFF)
+##MODIFIED: We don't need Telnet
+option(CURL_DISABLE_TELNET "disables Telnet" ON)
 mark_as_advanced(CURL_DISABLE_TELNET)
-option(CURL_DISABLE_DICT "disables DICT" OFF)
+##MODIFIED: We don't need DICT
+option(CURL_DISABLE_DICT "disables DICT" ON)
 mark_as_advanced(CURL_DISABLE_DICT)
-option(CURL_DISABLE_FILE "disables FILE" OFF)
+##MODIFIED: We don't need FILE
+option(CURL_DISABLE_FILE "disables FILE" ON)
 mark_as_advanced(CURL_DISABLE_FILE)
-option(CURL_DISABLE_TFTP "disables TFTP" OFF)
+##MODIFIED: We don't need TFTP
+option(CURL_DISABLE_TFTP "disables TFTP" ON)
 mark_as_advanced(CURL_DISABLE_TFTP)
 option(CURL_DISABLE_HTTP "disables HTTP" OFF)
 mark_as_advanced(CURL_DISABLE_HTTP)
-
-option(CURL_DISABLE_LDAPS "to disable LDAPS" OFF)
+##MODIFIED: We don't need LDAPS
+option(CURL_DISABLE_LDAPS "to disable LDAPS" ON)
 mark_as_advanced(CURL_DISABLE_LDAPS)
 
 if(HTTP_ONLY)
