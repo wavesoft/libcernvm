@@ -68,6 +68,10 @@ else()
     set( CURL_STATICLIB ON )
 endif()
 
+# Expose project variables to parent
+set (CURL_LIBRARIES "libcurl" PARENT_SCOPE)
+set (CURL_INCLUDE_DIRS ${ARCHIVE_DIR}/include PARENT_SCOPE)
+
 #############################################################
 # BUILD SCRIPT 
 #############################################################
@@ -308,12 +312,17 @@ if (CURL_ZLIB) # AND CURL_CONFIG_HAS_BEEN_RUN_BEFORE
         message( FATAL_ERROR "OpenSSL was not found in this project!" )
     else()
         message(STATUS "Using ZLib Includes for CURL from: ${ZLIB_INCLUDE_DIRS}")
-        list(APPEND CURL_LIBS ${ZLIB_LIBRARIES})
-        list(APPEND CMAKE_REQUIRED_INCLUDES ${ZLIB_INCLUDE_DIRS})
-        include_directories( ${ZLIB_INCLUDE_DIRS} )
         set(HAVE_ZLIB_H ON)
         set(HAVE_ZLIB ON)
         set(HAVE_LIBZ ON)
+
+        # Prepare includes & libs
+        list(APPEND CURL_LIBS ${ZLIB_LIBRARIES})
+        list(APPEND CMAKE_REQUIRED_INCLUDES ${ZLIB_INCLUDE_DIRS})
+        include_directories( ${ZLIB_INCLUDE_DIRS} )
+
+        # Depend
+        add_dependencies(${PROJECT_NAME} zlib)
     endif()
 
 endif()
@@ -328,13 +337,18 @@ if (CMAKE_USE_OPENSSL)
     else()
         message(STATUS "Using OpenSSL Includes for CURL from: ${OPENSSL_INCLUDE_DIRS}")
         set(CMAKE_USE_OPENSSL ON)
-        list(APPEND CURL_LIBS ${OPENSSL_LIBRARIES})
-        list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
-        include_directories( ${OPENSSL_INCLUDE_DIRS} )
         set(USE_SSLEAY ON)
         set(USE_OPENSSL ON)
         set(HAVE_LIBCRYPTO ON)
         set(HAVE_LIBSSL ON)
+
+        # Prepare includes & libs
+        list(APPEND CURL_LIBS ${OPENSSL_LIBRARIES})
+        list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
+        include_directories( ${OPENSSL_INCLUDE_DIRS} )
+
+        # Depend
+        add_dependencies(${PROJECT_NAME} openssl)
     endif()
 endif()
 
