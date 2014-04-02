@@ -18,9 +18,9 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "DaemonCtl.h"
-#include "Utilities.h"
-#include "Hypervisor.h"
+#include "CernVM/DaemonCtl.h"
+#include "CernVM/Utilities.h"
+#include "CernVM/Hypervisor.h"
 
 #include <sstream>
 #include <cstdlib>

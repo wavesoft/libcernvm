@@ -18,7 +18,7 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "Callbacks.h"
+#include "CernVM/Callbacks.h"
 
 /**
  * Register a callback that handles a named event

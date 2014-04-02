@@ -21,8 +21,7 @@
 #include "VBoxCommon.h"
 #include "VBoxInstance.h"
 
-#include "CVMGlobals.h"
-#include "global/config.h"
+#include "CernVM/Config.h"
 
 using namespace std;
 
@@ -155,7 +154,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
         if (pf) pf->doing("Downloading hypervisor configuration");
 
         // Try to download the configuration URL
-        res = downloadProvider->downloadText( URL_HYPERVISOR_CONFIG FBSTRING_PLUGIN_VERSION, &requestBuf );
+        res = downloadProvider->downloadText( URL_HYPERVISOR_CONFIG CERNVM_WEBAPI_VERSION, &requestBuf );
         if ( res != HVE_OK ) {
             if (tries<retries) {
                 CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );

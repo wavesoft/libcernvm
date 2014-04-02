@@ -26,12 +26,11 @@
 #include <map>
 #include <algorithm>
 
-#include "CVMGlobals.h"
-#include "global/config.h"
+#include "CernVM/Config.h"
 
 #include "VBoxInstance.h"
-#include "Common/Hypervisor.h"
-#include "Common/Utilities.h"
+#include "CernVM/Hypervisor.h"
+#include "CernVM/Utilities.h"
 
 using namespace std;
 
@@ -914,7 +913,7 @@ int VBoxInstance::installExtPack( const DownloadProviderPtr & downloadProvider, 
     
     /* Contact the information point */
     CVMWA_LOG( "Info", "Fetching data" );
-    int res = downloadProvider->downloadText( URL_HYPERVISOR_CONFIG FBSTRING_PLUGIN_VERSION, &requestBuf, downloadPf );
+    int res = downloadProvider->downloadText( URL_HYPERVISOR_CONFIG CERNVM_WEBAPI_VERSION, &requestBuf, downloadPf );
     if ( res != HVE_OK ) {
         if (pf) pf->fail("Unable to fetch hypervisor configuration", res);
         return res;

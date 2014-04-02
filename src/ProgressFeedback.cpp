@@ -18,7 +18,7 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "ProgressFeedback.h"
+#include <CernVM/ProgressFeedback.h>
 
 /** #####################################################################################
  *  # ProgressTask Implementation - Base Task

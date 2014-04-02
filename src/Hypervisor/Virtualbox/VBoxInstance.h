@@ -27,11 +27,11 @@
 
 #include <map>
 
-#include "Common/Utilities.h"
-#include "Common/Hypervisor.h"
-#include "Common/ProgressFeedback.h"
-#include "Common/CrashReport.h"
-#include "Common/LocalConfig.h"
+#include "CernVM/Utilities.h"
+#include "CernVM/Hypervisor.h"
+#include "CernVM/ProgressFeedback.h"
+#include "CernVM/CrashReport.h"
+#include "CernVM/LocalConfig.h"
 
 #include <boost/regex.hpp>
 

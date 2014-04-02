@@ -31,10 +31,10 @@
 #include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
 
-#include "Config.h"
-#include "Utilities.h"
-#include "Hypervisor.h"
-#include "DaemonCtl.h"
+#include "CernVM/Config.h"
+#include "CernVM/Utilities.h"
+#include "CernVM/Hypervisor.h"
+#include "CernVM/DaemonCtl.h"
 
 #include "contextiso.h"
 #include "floppyIO.h"

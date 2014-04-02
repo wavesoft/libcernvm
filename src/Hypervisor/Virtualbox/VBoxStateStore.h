@@ -22,8 +22,8 @@
 #ifndef VBOXSTATESTORE_H
 #define VBOXSTATESTORE_H
 
-#include "Common/Utilities.h"
-#include "Common/LocalConfig.h"
+#include <CernVM/Utilities.h>
+#include <CernVM/LocalConfig.h>
 
 #include <string>
 #include <map>

@@ -23,7 +23,7 @@
 #include <Cocoa/Cocoa.h>
 #include <string>
  
-#include "../CrashReport.h"
+#include <CernVM/CrashReport.h>
 
 /**
  * Get platform string

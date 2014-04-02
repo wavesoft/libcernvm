@@ -18,7 +18,7 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "CrashReport.h"
+#include <CernVM/CrashReport.h>
 #include <time.h>
 using namespace std;
 

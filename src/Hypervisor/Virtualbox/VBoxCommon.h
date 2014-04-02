@@ -22,8 +22,8 @@
 #ifndef VBOXCOMMON_H
 #define VBOXCOMMON_H
 
-#include "Common/ProgressFeedback.h"
-#include "Common/Hypervisor.h"
+#include "CernVM/ProgressFeedback.h"
+#include "CernVM/Hypervisor.h"
 
 // Where to mount the bootable CD-ROM
 #define BOOT_CONTROLLER     "IDE"

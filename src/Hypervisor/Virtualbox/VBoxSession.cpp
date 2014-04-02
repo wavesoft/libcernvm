@@ -21,7 +21,7 @@
 #include "VBoxSession.h"
 #include "VBoxInstance.h"
 
-#include "CVMGlobals.h"
+#include "CernVM/Config.h"
 
 using namespace std;
 

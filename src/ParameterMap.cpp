@@ -18,9 +18,9 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "CrashReport.h"
-#include "Utilities.h"
-#include "ParameterMap.h"
+#include <CernVM/CrashReport.h>
+#include <CernVM/Utilities.h>
+#include <CernVM/ParameterMap.h>
 
 /**
  * Allocate a new shared pointer

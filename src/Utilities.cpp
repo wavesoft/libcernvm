@@ -35,8 +35,8 @@
 #include <openssl/evp.h>
 #include "zlib.h"
 
-#include "Utilities.h"
-#include "Hypervisor.h"
+#include <CernVM/Utilities.h>
+#include <CernVM/Hypervisor.h>
 
 using namespace std;
 

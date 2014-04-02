@@ -20,8 +20,8 @@
 
 #include <boost/filesystem.hpp> 
 
-#include "Hypervisor.h"
-#include "LocalConfig.h"
+#include <CernVM/Hypervisor.h>
+#include <CernVM/LocalConfig.h>
 
 // Initialize singletons
 LocalConfigPtr LocalConfig::globalConfigSingleton;

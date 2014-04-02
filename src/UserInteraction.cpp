@@ -18,7 +18,7 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "UserInteraction.h"
+#include <CernVM/UserInteraction.h>
 #include <boost/bind.hpp>
 
 // Initialize singleton to default

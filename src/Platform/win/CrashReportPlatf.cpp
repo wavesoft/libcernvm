@@ -18,7 +18,7 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "../Common/CrashReport.h"
+#include <CernVM/CrashReport.h>
 using namespace std;
 
 #include <tchar.h>

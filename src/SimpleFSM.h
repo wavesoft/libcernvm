@@ -22,8 +22,8 @@
 #ifndef SIMPLEFSM_H
 #define SIMPLEFSM_H
 
-#include "Utilities.h"
-#include "Common/ProgressFeedback.h"
+#include "CernVM/Utilities.h"
+#include "CernVM/ProgressFeedback.h"
 
 #include <list>
 #include <vector>

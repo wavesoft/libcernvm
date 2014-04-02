@@ -22,8 +22,8 @@
 #ifndef TRANSACTION_H
 #define TRANSACTION_H
 
-#include "Utilities.h"  // It also contains the common global headers
-#include "CrashReport.h"
+#include <CernVM/Utilities.h>  // It also contains the common global headers
+#include <CernVM/CrashReport.h>
 
 #include <vector>
 

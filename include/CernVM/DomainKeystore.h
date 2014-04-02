@@ -22,12 +22,12 @@
 #ifndef COMMON_CRYPTO_H
 #define COMMON_CRYPTO_H
 
-#include <Common/Config.h>
-#include <Common/DownloadProvider.h>
-#include <Common/Utilities.h>
-#include <Common/Hypervisor.h>
-#include <Common/LocalConfig.h>
-#include <Common/CrashReport.h>
+#include <CernVM/Config.h>
+#include <CernVM/DownloadProvider.h>
+#include <CernVM/Utilities.h>
+#include <CernVM/Hypervisor.h>
+#include <CernVM/LocalConfig.h>
+#include <CernVM/CrashReport.h>
 
 #include <openssl/pem.h>
 #include <openssl/sha.h>

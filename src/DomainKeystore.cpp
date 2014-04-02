@@ -18,7 +18,7 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "DomainKeystore.h"
+#include "CernVM/DomainKeystore.h"
 using namespace std;
 
 /**

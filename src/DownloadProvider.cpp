@@ -18,8 +18,8 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "DownloadProvider.h"
-#include "Hypervisor.h"
+#include "CernVM/DownloadProvider.h"
+#include "CernVM/Hypervisor.h"
 
 DownloadProviderPtr systemProvider;
 

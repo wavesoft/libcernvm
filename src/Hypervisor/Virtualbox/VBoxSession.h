@@ -27,9 +27,9 @@
 #include <string>
 #include <map>
 
-#include "Common/SimpleFSM.h"
-#include "Common/Hypervisor.h"
-#include "Common/CrashReport.h"
+#include "SimpleFSM.h"
+#include "CernVM/Hypervisor.h"
+#include "CernVM/CrashReport.h"
 
 #include <boost/regex.hpp>
 

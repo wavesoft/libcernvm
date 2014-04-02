@@ -23,7 +23,7 @@
 #ifndef FLOPPYIO_H
 #define	FLOPPYIO_H
 
-#include "CrashReport.h"
+#include "CernVM/CrashReport.h"
 
 #include <iostream>
 #include <fstream>

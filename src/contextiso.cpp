@@ -22,8 +22,8 @@
 #include <time.h>
 #include <ctype.h>
 #include <string.h>
+#include <CernVM/CrashReport.h>
 #include "iso9660.h"
-#include "CrashReport.h"
 
 // CD-ROM size for 2KiB of data
 static const int CONTEXTISO_CDROM_SIZE = 358400;

@@ -22,8 +22,8 @@
 #ifndef THINIPC_H_MPQIX21W
 #define THINIPC_H_MPQIX21W
 
-#include "Utilities.h"  // It also contains the common global headers
-#include "CrashReport.h"
+#include "CernVM/Utilities.h"  // It also contains the common global headers
+#include "CernVM/CrashReport.h"
 
 #define MAX_MSG_SIZE    1024
 
