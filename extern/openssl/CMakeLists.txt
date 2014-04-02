@@ -82,11 +82,26 @@ endif()
 set( OPENSSL_SRC_DIR ${ARCHIVE_DIR})
 set( OPENSSL_BIN_DIR ${ARCHIVE_DIR}/Build )
 
-# Pick the appropriate OpenSSL target
+# Pick openssl variables according to target
 set( OPENSSL_TARGET "" )
+set( OPENSSL_CONFIG_ARGS "" )
+set( OPENSSL_LIB_SUFFIX "" )
 
 # Check if we are on Windows
 if(WIN32)
+
+    # Windows build ".lib" files for static and ".dll" for dynamic
+    if (${BUILD_SHARED_LIBS})
+        set( OPENSSL_LIB_SUFFIX ".dll" )
+    else()
+        set( OPENSSL_LIB_SUFFIX ".lib" )
+    endif()
+
+    # Expose library names to parent scope
+    set (OPENSSL_LIBRARIES  
+        ${OPENSSL_BIN_DIR}/lib/libeay32${OPENSSL_LIB_SUFFIX}
+        ${OPENSSL_BIN_DIR}/lib/ssleay${OPENSSL_LIB_SUFFIX}
+        PARENT_SCOPE)
 
     # Check if we are using the Visual Studio compiler
     if(MSVC)
@@ -96,7 +111,7 @@ if(WIN32)
         elseif (${TARGET_ARCH} STREQUAL "x86")
             # 32-bit Windows, Visual Stuio
             set( OPENSSL_TARGET "VC-WIN32" )
-        else()
+        endif()
 
     # Check if we are using GCC on windows (mingw)
     elseif(CMAKE_COMPILER_IS_GNUCXX)
@@ -106,29 +121,57 @@ if(WIN32)
         elseif (${TARGET_ARCH} STREQUAL "x86")
             # 32-bit Windows, GCC
             set( OPENSSL_TARGET "mingw" )
-        else()
+        endif()
 
     else()
         message(SEND_ERROR "You are using an unsupported Windows compiler! (Not MSVC or GCC)")
     endif()
 
 elseif(APPLE)
+
+    # MacOSX build ".a" for static and ".dylib" for dynamic
+    if (${BUILD_SHARED_LIBS})
+        set( OPENSSL_LIB_SUFFIX ".dylib" )
+    else()
+        set( OPENSSL_LIB_SUFFIX ".a" )
+    endif()
+
+    # Expose library names to parent scope
+    set (OPENSSL_LIBRARIES  
+        ${OPENSSL_BIN_DIR}/lib/libcrypto${OPENSSL_LIB_SUFFIX}
+        ${OPENSSL_BIN_DIR}/lib/libssl${OPENSSL_LIB_SUFFIX}
+        PARENT_SCOPE)
+
     if (${TARGET_ARCH} STREQUAL "x86_64")
         # 64-bit MacOSX, Any Compiler
         set( OPENSSL_TARGET "darwin64-x86_64-cc" )
     elseif (${TARGET_ARCH} STREQUAL "x86")
         # 32-bit MacOSX, Any Compiler
         set( OPENSSL_TARGET "darwin-i386-cc" )
-    else()
+    endif()
 
 elseif(UNIX)
+
+    # MacOSX build ".a" for static and ".so" for dynamic
+    if (${BUILD_SHARED_LIBS})
+        set( OPENSSL_LIB_SUFFIX ".so" )
+    else()
+        set( OPENSSL_LIB_SUFFIX ".a" )
+    endif()
+
+    # Expose library names to parent scope
+    set (OPENSSL_LIBRARIES  
+        ${OPENSSL_BIN_DIR}/lib/libcrypto${OPENSSL_LIB_SUFFIX}
+        ${OPENSSL_BIN_DIR}/lib/libssl${OPENSSL_LIB_SUFFIX}
+        PARENT_SCOPE)
+
     if (${TARGET_ARCH} STREQUAL "x86_64")
         # 64-bit MacOSX, Any Compiler
         set( OPENSSL_TARGET "linux-generic64" )
     elseif (${TARGET_ARCH} STREQUAL "x86")
         # 32-bit Intel processor, Any Compiler
         set( OPENSSL_TARGET "linux-generic32" )
-    else()
+    endif()
 
 endif()
 
@@ -138,55 +181,43 @@ if (WIN32 AND MSVC)
         openssl
         PREFIX ${OPENSSL_BIN_DIR}
         SOURCE_DIR ${OPENSSL_SRC_DIR}
-        BINARY_DIR ${OPENSSL_BIN_DIR}
         CONFIGURE_COMMAND cmd.exe /c "ms\\do_ms.bat"
         BUILD_COMMAND     nmake.exe -f "ms\\nt.mak"
         INSTALL_COMMAND   nmake.exe -f "ms\\nt.mak" "install"
+        BUILD_IN_SOURCE ON
         LOG_BUILD ON
+        LOG_INSTALL ON
     )
 else()
+    message( ">>> Doing crap on " ${OPENSSL_BIN_DIR} )
     # Any other POSIX system uses make
     ExternalProject_Add(
         openssl
         PREFIX ${OPENSSL_BIN_DIR}
         SOURCE_DIR ${OPENSSL_SRC_DIR}
-        BINARY_DIR ${OPENSSL_BIN_DIR}
         CONFIGURE_COMMAND ""
         BUILD_COMMAND     make
         INSTALL_COMMAND   make install
+        BUILD_IN_SOURCE ON
         LOG_BUILD ON
+        LOG_INSTALL ON
     )
 endif()
 
 # Configure is an intermediate step
+message(">>> Working on " ${OPENSSL_SRC_DIR})
 ExternalProject_Add_Step(
     openssl
     build_configure
     COMMENT "Configuring OpenSSL environment"
-    COMMAND ${PERL_EXECUTABLE} "Configure" ${OPENSSL_TARGET} --prefix=Build
+    COMMAND ${PERL_EXECUTABLE} "Configure" ${OPENSSL_TARGET} ${OPENSSL_CONFIG_ARGS} --prefix=${OPENSSL_BIN_DIR}
     WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
     DEPENDEES download
     DEPENDERS configure
+    LOG 1
 )
 
-# Collect non-directory files from lib (they are the libeay & ssleay libs)
-set (OPENSSL_LIB_FILES "")
-file(GLOB _LIB_FILES ${OPENSSL_BIN_DIR}/lib/*)
-foreach( LIB ${_LIB_FILES} )
-    if(NOT IS_DIRECTORY ${LIB})
-        set (OPENSSL_LIB_FILES ${OPENSSL_LIB_FILES} ${LIB})
-    endif()
-endforeach()
-
-# Get the first sub-directory that matches the inc* prefix
-set (OPENSSL_INC_DIR "")
-file(GLOB _INC_SUBDIRS ${ARCHIVE_DIR}/inc*)
-foreach( _INC_SUBDIR ${_INC_SUBDIRS} )
-    if(IS_DIRECTORY ${_INC_SUBDIR})
-        set(OPENSSL_INC_DIR ${_INC_SUBDIR})
-    endif()
-endforeach()
-
-# Expose to parent scope
-set (OPENSSL_LIBRARIES  ${OPENSSL_LIB_FILES} PARENT_SCOPE)
-set (OPENSSL_INCLUDE_DIRS ${OPENSSL_INC_DIR} PARENT_SCOPE)
+# Define the include directory
+set (OPENSSL_INCLUDE_DIRS 
+    ${OPENSSL_BIN_DIR}/include
+    PARENT_SCOPE)

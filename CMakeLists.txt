@@ -104,7 +104,7 @@ if ( NOT DEFINED(OPENSSL_LIBRARIES) OR NOT DEFINED(OPENSSL_INCLUDE_DIRS) )
 
 	# Check if we should check for local
 	set( USE_LOCAL 1 )
-	if (${USE_SYSTEM_LIBS} OR 1)
+	if (${USE_SYSTEM_LIBS})
 		# Check if we can find it on the system
 		find_package(OpenSSL)
 		if(OPENSSL_FOUND)
@@ -316,10 +316,16 @@ add_library( ${PROJECT_NAME}
 # ourselves - That's the only way I know for starting
 # the build process for these libraries, since BOOST
 # was not added as a library, but as an external project
-if (DEFINED(BOOST_DEPEND_TARGETS))
+if (${BOOST_MODE} STREQUAL "LOCAL")
 	foreach(TARGET ${BOOST_DEPEND_TARGETS})
 		add_dependencies(${PROJECT_NAME} ${TARGET})
 	endforeach()
+endif()
+
+# in the same way we have to depend openssl (if we are the ones)
+# building it.
+if (${OPENSSL_MODE} STREQUAL "LOCAL")
+	add_dependencies(${PROJECT_NAME} openssl)
 endif()
 
 # Libraries

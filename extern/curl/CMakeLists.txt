@@ -131,8 +131,10 @@ message(STATUS "curl version=[${CURL_VERSION}]")
 set(OPERATING_SYSTEM "${CMAKE_SYSTEM_NAME}")
 set(OS "\"${CMAKE_SYSTEM_NAME}\"")
 
-include_directories(${PROJECT_BINARY_DIR}/include/curl)
+include_directories( ${PROJECT_BINARY_DIR}/include/curl )
 include_directories( ${CURL_SOURCE_DIR}/include )
+##MODIFIED: Added this for finding the curl_config.h
+include_directories( ${PROJECT_BINARY_DIR}/curl/lib )
 
 option(BUILD_CURL_EXE "Set to ON to build cURL executable." ON)
 option(BUILD_CURL_TESTS "Set to ON to build cURL tests." ON)
@@ -916,12 +918,15 @@ function(TRANSFORM_MAKEFILE_INC INPUT_FILE OUTPUT_FILE)
 
 endfunction()
 
-add_subdirectory(${ARCHIVE_DIR}/lib)
+##MODIFIED: Defined bin folder
+add_subdirectory(${ARCHIVE_DIR}/lib curl/lib)
 if(BUILD_CURL_EXE)
-  add_subdirectory(${ARCHIVE_DIR}/src)
+    ##MODIFIED: Defined bin folder
+    add_subdirectory(${ARCHIVE_DIR}/src curl/src)
 endif()
 if(BUILD_CURL_TESTS)
-  add_subdirectory(${ARCHIVE_DIR}/tests)
+    ##MODIFIED: This causes errors
+    #add_subdirectory(${ARCHIVE_DIR}/tests)
 endif()
 
 # This needs to be run very last so other parts of the scripts can take advantage of this.
