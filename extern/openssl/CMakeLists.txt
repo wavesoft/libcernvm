@@ -58,12 +58,12 @@ if ( NOT EXISTS ${ARCHIVE_DIR} )
 endif()
 
 # Get the first sub-directory in the archive
-FILE(GLOB _ARCHIVE_SUBDIRS ${ARCHIVE_DIR}/*)
-FOREACH( _ARCHIVE_SUBDIR ${_ARCHIVE_SUBDIRS} )
-    IF(IS_DIRECTORY ${_ARCHIVE_SUBDIR})
-        SET(ARCHIVE_DIR ${_ARCHIVE_SUBDIR})
-    ENDIF()
-ENDFOREACH()
+file(GLOB _ARCHIVE_SUBDIRS ${ARCHIVE_DIR}/*)
+foreach( _ARCHIVE_SUBDIR ${_ARCHIVE_SUBDIRS} )
+    if(IS_DIRECTORY ${_ARCHIVE_SUBDIR})
+        set(ARCHIVE_DIR ${_ARCHIVE_SUBDIR})
+    endif()
+endforeach()
 
 #############################################################
 # BUILD SCRIPT 
@@ -82,69 +82,111 @@ endif()
 set( OPENSSL_SRC_DIR ${ARCHIVE_DIR})
 set( OPENSSL_BIN_DIR ${ARCHIVE_DIR}/Build )
 
+# Pick the appropriate OpenSSL target
+set( OPENSSL_TARGET "" )
+
 # Check if we are on Windows
-IF(WIN32)
+if(WIN32)
 
     # Check if we are using the Visual Studio compiler
     if(MSVC)
-
-        # Add custom windows target 
-        ExternalProject_Add(
-            openssl
-            PREFIX ${OPENSSL_BIN_DIR}
-            SOURCE_DIR ${OPENSSL_SRC_DIR}
-            BINARY_DIR ${OPENSSL_BIN_DIR}
-            CONFIGURE_COMMAND cmd.exe /c "ms\\do_ms.bat"
-            BUILD_COMMAND     nmake.exe -f "ms\\nt.mak"
-            INSTALL_COMMAND   nmake.exe -f "ms\\nt.mak" "install"
-            LOG_BUILD ON
-        )
-
-        # Preparation steps
         if (${TARGET_ARCH} STREQUAL "x86_64")
-
-            # Prepare for 32-bit, no-debug
-            ExternalProject_Add_Step(
-                openssl
-                build_configure
-                COMMENT "Perparing OpenSSL environment"
-                COMMAND ${PERL_EXECUTABLE} "Configure" VC-WIN64A --prefix=Build
-                WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
-                DEPENDEES download
-                DEPENDERS configure
-            )
-
+            # 64-bit Windows, Visual Stuio
+            set( OPENSSL_TARGET "VC-WIN64A" )
+        elseif (${TARGET_ARCH} STREQUAL "x86")
+            # 32-bit Windows, Visual Stuio
+            set( OPENSSL_TARGET "VC-WIN32" )
         else()
 
-            # Prepare for 32-bit, no-debug
-            ExternalProject_Add_Step(
-                openssl
-                build_configure
-                COMMENT "Perparing OpenSSL environment"
-                COMMAND ${PERL_EXECUTABLE} "Configure" VC-WIN32 --prefix=Build
-                WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
-                DEPENDEES download
-                DEPENDERS configure
-            )
-
-        endif()
-
-        # Expose project variables to parent
-        set (OPENSSL_LIBRARIES 
-            ${OPENSSL_BIN_DIR}/lib/libeay32.lib 
-            ${OPENSSL_BIN_DIR}/lib/ssleay32.lib
-            PARENT_SCOPE)
-        set (OPENSSL_INCLUDE_DIRS 
-            ${OPENSSL_SRC_DIR}/inc32 
-            PARENT_SCOPE)
-
+    # Check if we are using GCC on windows (mingw)
     elseif(CMAKE_COMPILER_IS_GNUCXX)
+        if (${TARGET_ARCH} STREQUAL "x86_64")
+            # 64-bit Windows, GCC
+            set( OPENSSL_TARGET "mingw64" )
+        elseif (${TARGET_ARCH} STREQUAL "x86")
+            # 32-bit Windows, GCC
+            set( OPENSSL_TARGET "mingw" )
+        else()
+
     else()
         message(SEND_ERROR "You are using an unsupported Windows compiler! (Not MSVC or GCC)")
     endif()
 
-# On any other platform (UNIX/Linux) use the POSIX build
-else()
+elseif(APPLE)
+    if (${TARGET_ARCH} STREQUAL "x86_64")
+        # 64-bit MacOSX, Any Compiler
+        set( OPENSSL_TARGET "darwin64-x86_64-cc" )
+    elseif (${TARGET_ARCH} STREQUAL "x86")
+        # 32-bit MacOSX, Any Compiler
+        set( OPENSSL_TARGET "darwin-i386-cc" )
+    else()
 
+elseif(UNIX)
+    if (${TARGET_ARCH} STREQUAL "x86_64")
+        # 64-bit MacOSX, Any Compiler
+        set( OPENSSL_TARGET "linux-generic64" )
+    elseif (${TARGET_ARCH} STREQUAL "x86")
+        # 32-bit Intel processor, Any Compiler
+        set( OPENSSL_TARGET "linux-generic32" )
+    else()
 
 endif()
+
+if (WIN32 AND MSVC)
+    # Windows/MSVC we should use nmake for building
+    ExternalProject_Add(
+        openssl
+        PREFIX ${OPENSSL_BIN_DIR}
+        SOURCE_DIR ${OPENSSL_SRC_DIR}
+        BINARY_DIR ${OPENSSL_BIN_DIR}
+        CONFIGURE_COMMAND cmd.exe /c "ms\\do_ms.bat"
+        BUILD_COMMAND     nmake.exe -f "ms\\nt.mak"
+        INSTALL_COMMAND   nmake.exe -f "ms\\nt.mak" "install"
+        LOG_BUILD ON
+    )
+else()
+    # Any other POSIX system uses make
+    ExternalProject_Add(
+        openssl
+        PREFIX ${OPENSSL_BIN_DIR}
+        SOURCE_DIR ${OPENSSL_SRC_DIR}
+        BINARY_DIR ${OPENSSL_BIN_DIR}
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND     make
+        INSTALL_COMMAND   make install
+        LOG_BUILD ON
+    )
+endif()
+
+# Configure is an intermediate step
+ExternalProject_Add_Step(
+    openssl
+    build_configure
+    COMMENT "Configuring OpenSSL environment"
+    COMMAND ${PERL_EXECUTABLE} "Configure" ${OPENSSL_TARGET} --prefix=Build
+    WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
+    DEPENDEES download
+    DEPENDERS configure
+)
+
+# Collect non-directory files from lib (they are the libeay & ssleay libs)
+set (OPENSSL_LIB_FILES "")
+file(GLOB _LIB_FILES ${OPENSSL_BIN_DIR}/lib/*)
+foreach( LIB ${_LIB_FILES} )
+    if(NOT IS_DIRECTORY ${LIB})
+        set (OPENSSL_LIB_FILES ${OPENSSL_LIB_FILES} ${LIB})
+    endif()
+endforeach()
+
+# Get the first sub-directory that matches the inc* prefix
+set (OPENSSL_INC_DIR "")
+file(GLOB _INC_SUBDIRS ${ARCHIVE_DIR}/inc*)
+foreach( _INC_SUBDIR ${_INC_SUBDIRS} )
+    if(IS_DIRECTORY ${_INC_SUBDIR})
+        set(OPENSSL_INC_DIR ${_INC_SUBDIR})
+    endif()
+endforeach()
+
+# Expose to parent scope
+set (OPENSSL_LIBRARIES  ${OPENSSL_LIB_FILES} PARENT_SCOPE)
+set (OPENSSL_INCLUDE_DIRS ${OPENSSL_INC_DIR} PARENT_SCOPE)

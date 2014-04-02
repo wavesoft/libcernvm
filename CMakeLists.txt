@@ -104,7 +104,7 @@ if ( NOT DEFINED(OPENSSL_LIBRARIES) OR NOT DEFINED(OPENSSL_INCLUDE_DIRS) )
 
 	# Check if we should check for local
 	set( USE_LOCAL 1 )
-	if (${USE_SYSTEM_LIBS})
+	if (${USE_SYSTEM_LIBS} OR 1)
 		# Check if we can find it on the system
 		find_package(OpenSSL)
 		if(OPENSSL_FOUND)
