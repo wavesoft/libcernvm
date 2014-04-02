@@ -294,10 +294,6 @@ ADD_DEFINITIONS(-DLOGGING)
 if (WIN32)
 	# Fix: Disable Min/Max macros
 	ADD_DEFINITIONS(-DNOMINMAX)
-	# Fix: For some reason CURL_STATICLIB is not defined
-	ADD_DEFINITIONS(-DCURL_STATICLIB)
-	# Fix: OpenSSL builds are not built with safe exception handlers
-	ADD_DEFINITIONS(-DSAFESEH:NO)
 endif(WIN32)
 
 # Include project and headers
