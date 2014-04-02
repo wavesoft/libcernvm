@@ -18,6 +18,8 @@ if (CMAKE_OSX_ARCHITECTURES)
 else()
 	set(TARGET_ARCH "i386")
 endif()
+set(CMAKE_OSX_ARCHITECTURES ${TARGET_ARCH})
+message(STATUS "Building libcernvm for arch: ${TARGET_ARCH}")
 
 # Don't use libraries from the system by default
 if (NOT USE_SYSTEM_LIBS)
@@ -291,8 +293,12 @@ ADD_DEFINITIONS(-DLOGGING)
 
 # Windows additional definitions
 if (WIN32)
+	# Fix: Disable Min/Max macros
 	ADD_DEFINITIONS(-DNOMINMAX)
+	# Fix: For some reason CURL_STATICLIB is not defined
 	ADD_DEFINITIONS(-DCURL_STATICLIB)
+	# Fix: OpenSSL builds are not built with safe exception handlers
+	ADD_DEFINITIONS(-DSAFESEH:NO)
 endif(WIN32)
 
 # Include project and headers
