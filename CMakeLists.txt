@@ -11,7 +11,19 @@ set( HV_NAMES Virtualbox )
 SET(BUILD_SHARED_LIBS 	OFF)
 
 # Should we try to find system libs?
-SET(USE_SYSTEM_LIBS 	1)
+SET(USE_SYSTEM_LIBS 	0)
+
+#############################################################
+# HELPER FUNCTIONS 
+#############################################################
+
+# Helper function to convert a string to camel-case
+function(to_camel_case VarIn VarOut)
+	string(SUBSTRING ${VarIn} 0 1 Initial)
+	string(SUBSTRING ${VarIn} 1 -1 VarIn)
+	string(TOUPPER ${Initial} Initial)
+	set(${VarOut} ${Initial}${VarIn} PARENT_SCOPE)
+endfunction()
 
 #############################################################
 # LIBRARIES 
@@ -28,24 +40,26 @@ SET(USE_SYSTEM_LIBS 	1)
 #	XXXXXX_INCLUDE 	 : Which contain the additiona include directories
 #
 
-# Common environment cleanups
-if (NOT DEFINED(USE_SYSTEM_LIBS))
-	set(USE_SYSTEM_LIBS 0)
-endif()
-
 #
 # [ZLib] For GZIP compression/decompression
 #
+set( ZLIB_MODE "EXTERN" )
 if ( NOT DEFINED(ZLIB_LIBRARIES) OR NOT DEFINED(ZLIB_INCLUDE_DIR) )
 
-	# Check if we can find ZLib in the system
-	find_package(ZLIB)
-	if(ZLIB_FOUND AND ${USE_SYSTEM_LIBS})
+	# Check if we should check for local
+	set( USE_LOCAL 1 )
+	if (${USE_SYSTEM_LIBS})
+		# Check if we can find it on the system
+		find_package(ZLIB)
+		if(ZLIB_FOUND)
+			set( USE_LOCAL 0 )
+			set( ZLIB_MODE "SYSTEM" )
+			message( STATUS "Using ZLib from system")
+		endif()
+	endif()
 
-		# Log
-		message( STATUS "Using ZLib from system")
-
-	else()
+	# Use shipped ZLib if not found locally
+	if(${USE_LOCAL})
 
 		# We are shipping zlib with the project
 		set( EXTERN_ZLIB "extern/zlib" )
@@ -53,6 +67,7 @@ if ( NOT DEFINED(ZLIB_LIBRARIES) OR NOT DEFINED(ZLIB_INCLUDE_DIR) )
 		include_directories( ${CMAKE_BINARY_DIR}/${EXTERN_ZLIB} )
 
 		# Log
+		set( ZLIB_MODE "LOCAL" )
 		message( STATUS "Using ZLib shipped with libcernvm")
 
 	endif()
@@ -65,6 +80,7 @@ endif()
 #
 # [JSONCPP] For parsing JSON data
 #
+set( JSONCPP_MODE "EXTERN" )
 if ( NOT DEFINED(JSONCPP_LIBRARIES) OR NOT DEFINED(JSONCPP_INCLUDE_DIRS) )
 
 	# We are shipping jsoncpp with the project
@@ -72,6 +88,7 @@ if ( NOT DEFINED(JSONCPP_LIBRARIES) OR NOT DEFINED(JSONCPP_INCLUDE_DIRS) )
 	add_subdirectory( ${EXTERN_JSONCPP} ${CMAKE_BINARY_DIR}/${EXTERN_JSONCPP} )
 
 	# Log
+	set( JSONCPP_MODE "LOCAL" )
 	message( STATUS "Using JsonCPP shipped with libcernvm")
 
 else()
@@ -80,24 +97,32 @@ else()
 endif()
 
 #
-# [OpenSSL] For PKI functions
+# [OpenSSL] For PKI functions and for libCurl
 #
+set( OPENSSL_MODE "EXTERN" )
 if ( NOT DEFINED(OPENSSL_LIBRARIES) OR NOT DEFINED(OPENSSL_INCLUDE_DIRS) )
 
-	# Check if we can find ZLib in the system
-	find_package(OpenSSL)
-	if(OPENSSL_FOUND AND ${USE_SYSTEM_LIBS})
+	# Check if we should check for local
+	set( USE_LOCAL 1 )
+	if (${USE_SYSTEM_LIBS})
+		# Check if we can find it on the system
+		find_package(OpenSSL)
+		if(OPENSSL_FOUND)
+			set( USE_LOCAL 0 )
+			set( OPENSSL_MODE "SYSTEM" )
+			message( STATUS "Using OpenSSL from system")
+		endif()
+	endif()
 
-		# Log
-		message( STATUS "Using OpenSSL from system")
-
-	else()
+	# Use shipped OpenSSL if not found locally
+	if(${USE_LOCAL})
 
 		# We are shipping jsoncpp with the project
 		set( EXTERN_OPENSSL "extern/openssl" )
 		add_subdirectory( ${EXTERN_OPENSSL} ${CMAKE_BINARY_DIR}/${EXTERN_OPENSSL} )
 
 		# Log
+		set( OPENSSL_MODE "LOCAL" )
 		message( STATUS "Using OpenSSL shipped with libcernvm")
 
 	endif()
@@ -108,22 +133,67 @@ else()
 endif()
 
 #
+# [CURL] For interacting with web endpoints
+#
+set( CURL_MODE "EXTERN" )
+if ( NOT DEFINED(CURL_LIBRARIES) OR NOT DEFINED(CURL_INCLUDE_DIRS) )
+
+	# Check if we should check for local
+	set( USE_LOCAL 1 )
+	if (${USE_SYSTEM_LIBS})
+		# Check if we can find it on the system
+		find_package(CURL)
+		if(CURL_FOUND)
+			set( USE_LOCAL 0 )
+			set( CURL_MODE "SYSTEM" )
+			message( STATUS "Using CURL from system")
+		endif()
+	endif()
+
+	# Use shipped CURL if not found locally
+	if(${USE_LOCAL})
+
+		# We are shipping curl with the project
+		set( EXTERN_CURL "extern/curl" )
+		add_subdirectory( ${EXTERN_CURL} ${CMAKE_BINARY_DIR}/${EXTERN_CURL} )
+
+		# Log
+		set( CURL_MODE "LOCAL" )
+		message( STATUS "Using CURL shipped with libcernvm")
+
+	endif()
+
+else()
+	message( STATUS "Using CURL from: ${CURL_INCLUDE_DIRS}")
+
+endif()
+
+#
 # [BOOST] We use various accelerators from boost
 #
+set( BOOST_MODE "EXTERN" )
 set( BOOST_REQUIRE_LIBRARIES thread system filesystem regex )
 if ( NOT DEFINED(BOOST_LIBRARIES) OR NOT DEFINED(BOOST_INCLUDE_DIRS) )
 
-	# Try to find system boost
-	set(Boost_USE_MULTITHREADED ON)  
-	set(Boost_USE_STATIC_RUNTIME NOT BUILD_SHARED_LIBS) 
-	set(Boost_USE_STATIC_LIBS NOT BUILD_SHARED_LIBS) 
-	find_package(Boost COMPONENTS ${BOOST_REQUIRE_LIBRARIES}) 
-	if(Boost_FOUND AND ${USE_SYSTEM_LIBS})
+	# Check if we should check for local
+	set( USE_LOCAL 1 )
+	if (${USE_SYSTEM_LIBS})
+ 		# Check if we can find it on the system
+		set(Boost_USE_MULTITHREADED ON)  
+		set(Boost_USE_STATIC_RUNTIME NOT BUILD_SHARED_LIBS) 
+		set(Boost_USE_STATIC_LIBS NOT BUILD_SHARED_LIBS) 
+		find_package(Boost COMPONENTS ${BOOST_REQUIRE_LIBRARIES}) 
+		if(Boost_FOUND)
+			set( USE_LOCAL 0 )
+			set( BOOST_MODE "SYSTEM" )
+			set( BOOST_LIBRARIES ${Boost_LIBRARIES} )
+			set( BOOST_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} )
+			message( STATUS "Using BOOST from system")
+		endif()
+	endif()
 
-		# Log
-		message( STATUS "Using BOOST from system")
-
-	else()
+	# Use shipped BOOST if not found locally
+	if(${USE_LOCAL})
 
 		# We are shipping BOOST with the project
 		set( EXTERN_BOOST "extern/boost" )
@@ -134,6 +204,8 @@ if ( NOT DEFINED(BOOST_LIBRARIES) OR NOT DEFINED(BOOST_INCLUDE_DIRS) )
 		set( BOOST_DEPEND_TARGETS "")
 		set( BOOST_INCLUDE_DIRS ${BoostSourceDir} )
 		foreach(LIB ${BOOST_REQUIRE_LIBRARIES}) 
+			# Camel-case lib
+			to_camel_case( ${LIB} LIB )
 			# Depend target
 			set( BOOST_DEPEND_TARGETS ${BOOST_DEPEND_TARGETS} boost_${LIB} )
 			# Use given library
@@ -141,6 +213,7 @@ if ( NOT DEFINED(BOOST_LIBRARIES) OR NOT DEFINED(BOOST_INCLUDE_DIRS) )
 		endforeach()
 
 		# Log
+		set( BOOST_MODE "LOCAL" )
 		message( STATUS "Using BOOST shipped with libcernvm")
 
 	endif()
@@ -165,6 +238,9 @@ set( PROJECT_LIBRARIES
 	${OPENSSL_LIBRARIES}
 	${BOOST_LIBRARIES}
 )
+
+message( STATUS "Libraries: ${PROJECT_LIBRARIES}")
+message( STATUS "Includes: ${PROJECT_INCLUDES}")
 
 #############################################################
 # PROJECT SOURCES 
@@ -237,7 +313,9 @@ add_library( ${PROJECT_NAME}
 )
 
 # Depend boost targets if we are building them
-# ourselves
+# ourselves - That's the only way I know for starting
+# the build process for these libraries, since BOOST
+# was not added as a library, but as an external project
 if (DEFINED(BOOST_DEPEND_TARGETS))
 	foreach(TARGET ${BOOST_DEPEND_TARGETS})
 		add_dependencies(${PROJECT_NAME} ${TARGET})

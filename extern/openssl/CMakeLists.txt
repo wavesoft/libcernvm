@@ -65,9 +65,6 @@ FOREACH( _ARCHIVE_SUBDIR ${_ARCHIVE_SUBDIRS} )
     ENDIF()
 ENDFOREACH()
 
-# Log status
-message( STATUS "Using ${PROJECT_NAME} sources in: ${ARCHIVE_DIR}" )
-
 #############################################################
 # BUILD SCRIPT 
 #############################################################

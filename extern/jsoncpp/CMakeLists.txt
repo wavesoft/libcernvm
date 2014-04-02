@@ -60,9 +60,6 @@ ENDFOREACH()
 # Rebase
 set( CMAKE_CURRENT_SOURCE_DIR ${ARCHIVE_DIR} )
 
-# Log status
-message( STATUS "Using ${PROJECT_NAME} sources in: ${ARCHIVE_DIR}" )
-
 # Expose project variables to parent
 set (JSONCPP_LIBRARIES ${PROJECT_NAME} PARENT_SCOPE)
 set (JSONCPP_INCLUDE_DIRS ${ARCHIVE_DIR}/include PARENT_SCOPE)
