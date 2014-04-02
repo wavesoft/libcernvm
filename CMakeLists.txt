@@ -7,8 +7,10 @@ set(VERSION "1.0.0")
 # Which hypervisors to enable
 set( HV_NAMES Virtualbox )
 
-# Static build
-SET(BUILD_SHARED_LIBS 	OFF)
+# Static build by default
+if(NOT BUILD_SHARED_LIBS)
+	SET(BUILD_SHARED_LIBS 	OFF)
+endif()
 
 # Target architecture
 if (CMAKE_OSX_ARCHITECTURES)
@@ -17,8 +19,10 @@ else()
 	set(TARGET_ARCH "i386")
 endif()
 
-# Should we try to find system libs?
-SET(USE_SYSTEM_LIBS 	0)
+# Don't use libraries from the system by default
+if (NOT USE_SYSTEM_LIBS)
+	SET(USE_SYSTEM_LIBS 0)
+endif()
 
 #############################################################
 # HELPER FUNCTIONS 
