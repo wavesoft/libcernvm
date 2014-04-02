@@ -181,8 +181,8 @@ if (WIN32 AND MSVC)
         PREFIX ${OPENSSL_BIN_DIR}
         SOURCE_DIR ${OPENSSL_SRC_DIR}
         CONFIGURE_COMMAND cmd.exe /c "ms\\do_ms.bat"
-        BUILD_COMMAND     nmake.exe -f "ms\\nt.mak"
-        INSTALL_COMMAND   nmake.exe -f "ms\\nt.mak" "install"
+        BUILD_COMMAND     nmake.exe -f "ms/nt.mak"
+        INSTALL_COMMAND   nmake.exe -f "ms/nt.mak" "install"
         BUILD_IN_SOURCE ON
         LOG_BUILD ON
         LOG_INSTALL ON
