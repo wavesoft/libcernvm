@@ -10,6 +10,9 @@ set( HV_NAMES Virtualbox )
 # Static build
 SET(BUILD_SHARED_LIBS 	OFF)
 
+# Target architecture
+set(TARGET_ARCH			"i386")
+
 # Should we try to find system libs?
 SET(USE_SYSTEM_LIBS 	0)
 
@@ -44,7 +47,7 @@ endfunction()
 # [ZLib] For GZIP compression/decompression
 #
 set( ZLIB_MODE "EXTERN" )
-if ( NOT DEFINED(ZLIB_LIBRARIES) OR NOT DEFINED(ZLIB_INCLUDE_DIR) )
+if ( NOT DEFINED(ZLIB_LIBRARIES) OR NOT DEFINED(ZLIB_INCLUDE_DIRS) )
 
 	# Check if we should check for local
 	set( USE_LOCAL 1 )
@@ -73,7 +76,7 @@ if ( NOT DEFINED(ZLIB_LIBRARIES) OR NOT DEFINED(ZLIB_INCLUDE_DIR) )
 	endif()
 
 else()
-	message( STATUS "Using ZLib from: ${ZLIB_INCLUDE_DIR}")
+	message( STATUS "Using ZLib from: ${ZLIB_INCLUDE_DIRS}")
 
 endif()
 
@@ -123,7 +126,7 @@ if ( NOT DEFINED(OPENSSL_LIBRARIES) OR NOT DEFINED(OPENSSL_INCLUDE_DIRS) )
 
 		# Log
 		set( OPENSSL_MODE "LOCAL" )
-		message( STATUS "Using OpenSSL shipped with libcernvm")
+		message( STATUS "Using OpenSSL shipped with libcernvm (${OPENSSL_INCLUDE_DIRS})")
 
 	endif()
 
@@ -225,7 +228,7 @@ endif()
 
 # Include libraries
 set( PROJECT_INCLUDES
-	${ZLIB_INCLUDE_DIR}
+	${ZLIB_INCLUDE_DIRS}
 	${JSONCPP_INCLUDE_DIRS}
 	${OPENSSL_INCLUDE_DIRS}
 	${BOOST_INCLUDE_DIRS}

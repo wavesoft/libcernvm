@@ -5,11 +5,6 @@ project( CURL C )
 set(CURL_VERSION 	7.34.0)
 set(CURL_SHA1    	9ef09e97dfc9f14ac2c042f3b7e301098794fc0f)
 
-# Setup defaults
-if (NOT DEFINED(TARGET_ARCH))
-    set(TARGET_ARCH "x86")
-endif()
-
 #############################################################
 # DOWNLOAD BOOTSTRAP 
 #############################################################
@@ -302,18 +297,24 @@ check_library_exists("${CURL_LIBS}" dlopen "" HAVE_DLOPEN)
 # For other tests to use the same libraries
 set(CMAKE_REQUIRED_LIBRARIES ${CURL_LIBS})
 
+##MODIFIED: Using ZLib from the previous detection
 option(CURL_ZLIB "Set to ON to enable building cURL with zlib support." ON)
 set(HAVE_LIBZ OFF)
 set(HAVE_ZLIB_H OFF)
 set(HAVE_ZLIB OFF)
-if(CURL_ZLIB)  # AND CURL_CONFIG_HAS_BEEN_RUN_BEFORE
-  find_package(ZLIB QUIET)
-  if(ZLIB_FOUND)
-    set(HAVE_ZLIB_H ON)
-    set(HAVE_ZLIB ON)
-    set(HAVE_LIBZ ON)
-    list(APPEND CURL_LIBS ${ZLIB_LIBRARIES})
-  endif()
+if (CURL_ZLIB) # AND CURL_CONFIG_HAS_BEEN_RUN_BEFORE
+    message(STATUS "Using ZLib: ${ZLIB_LIBRARIES}")
+    if(NOT ZLIB_LIBRARIES)
+        message( FATAL_ERROR "OpenSSL was not found in this project!" )
+    else()
+        set(HAVE_ZLIB_H ON)
+        set(HAVE_ZLIB ON)
+        set(HAVE_LIBZ ON)
+        list(APPEND CURL_LIBS ${ZLIB_LIBRARIES})
+        message(STATUS "Using ZLib Includes for CURL from: ${ZLIB_INCLUDE_DIRS}")
+        list(APPEND CMAKE_REQUIRED_INCLUDES ${ZLIB_INCLUDE_DIRS})
+    endif()
+
 endif()
 
 ##MODIFIED: Using OpenSSL from the previous detection
@@ -326,7 +327,8 @@ if (CMAKE_USE_OPENSSL)
     else()
         set(CMAKE_USE_OPENSSL ON)
         list(APPEND CURL_LIBS ${OPENSSL_LIBRARIES})
-        list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
+        message(STATUS "Using OpenSSL Includes for CURL from: ${OPENSSL_INCLUDE_DIRS}")
+        list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
         set(USE_SSLEAY ON)
         set(USE_OPENSSL ON)
         set(HAVE_LIBCRYPTO ON)

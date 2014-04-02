@@ -62,7 +62,7 @@ set( CMAKE_CURRENT_SOURCE_DIR ${ARCHIVE_DIR} )
 
 # Expose project variables to parent
 set (ZLIB_LIBRARIES zlibstatic PARENT_SCOPE)
-set (ZLIB_INCLUDE_DIR ${ARCHIVE_DIR} PARENT_SCOPE)
+set (ZLIB_INCLUDE_DIRS ${ARCHIVE_DIR} PARENT_SCOPE)
 
 #############################################################
 # BUILD SCRIPT 

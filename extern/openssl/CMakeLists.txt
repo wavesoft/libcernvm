@@ -5,11 +5,6 @@ project(openssl)
 set(OPENSSL_VERSION 1.0.1f)
 set(OPENSSL_SHA1    9ef09e97dfc9f14ac2c042f3b7e301098794fc0f)
 
-# Setup defaults
-if (NOT DEFINED(TARGET_ARCH))
-    set(TARGET_ARCH "x86")
-endif()
-
 #############################################################
 # DOWNLOAD BOOTSTRAP 
 #############################################################
@@ -108,7 +103,7 @@ if(WIN32)
         if (${TARGET_ARCH} STREQUAL "x86_64")
             # 64-bit Windows, Visual Stuio
             set( OPENSSL_TARGET "VC-WIN64A" )
-        elseif (${TARGET_ARCH} STREQUAL "x86")
+        elseif (${TARGET_ARCH} STREQUAL "i386")
             # 32-bit Windows, Visual Stuio
             set( OPENSSL_TARGET "VC-WIN32" )
         endif()
@@ -118,7 +113,7 @@ if(WIN32)
         if (${TARGET_ARCH} STREQUAL "x86_64")
             # 64-bit Windows, GCC
             set( OPENSSL_TARGET "mingw64" )
-        elseif (${TARGET_ARCH} STREQUAL "x86")
+        elseif (${TARGET_ARCH} STREQUAL "i386")
             # 32-bit Windows, GCC
             set( OPENSSL_TARGET "mingw" )
         endif()
@@ -145,7 +140,7 @@ elseif(APPLE)
     if (${TARGET_ARCH} STREQUAL "x86_64")
         # 64-bit MacOSX, Any Compiler
         set( OPENSSL_TARGET "darwin64-x86_64-cc" )
-    elseif (${TARGET_ARCH} STREQUAL "x86")
+    elseif (${TARGET_ARCH} STREQUAL "i386")
         # 32-bit MacOSX, Any Compiler
         set( OPENSSL_TARGET "darwin-i386-cc" )
     endif()
@@ -168,10 +163,14 @@ elseif(UNIX)
     if (${TARGET_ARCH} STREQUAL "x86_64")
         # 64-bit MacOSX, Any Compiler
         set( OPENSSL_TARGET "linux-generic64" )
-    elseif (${TARGET_ARCH} STREQUAL "x86")
+    elseif (${TARGET_ARCH} STREQUAL "i386")
         # 32-bit Intel processor, Any Compiler
         set( OPENSSL_TARGET "linux-generic32" )
     endif()
+
+else()
+
+    message( FATAL_ERROR "Could not pick an appropriate target for OpenSSL Config!" )
 
 endif()
 
@@ -204,6 +203,7 @@ else()
 endif()
 
 # Configure is an intermediate step
+message(">>> TARGET ${OPENSSL_TARGET}")
 ExternalProject_Add_Step(
     openssl
     build_configure
@@ -216,6 +216,6 @@ ExternalProject_Add_Step(
 )
 
 # Define the include directory
-set (OPENSSL_INCLUDE_DIRS 
+set (OPENSSL_INCLUDE_DIRS
     ${OPENSSL_BIN_DIR}/include
     PARENT_SCOPE)
