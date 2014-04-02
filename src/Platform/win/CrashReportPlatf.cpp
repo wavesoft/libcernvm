@@ -21,8 +21,10 @@
 #include <CernVM/CrashReport.h>
 using namespace std;
 
+#include <Windows.h>
 #include <tchar.h>
 #include <strsafe.h>
+#include <vector>
 
 #pragma comment(lib, "User32.lib")
 
