@@ -22,7 +22,7 @@
 #ifndef PROGRESSFEEDBACK_H
 #define PROGRESSFEEDBACK_H
 
-#include "CallbacksProgress.h"
+#include <CernVM/CallbacksProgress.h>
 
 #include <vector>
 #include <list>

@@ -59,7 +59,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-#include "CrashReport.h"
+#include <CernVM/CrashReport.h>
 
 // Only for WIN32
 #ifdef _WIN32

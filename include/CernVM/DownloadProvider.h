@@ -22,9 +22,9 @@
 #ifndef DOWNLOADPROVIDERS_H
 #define DOWNLOADPROVIDERS_H
 
-#include "Utilities.h"
-#include "ProgressFeedback.h"
-#include "CrashReport.h"
+#include <CernVM/Utilities.h>
+#include <CernVM/ProgressFeedback.h>
+#include <CernVM/CrashReport.h>
 
 #include <ostream>
 #include <iostream>

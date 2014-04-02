@@ -25,14 +25,14 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/regex.hpp> 
 
-#include "Config.h"
+#include <CernVM/Config.h>
 
-#include "ProgressFeedback.h"
-#include "DownloadProvider.h"
-#include "Utilities.h"
-#include "CrashReport.h"
-#include "ParameterMap.h"
-#include "UserInteraction.h"
+#include <CernVM/ProgressFeedback.h>
+#include <CernVM/DownloadProvider.h>
+#include <CernVM/Utilities.h>
+#include <CernVM/CrashReport.h>
+#include <CernVM/ParameterMap.h>
+#include <CernVM/UserInteraction.h>
 
 /* Hypervisor types */
 #define HV_NONE                 0

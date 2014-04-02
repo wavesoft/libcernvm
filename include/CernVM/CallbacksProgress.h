@@ -22,7 +22,7 @@
 #ifndef CALLBACKS_PROGRESS_H
 #define CALLBACKS_PROGRESS_H
 
-#include "CernVM/Callbacks.h"
+#include <CernVM/Callbacks.h>
 
 class CallbacksProgress: public Callbacks {
 public:

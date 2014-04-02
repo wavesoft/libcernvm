@@ -32,8 +32,8 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/thread/mutex.hpp>
 
-#include "Utilities.h"
-#include "ArgumentList.h"
+#include <CernVM/Utilities.h>
+#include <CernVM/ArgumentList.h>
 
 //////////////////////////////////////
 // Named callbacks definition

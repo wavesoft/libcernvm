@@ -22,9 +22,9 @@
 #ifndef CONFIG_H_4GP6DIPT
 #define CONFIG_H_4GP6DIPT
 
-#include "Utilities.h"
-#include "CrashReport.h"
-#include "ParameterMap.h"
+#include <CernVM/Utilities.h>
+#include <CernVM/CrashReport.h>
+#include <CernVM/ParameterMap.h>
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/make_shared.hpp>

@@ -22,8 +22,8 @@
 #ifndef USERINTERACTION_H
 #define USERINTERACTION_H
 
-#include "Utilities.h"  // It also contains the common global headers
-#include "CrashReport.h"
+#include <CernVM/Utilities.h>  // It also contains the common global headers
+#include <CernVM/CrashReport.h>
 
 /**
  * User interaction constants

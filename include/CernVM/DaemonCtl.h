@@ -21,9 +21,9 @@
 #ifndef DAEMONCTL_H_4LFX6MZT
 #define DAEMONCTL_H_4LFX6MZT
 
-#include "Config.h"
-#include "ThinIPC.h"
-#include "CrashReport.h"
+#include <CernVM/Config.h>
+#include <CernVM/ThinIPC.h>
+#include <CernVM/CrashReport.h>
 #include <string>
 
 /* Used by daemonLock/~Unlock */

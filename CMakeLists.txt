@@ -11,7 +11,10 @@ set( HV_NAMES Virtualbox )
 SET(BUILD_SHARED_LIBS 	OFF)
 
 # Target architecture
-set(TARGET_ARCH			"i386")
+set(TARGET_ARCH ${OSX_ARCHITECTURES})
+if(NOT "${TARGET_ARCH}")
+	set(TARGET_ARCH "i386")
+endif()
 
 # Should we try to find system libs?
 SET(USE_SYSTEM_LIBS 	0)
@@ -19,6 +22,9 @@ SET(USE_SYSTEM_LIBS 	0)
 #############################################################
 # HELPER FUNCTIONS 
 #############################################################
+
+# Include additional libraries
+include(cmake/AddCompileLinkFlags.cmake)
 
 # Helper function to convert a string to camel-case
 function(to_camel_case VarIn VarOut)
@@ -332,3 +338,13 @@ endif()
 
 # Libraries
 target_link_libraries ( ${PROJECT_NAME} ${PROJECT_LIBRARIES} )
+
+# Expose everything to the parent context
+set( CERNVM_LIBRARIES 
+	${PROJECT_NAME} 
+	${PROJECT_LIBRARIES}
+	PARENT_SCOPE )
+set( CERNVM_INCLUDE_DIRS
+	${PROJECT_SOURCE_DIR}/include 	# Library includes
+	${JSONCPP_INCLUDE_DIRS}			# JSON includes are found in the headers
+	PARENT_SCOPE )

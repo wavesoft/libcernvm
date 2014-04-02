@@ -22,7 +22,7 @@
 #ifndef PARAMETERMAP_H
 #define PARAMETERMAP_H
 
-#include "Config.h"
+#include <CernVM/Config.h>
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/make_shared.hpp>

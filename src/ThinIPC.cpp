@@ -19,7 +19,7 @@
  */
  
 #include <string.h>
-#include "ThinIPC.h"
+#include <CernVM/ThinIPC.h>
 
 using namespace std;
 
