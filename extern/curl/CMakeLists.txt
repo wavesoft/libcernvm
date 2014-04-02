@@ -307,11 +307,11 @@ set(HAVE_LIBZ OFF)
 set(HAVE_ZLIB_H OFF)
 set(HAVE_ZLIB OFF)
 if (CURL_ZLIB) # AND CURL_CONFIG_HAS_BEEN_RUN_BEFORE
-    message(STATUS "Using ZLib: ${ZLIB_LIBRARIES}")
     if(NOT ZLIB_LIBRARIES)
         message( FATAL_ERROR "OpenSSL was not found in this project!" )
     else()
-        message(STATUS "Using ZLib Includes for CURL from: ${ZLIB_INCLUDE_DIRS}")
+
+        # Enable ZLib
         set(HAVE_ZLIB_H ON)
         set(HAVE_ZLIB ON)
         set(HAVE_LIBZ ON)
@@ -321,8 +321,6 @@ if (CURL_ZLIB) # AND CURL_CONFIG_HAS_BEEN_RUN_BEFORE
         list(APPEND CMAKE_REQUIRED_INCLUDES ${ZLIB_INCLUDE_DIRS})
         include_directories( ${ZLIB_INCLUDE_DIRS} )
 
-        # Depend
-        add_dependencies(${PROJECT_NAME} zlib)
     endif()
 
 endif()
@@ -331,11 +329,11 @@ endif()
 option(CMAKE_USE_OPENSSL "Use OpenSSL code. Experimental" ON)
 mark_as_advanced(CMAKE_USE_OPENSSL)
 if (CMAKE_USE_OPENSSL)
-    message(STATUS "Using OpenSSL: ${OPENSSL_LIBRARIES}")
     if(NOT OPENSSL_LIBRARIES)
         message( FATAL_ERROR "OpenSSL was not found in this project!" )
     else()
-        message(STATUS "Using OpenSSL Includes for CURL from: ${OPENSSL_INCLUDE_DIRS}")
+
+        # Enable OpenSSL
         set(CMAKE_USE_OPENSSL ON)
         set(USE_SSLEAY ON)
         set(USE_OPENSSL ON)
@@ -347,8 +345,6 @@ if (CMAKE_USE_OPENSSL)
         list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
         include_directories( ${OPENSSL_INCLUDE_DIRS} )
 
-        # Depend
-        add_dependencies(${PROJECT_NAME} openssl)
     endif()
 endif()
 
@@ -972,3 +968,10 @@ if(MSVC_VERSION EQUAL 1600)
   endif()
 endif()
 
+##MODIFIED: Depending libcurl to openssl & zlib
+if (CURL_ZLIB)
+  add_dependencies(libcurl zlib)
+endif()
+if (CMAKE_USE_OPENSSL)
+  add_dependencies(libcurl openssl)
+endif()

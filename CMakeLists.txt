@@ -126,7 +126,7 @@ if ( NOT DEFINED(OPENSSL_LIBRARIES) OR NOT DEFINED(OPENSSL_INCLUDE_DIRS) )
 
 		# Log
 		set( OPENSSL_MODE "LOCAL" )
-		message( STATUS "Using OpenSSL shipped with libcernvm (${OPENSSL_INCLUDE_DIRS})")
+		message( STATUS "Using OpenSSL shipped with libcernvm")
 
 	endif()
 
@@ -243,9 +243,6 @@ set( PROJECT_LIBRARIES
 	${CURL_LIBRARIES}
 	${BOOST_LIBRARIES}
 )
-
-message( STATUS "Libraries: ${PROJECT_LIBRARIES}")
-message( STATUS "Includes: ${PROJECT_INCLUDES}")
 
 #############################################################
 # PROJECT SOURCES 

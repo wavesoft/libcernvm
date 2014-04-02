@@ -203,7 +203,6 @@ else()
 endif()
 
 # Configure is an intermediate step
-message(">>> TARGET ${OPENSSL_TARGET}")
 ExternalProject_Add_Step(
     openssl
     build_configure
