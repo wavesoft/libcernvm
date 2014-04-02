@@ -7,24 +7,23 @@ set(VERSION "1.0.0")
 # Which hypervisors to enable
 set( HV_NAMES Virtualbox )
 
+# Guess system architecture
+set(GUESS_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+if(CMAKE_OSX_ARCHITECTURES)
+	set(GUESS_ARCH ${CMAKE_OSX_ARCHITECTURES})
+endif()
+
 # Static build by default
-if(NOT BUILD_SHARED_LIBS)
-	SET(BUILD_SHARED_LIBS 	OFF)
-endif()
+option(BUILD_SHARED_LIBS "Set to ON to build shared libraries instead of static" OFF)
+option(USE_SYSTEM_LIBS "Set to ON to use system libraries instead the ones shipped with libcernvm" OFF)
+option(TARGET_ARCH "Define the target architecture" "${GUESS_ARCH}")
 
-# Target architecture
-if (CMAKE_OSX_ARCHITECTURES)
-	set(TARGET_ARCH ${CMAKE_OSX_ARCHITECTURES})
-else()
-	set(TARGET_ARCH "i386")
+# Validation banner
+if (NOT ${TARGET_ARCH})
+	set(TARGET_ARCH ${GUESS_ARCH})
 endif()
-set(CMAKE_OSX_ARCHITECTURES ${TARGET_ARCH})
 message(STATUS "Building libcernvm for arch: ${TARGET_ARCH}")
-
-# Don't use libraries from the system by default
-if (NOT USE_SYSTEM_LIBS)
-	SET(USE_SYSTEM_LIBS 0)
-endif()
+set(CMAKE_OSX_ARCHITECTURES ${TARGET_ARCH})
 
 #############################################################
 # HELPER FUNCTIONS 
