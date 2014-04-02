@@ -228,7 +228,7 @@ string crashReportPlatformString() {
       }
 
       /* Cast from unicode to string */
-      const std::wstring ws = pszOS;
+      const std::wstring ws(pszOS, pszOS+strlen(pszOS)-1 );
       const std::locale locale("");
       typedef std::codecvt<wchar_t, char, std::mbstate_t> converter_type;
       const converter_type& converter = std::use_facet<converter_type>(locale);
