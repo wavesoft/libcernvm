@@ -73,6 +73,11 @@ set (JSONCPP_INCLUDE_DIRS
 # BUILD SCRIPT 
 #############################################################
 
+# Windows additional definitions
+if (WIN32)
+	ADD_DEFINITIONS(-DNOMINMAX)   
+endif(WIN32)
+
 # Include directories
 include_directories (
 	${ARCHIVE_DIR}/src/lib_json
