@@ -291,7 +291,8 @@ ADD_DEFINITIONS(-DLOGGING)
 
 # Windows additional definitions
 if (WIN32)
-	ADD_DEFINITIONS(-DNOMINMAX)   
+	ADD_DEFINITIONS(-DNOMINMAX)
+	ADD_DEFINITIONS(-DCURL_STATICLIB)
 endif(WIN32)
 
 # Include project and headers
