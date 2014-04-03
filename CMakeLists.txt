@@ -8,6 +8,10 @@ set(GUESS_ARCH ${CMAKE_SYSTEM_PROCESSOR})
 if(CMAKE_OSX_ARCHITECTURES)
 	set(GUESS_ARCH ${CMAKE_OSX_ARCHITECTURES})
 endif()
+# We don't do any differentiation for AMD64 instruction set
+if(${GUESS_ARCH} STREQUAL "AMD64")
+	set(GUESS_ARCH "x86_64")
+endif()
 
 # Static build by default
 option(BUILD_SHARED_LIBS "Set to ON to build shared libraries instead of static" OFF)
