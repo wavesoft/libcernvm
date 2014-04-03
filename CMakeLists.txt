@@ -1,9 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
 
-# CernVM Library
-project ( libcernvm )
-set(VERSION "1.0.0")
-
 # Which hypervisors to enable
 set( HV_NAMES Virtualbox )
 
@@ -16,14 +12,16 @@ endif()
 # Static build by default
 option(BUILD_SHARED_LIBS "Set to ON to build shared libraries instead of static" OFF)
 option(USE_SYSTEM_LIBS "Set to ON to use system libraries instead the ones shipped with libcernvm" OFF)
-option(TARGET_ARCH "Define the target architecture" "${GUESS_ARCH}")
+set(TARGET_ARCH "${GUESS_ARCH}" CACHE STRING "Define the target architecture" )
 
 # Validation banner
-if (NOT ${TARGET_ARCH})
-	set(TARGET_ARCH ${GUESS_ARCH})
-endif()
-message(STATUS "Building libcernvm for arch: ${TARGET_ARCH}")
 set(CMAKE_OSX_ARCHITECTURES ${TARGET_ARCH})
+set(OSX_ARCHITECTURES ${TARGET_ARCH})
+message(STATUS "Building libcernvm for arch: ${TARGET_ARCH}")
+
+# CernVM Library
+project ( libcernvm )
+set(VERSION "1.0.0")
 
 #############################################################
 # HELPER FUNCTIONS 
