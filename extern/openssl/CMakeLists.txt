@@ -181,6 +181,7 @@ else()
 endif()
 
 if (WIN32 AND MSVC)
+
     # Windows/MSVC we should use nmake for building
     ExternalProject_Add(
         openssl
@@ -193,18 +194,15 @@ if (WIN32 AND MSVC)
         LOG_BUILD ON
         LOG_INSTALL ON
     )
-    # Since we cannot register a clean target, clean before build
-    ExternalProject_Add_Step(
-        openssl
-        build_clean
-        COMMENT "Cleaning previous build"
-        COMMAND nmake.exe -f "ms/nt.mak" "clean"
-        WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
-        DEPENDEES configure
-        DEPENDERS build
-        LOG 1
-    )
+
+    # Include tmp32 folder for the clean phase
+    set_directory_properties( 
+        PROPERTIES
+        ADDITIONAL_MAKE_CLEAN_FILES
+        ${OPENSSL_SRC_DIR}/tmp32 )
+
 else()
+    
     # Any other POSIX system uses make
     ExternalProject_Add(
         openssl
@@ -217,6 +215,7 @@ else()
         LOG_BUILD ON
         LOG_INSTALL ON
     )
+
     # Since we cannot register a clean target, clean before build
     ExternalProject_Add_Step(
         openssl
@@ -228,6 +227,7 @@ else()
         DEPENDERS build
         LOG 1
     )
+
 endif()
 
 # Configure is an intermediate step
