@@ -695,6 +695,48 @@ HVSessionPtr VBoxInstance::sessionOpen ( const ParameterMapPtr& parameters, cons
 
 }
 
+/**
+ * Remove a session object indexed by it's reference
+ */
+void VBoxInstance::sessionDelete ( const HVSessionPtr& session ) {
+    CRASH_REPORT_BEGIN;
+
+    // Iterate over sessions
+    for (std::map< std::string,HVSessionPtr >::iterator i = this->sessions.begin(); i != this->sessions.end(); i++) {
+        string uuid = (*i).first;
+        HVSessionPtr sess = (*i).second;
+
+        // Session found
+        if ( uuid.compare(session->uuid) == 0 ) {
+
+            // Loook for the session object in the open sessions
+            for (std::list< HVSessionPtr >::iterator jt = openSessions.begin(); jt != openSessions.end(); ++jt) {
+                HVSessionPtr openSess = (*jt);
+                // Check if the session has gone away
+                if ( uuid.compare(openSess->uuid) == 0 ) {
+                    // Remove from open sessions
+                    openSessions.erase( jt );
+                    // Let session know that it has gone away
+                    boost::static_pointer_cast<VBoxSession>(sess)->hvNotifyDestroyed();
+                    break;
+                }
+            }
+
+            // Erase session from the sessions list
+            this->sessions.erase( i );
+
+            // Erase session file from disk
+            ostringstream oss;
+            oss << "vbsess-" << uuid;
+            LocalConfig::forRuntime(oss.str())->clear();
+
+            // Done
+            return;
+        }
+    }
+
+    CRASH_REPORT_END;
+}
 
 /**
  * Load session state from VirtualBox

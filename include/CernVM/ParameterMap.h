@@ -147,12 +147,12 @@ public:
     /**
      * Set a numeric parameter value
      */
-    template<typename T> void   setNum          ( const std::string& name, T value );
+    template<typename T> ParameterMap&   setNum          ( const std::string& name, T value );
 
     /**
      * Set a boolean parameter
      */
-    void                        setBool         ( const std::string& name, bool value );
+    ParameterMap&             	setBool         ( const std::string& name, bool value );
 
     /**
      * Get a boolean parameter

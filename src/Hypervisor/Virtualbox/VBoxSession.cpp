@@ -402,10 +402,20 @@ void VBoxSession::CreateVM() {
         << " --register";
     
     // Execute and handle errors
-    ans = this->wrapExec(args.str(), &lines, NULL, execConfig);
+    SysExecConfig createExecConfig(execConfig);
+    createExecConfig.handleErrString("already exists", 500);
+    ans = this->wrapExec(args.str(), &lines, NULL, createExecConfig);
     if (ans != 0) {
-        errorOccured("Unable to create a new virtual machine", HVE_CREATE_ERROR);
-        return;
+
+        // Handle known error cases
+        if (ans == 500) {
+            errorOccured("A VM with the same name already exists (should not reach this point!)", HVE_CREATE_ERROR);
+            return;
+        } else {
+            errorOccured("Unable to create a new virtual machine", HVE_CREATE_ERROR);
+            return;
+        }
+
     }
     
     // Parse output
@@ -1535,6 +1545,13 @@ void VBoxSession::abort ( ) {
     // causing all intermediate code to except)
     FSMThreadStop();
 
+}
+
+/**
+ * Wait until FSM is idle
+ */
+void VBoxSession::wait ( ) {
+    FSMWaitInactive();
 }
 
 /////////////////////////////////////

@@ -101,9 +101,10 @@ template<typename T> T ParameterMap::getNum ( const std::string& kname, T defaul
 /**
  * Set a numeric parameter value
  */
-template<typename T> void ParameterMap::setNum ( const std::string& kname, T value ) {
+template<typename T> ParameterMap& ParameterMap::setNum ( const std::string& kname, T value ) {
     CRASH_REPORT_BEGIN;
     set( kname, ntos<T>(value) );
+    return *this;
     CRASH_REPORT_END;
 }
 
@@ -342,10 +343,11 @@ void ParameterMap::toMap ( std::map< std::string, std::string> * map, bool clear
 /**
  * Set a boolean parameter
  */
-void ParameterMap::setBool ( const std::string& name, bool value ) {
+ParameterMap& ParameterMap::setBool ( const std::string& name, bool value ) {
     std::string v = "n";
     if (value) v = "y";
     set(name, v);
+    return *this;
 }
 
 /**
@@ -377,6 +379,6 @@ bool ParameterMap::sync ( ) {
  * Template implementations for numeric values
  */
 template int ParameterMap::getNum<int>( const std::string&, int defValue );
-template void ParameterMap::setNum<int>( const std::string&, int value );
+template ParameterMap& ParameterMap::setNum<int>( const std::string&, int value );
 template long ParameterMap::getNum<long>( const std::string&, long defValue );
-template void ParameterMap::setNum<long>( const std::string&, long value );
+template ParameterMap& ParameterMap::setNum<long>( const std::string&, long value );

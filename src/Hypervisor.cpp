@@ -1133,6 +1133,16 @@ void HVInstance::setDownloadProvider( DownloadProviderPtr p ) {
 };
 
 /**
+ * Change the default user interaction
+ */
+void HVInstance::setUserInteraction( UserInteractionPtr p ) {
+    CRASH_REPORT_BEGIN;
+    this->userInteraction = p;
+    CRASH_REPORT_END;
+}
+
+
+/**
  * Search the system's folders and try to detect what hypervisor
  * the user has installed and it will then populate the Hypervisor Config
  * structure that was passed to it.

@@ -395,6 +395,11 @@ public:
      */
     virtual void            abort() = 0;
 
+    /**
+     * Wait until any underlaying command is completed
+     */
+    virtual void            wait() = 0;
+
 };
 
 
@@ -466,6 +471,11 @@ public:
      * Open a session using the specified input parameters
      */
     virtual HVSessionPtr    sessionOpen         ( const ParameterMapPtr& parameters, const FiniteTaskPtr& pf );
+
+    /**
+     * Remove a session from the disk
+     */
+    virtual void            sessionDelete       ( const HVSessionPtr& session ) = 0;
 
     /**
      * Validate a session using the specified input parameters

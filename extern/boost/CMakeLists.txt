@@ -117,8 +117,9 @@ if(Found LESS 0 OR NOT IS_DIRECTORY "${BoostDownloadFolder}")
 endif()
 
 # Get the path to the extracted folder
-file(GLOB BoostSourceDir "${BoostDownloadFolder}/*")
+file(GLOB BoostSourceDir "${BoostDownloadFolder}/[^.]*")
 list(LENGTH BoostSourceDir n)
+message( GLOB ${BoostSourceDir} )
 if(NOT n EQUAL 1 OR NOT IS_DIRECTORY "${BoostSourceDir}")
   message(FATAL_ERROR "Failed extracting boost ${BoostVersion} to ${BoostDownloadFolder}")
 endif()

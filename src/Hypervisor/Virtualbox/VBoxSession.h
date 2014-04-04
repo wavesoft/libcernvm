@@ -190,6 +190,7 @@ public:
     virtual int             getAPIPort          ();
     virtual void            abort               ();
     virtual int             update              ( bool waitTillInactive = true );
+    virtual void            wait                ( );
 
     /////////////////////////////////////
     // External updates feedback
