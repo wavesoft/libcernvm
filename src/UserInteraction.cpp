@@ -44,6 +44,8 @@ UserInteractionPtr UserInteraction::Default() {
  */
 int UserInteraction::confirm ( const std::string& title, const std::string & message, int timeout ) {
 	if (!cbConfirm) return UI_UNDEFINED;
+	// Set result to -1 (Pending response)
+	result = -1;
 	cbConfirm( title, message, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
 }
@@ -53,6 +55,8 @@ int UserInteraction::confirm ( const std::string& title, const std::string & mes
  */
 int UserInteraction::alert ( const std::string& title, const std::string& message, int timeout ) {
 	if (!cbAlert) return UI_UNDEFINED;
+	// Set result to -1 (Pending response)
+	result = -1;
 	cbAlert( title, message, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
 }
@@ -63,6 +67,8 @@ int UserInteraction::alert ( const std::string& title, const std::string& messag
  */
 int UserInteraction::confirmLicenseURL	( const std::string& title, const std::string& url, int timeout ) {
 	if (!cbLicenseURL) return UI_UNDEFINED;
+	// Set result to -1 (Pending response)
+	result = -1;
 	cbLicenseURL( title, url, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
 }
@@ -72,6 +78,8 @@ int UserInteraction::confirmLicenseURL	( const std::string& title, const std::st
  */
 int UserInteraction::confirmLicense	( const std::string& title, const std::string& buffer, int timeout ) {
 	if (!cbLicense) return UI_UNDEFINED;
+	// Set result to -1 (Pending response)
+	result = -1;
 	cbLicense( title, buffer, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
 }
@@ -108,9 +116,6 @@ void UserInteraction::setLicenseURLHandler ( const callbackLicense & cb ) {
  * Local function to wait for callback
  */
 int UserInteraction::__waitResult ( int timeout ) {
-
-	// Set result to -1 (Pending response)
-	result = -1;
 
 	// Wait on mutex
 	boost::unique_lock<boost::mutex> lock(mutex);

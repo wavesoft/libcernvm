@@ -189,7 +189,7 @@ endif()
 # [BOOST] We use various accelerators from boost
 #
 set( BOOST_MODE "EXTERN" )
-set( BOOST_REQUIRE_LIBRARIES thread system filesystem regex )
+set( BOOST_REQUIRE_LIBRARIES thread system filesystem regex date_time chrono )
 if ( NOT DEFINED(BOOST_LIBRARIES) OR NOT DEFINED(BOOST_INCLUDE_DIRS) )
 
 	# Check if we should check for local
