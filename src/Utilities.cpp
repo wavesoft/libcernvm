@@ -1223,7 +1223,7 @@ int digest_file( const std::string& path, const EVP_MD * md, string * dst, bool 
     unsigned char md_value[EVP_MAX_MD_SIZE];
 
     // Open file
-    std::ifstream file( path.c_str() );
+    std::ifstream file( path.c_str(), std::ios::binary );
     if(!file.good()) return -534;
 
     // Initialize EVP subsystem
