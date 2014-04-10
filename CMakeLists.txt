@@ -178,6 +178,10 @@ if ( NOT DEFINED(CURL_LIBRARIES) OR NOT DEFINED(CURL_INCLUDE_DIRS) )
 		set( EXTERN_CURL "extern/curl" )
 		add_subdirectory( ${EXTERN_CURL} ${CMAKE_BINARY_DIR}/${EXTERN_CURL} )
 
+		# Add a definition required by the curl header to switch
+		# to static build
+		add_definitions(-DCURL_STATICLIB)
+
 		# Log
 		set( CURL_MODE "LOCAL" )
 		message( STATUS "Using CURL shipped with libcernvm")

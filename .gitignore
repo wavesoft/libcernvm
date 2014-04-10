@@ -12,14 +12,15 @@
 *.la
 *.a
 
-# Exclude archives from the extern
-extern/zlib/archive*
-extern/jsoncpp/archive*
-extern/boost/archive*
-extern/crypto50/archive*
-extern/nss/archive*
-extern/openssl/archive*
-extern/curl/archive*
-
 # Exclude build dirs
 build
+
+# Exclude archives from the extern
+*
+!extern/zlib/CMakeLists.txt
+!extern/jsoncpp/CMakeLists.txt
+!extern/boost/CMakeLists.txt
+!extern/crypto50/CMakeLists.txt
+!extern/nss/CMakeLists.txt
+!extern/openssl/CMakeLists.txt
+!extern/curl/CMakeLists.txt

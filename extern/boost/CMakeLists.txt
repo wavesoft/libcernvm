@@ -68,7 +68,7 @@ set(BoostFolderName boost_${BoostFolderName})
 
 # Set cache dir inside the extern folder
 set(USE_BOOST_CACHE True)
-set(BOOST_CACHE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/archive")
+set(BOOST_CACHE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/boost-${BoostVersion}")
 if (NOT EXISTS ${BOOST_CACHE_DIR})
 	# Make the directory
 	FILE( MAKE_DIRECTORY ${BOOST_CACHE_DIR} )
