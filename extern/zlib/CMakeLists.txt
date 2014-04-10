@@ -1,29 +1,29 @@
 cmake_minimum_required(VERSION 2.4.4)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
-
 project(zlib C)
 
-set(VERSION "1.2.8")
+# Download information for OpenSSL
+set(ZLIB_VERSION 1.2.8)
 
 #############################################################
 # DOWNLOAD BOOTSTRAP 
 #############################################################
 
 # Setup archive
-set( ARCHIVE_URL "http://downloads.sourceforge.net/project/libpng/zlib/1.2.8/zlib-1.2.8.tar.gz" )
-set( ARCHIVE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/archive" )
+set( ARCHIVE_URL "http://downloads.sourceforge.net/project/libpng/zlib/${ZLIB_VERSION}/zlib-${ZLIB_VERSION}.tar.gz" )
+set( ARCHIVE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/zlib-${ZLIB_VERSION}" )
 set( ARCHIVE_EXT ".tar.gz" )
 
 # Check if we have the archive
 if ( NOT EXISTS ${ARCHIVE_DIR} )
-    set( ARCHIVE_TEMP "${CMAKE_CURRENT_SOURCE_DIR}/~download-archive${ARCHIVE_EXT}" )
+    set( ARCHIVE_FILE "${ARCHIVE_DIR}${ARCHIVE_EXT}" )
 
     # Make the directory
     FILE( MAKE_DIRECTORY ${ARCHIVE_DIR} )
 
     # Download the archive
     message( STATUS "Downloading ${PROJECT_NAME} archive" )
-    file(DOWNLOAD ${ARCHIVE_URL} ${ARCHIVE_TEMP}
+    file(DOWNLOAD ${ARCHIVE_URL} ${ARCHIVE_FILE}
         SHOW_PROGRESS STATUS ARCHIVE_DOWNLOAD_STATUS)
 
     # Check status
@@ -31,7 +31,7 @@ if ( NOT EXISTS ${ARCHIVE_DIR} )
     if( ARCHIVE_DOWLOAD_ERROR )
 
         # Remove file and dir
-        file( REMOVE ${ARCHIVE_TEMP} )
+        file( REMOVE ${ARCHIVE_FILE} )
         file( REMOVE ${ARCHIVE_DIR} )
 
         # Fatal error
@@ -40,12 +40,9 @@ if ( NOT EXISTS ${ARCHIVE_DIR} )
 
     # Extract archive
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xzf ${ARCHIVE_TEMP}
+        COMMAND ${CMAKE_COMMAND} -E tar xzf ${ARCHIVE_FILE}
         WORKING_DIRECTORY ${ARCHIVE_DIR}
     )
-
-    # Remove the archive
-    file( REMOVE ${ARCHIVE_TEMP} )
 
 endif()
 

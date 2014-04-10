@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6.2 FATAL_ERROR)
 project( CURL C )
 
-# Download information for NSS
+# Download information for CURL
 set(CURL_VERSION 	7.34.0)
 set(CURL_SHA1    	9ef09e97dfc9f14ac2c042f3b7e301098794fc0f)
 
@@ -10,20 +10,20 @@ set(CURL_SHA1    	9ef09e97dfc9f14ac2c042f3b7e301098794fc0f)
 #############################################################
 
 # Setup archive
-set( ARCHIVE_URL "http://curl.haxx.se/download/curl-${CURL_VERSION}.zip" )
-set( ARCHIVE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/archive" )
-set( ARCHIVE_EXT ".zip" )
+set( ARCHIVE_URL  "http://curl.haxx.se/download/curl-${CURL_VERSION}.zip" )
+set( ARCHIVE_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/curl-${CURL_VERSION}" )
+set( ARCHIVE_EXT  ".zip" )
 
 # Check if we have the archive
 if ( NOT EXISTS ${ARCHIVE_DIR} )
-    set( ARCHIVE_TEMP "${CMAKE_CURRENT_SOURCE_DIR}/~download-archive${ARCHIVE_EXT}" )
+  set( ARCHIVE_FILE "${ARCHIVE_DIR}${ARCHIVE_EXT}" )
 
     # Make the directory
     FILE( MAKE_DIRECTORY ${ARCHIVE_DIR} )
 
     # Download the archive
     message( STATUS "Downloading ${PROJECT_NAME} archive" )
-    file(DOWNLOAD ${ARCHIVE_URL} ${ARCHIVE_TEMP}
+    file(DOWNLOAD ${ARCHIVE_URL} ${ARCHIVE_FILE}
         SHOW_PROGRESS STATUS ARCHIVE_DOWNLOAD_STATUS)
 
     # Check status
@@ -31,7 +31,7 @@ if ( NOT EXISTS ${ARCHIVE_DIR} )
     if( ARCHIVE_DOWLOAD_ERROR )
 
         # Remove file and dir
-        file( REMOVE ${ARCHIVE_TEMP} )
+        file( REMOVE ${ARCHIVE_FILE} )
         file( REMOVE ${ARCHIVE_DIR} )
 
         # Fatal error
@@ -40,12 +40,9 @@ if ( NOT EXISTS ${ARCHIVE_DIR} )
 
     # Extract archive
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xzf ${ARCHIVE_TEMP}
+        COMMAND ${CMAKE_COMMAND} -E tar xzf ${ARCHIVE_FILE}
         WORKING_DIRECTORY ${ARCHIVE_DIR}
     )
-
-    # Remove the archive
-    file( REMOVE ${ARCHIVE_TEMP} )
 
 endif()
 

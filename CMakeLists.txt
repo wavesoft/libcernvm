@@ -34,12 +34,16 @@ set(VERSION "1.0.0")
 # Include additional libraries
 include(cmake/AddCompileLinkFlags.cmake)
 
-# Helper function to convert a string to camel-case
-function(to_camel_case VarIn VarOut)
-	string(SUBSTRING ${VarIn} 0 1 Initial)
-	string(SUBSTRING ${VarIn} 1 -1 VarIn)
-	string(TOUPPER ${Initial} Initial)
-	set(${VarOut} ${Initial}${VarIn} PARENT_SCOPE)
+# Helper function to convert underscores to CamelCase
+function(ms_underscores_to_camel_case VarIn VarOut)
+  string(REPLACE "_" ";" Pieces ${VarIn})
+  foreach(Part ${Pieces})
+    string(SUBSTRING ${Part} 0 1 Initial)
+    string(SUBSTRING ${Part} 1 -1 Part)
+    string(TOUPPER ${Initial} Initial)
+    set(CamelCase ${CamelCase}${Initial}${Part})
+  endforeach()
+  set(${VarOut} ${CamelCase} PARENT_SCOPE)
 endfunction()
 
 #############################################################
@@ -222,11 +226,11 @@ if ( NOT DEFINED(BOOST_LIBRARIES) OR NOT DEFINED(BOOST_INCLUDE_DIRS) )
 		set( BOOST_INCLUDE_DIRS ${BoostSourceDir} )
 		foreach(LIB ${BOOST_REQUIRE_LIBRARIES}) 
 			# Camel-case lib
-			to_camel_case( ${LIB} LIB )
+			ms_underscores_to_camel_case( ${LIB} LIBCAMELCASE )
 			# Depend target
 			set( BOOST_DEPEND_TARGETS ${BOOST_DEPEND_TARGETS} boost_${LIB} )
 			# Use given library
-			set( BOOST_LIBRARIES ${BOOST_LIBRARIES} ${Boost${LIB}Libs} )
+			set( BOOST_LIBRARIES ${BOOST_LIBRARIES} ${Boost${LIBCAMELCASE}Libs} )
 		endforeach()
 
 		# Log
@@ -266,9 +270,10 @@ set( PROJECT_LIBRARIES
 file ( GLOB LIB_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp  )
 
 # Collect the hypervisor sources
+message( STATUS "Compiling drivers for the following hypervisors:" )
 set( HYPERVISOR_SOURCES "" )
 FOREACH(HV ${HV_NAMES}) 
-	message( STATUS "Using hypervisor driver: ${HV}" )
+	message( STATUS " - ${HV}" )
 	file ( GLOB HV_CPP ${PROJECT_SOURCE_DIR}/src/Hypervisor/${HV}/*.cpp  )
 	set( HYPERVISOR_SOURCES ${HYPERVISOR_SOURCES} ${HV_CPP} )
 ENDFOREACH(HV)
@@ -290,7 +295,7 @@ endif()
 #############################################################
 
 # Add custom definitions
-ADD_DEFINITIONS(-DLOGGING)
+#ADD_DEFINITIONS(-DLOGGING)
 
 # Windows additional definitions
 if (WIN32)

@@ -2,28 +2,30 @@
 # Written to work with cmake 2.6
 cmake_minimum_required (VERSION 2.6)
 set (CMAKE_BACKWARDS_COMPATIBILITY 2.6)
-
 project(jsoncpp)
+
+# Download information for JSONCPP
+set(JSONCPP_VERSION 0.5.0)
 
 #############################################################
 # DOWNLOAD BOOTSTRAP 
 #############################################################
 
 # Setup archive
-set( ARCHIVE_URL "http://downloads.sourceforge.net/project/jsoncpp/jsoncpp/0.5.0/jsoncpp-src-0.5.0.tar.gz" )
-set( ARCHIVE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/archive" )
-set( ARCHIVE_EXT ".tar.gz" )
+set( ARCHIVE_URL  "http://downloads.sourceforge.net/project/jsoncpp/jsoncpp/${JSONCPP_VERSION}/jsoncpp-src-${JSONCPP_VERSION}.tar.gz" )
+set( ARCHIVE_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp-${JSONCPP_VERSION}" )
+set( ARCHIVE_EXT  ".tar.gz" )
 
 # Check if we have the archive
 if ( NOT EXISTS ${ARCHIVE_DIR} )
-	set( ARCHIVE_TEMP "${CMAKE_CURRENT_SOURCE_DIR}/~download-archive${ARCHIVE_EXT}" )
+	set( ARCHIVE_FILE "${ARCHIVE_DIR}${ARCHIVE_EXT}" )
 
 	# Make the directory
 	FILE( MAKE_DIRECTORY ${ARCHIVE_DIR} )
 
 	# Download the archive
    	message( STATUS "Downloading ${PROJECT_NAME} archive" )
-	file(DOWNLOAD ${ARCHIVE_URL} ${ARCHIVE_TEMP}
+	file(DOWNLOAD ${ARCHIVE_URL} ${ARCHIVE_FILE}
 		SHOW_PROGRESS STATUS ARCHIVE_DOWNLOAD_STATUS)
 
 	# Check status
@@ -31,7 +33,7 @@ if ( NOT EXISTS ${ARCHIVE_DIR} )
     if( ARCHIVE_DOWLOAD_ERROR )
 
     	# Remove file and dir
-        file( REMOVE ${ARCHIVE_TEMP} )
+        file( REMOVE ${ARCHIVE_FILE} )
         file( REMOVE ${ARCHIVE_DIR} )
 
         # Fatal error
@@ -40,12 +42,9 @@ if ( NOT EXISTS ${ARCHIVE_DIR} )
 
    	# Extract archive
 	execute_process(
-		COMMAND ${CMAKE_COMMAND} -E tar xzf ${ARCHIVE_TEMP}
+		COMMAND ${CMAKE_COMMAND} -E tar xzf ${ARCHIVE_FILE}
 		WORKING_DIRECTORY ${ARCHIVE_DIR}
 	)
-
-	# Remove the archive
-   	file( REMOVE ${ARCHIVE_TEMP} )
 
 endif()
 
