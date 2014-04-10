@@ -831,12 +831,14 @@ int VBoxInstance::loadSessions( const FiniteTaskPtr & pf ) {
         // destroyed externally.
         if (vboxVms.find(sess->parameters->get("vboxid")) == vboxVms.end()) {
 
-            // Remove it from session map and rewind
-            sessions.erase( sess->uuid );
-            it = this->sessions.begin();
+            // Delete session
+            sessionDelete( sess );
 
-            // Quit if we are done
+            // Quit if we have no sessions left
             if (this->sessions.size() == 0) break;
+
+            // Rewind sessions
+            it = this->sessions.begin();
 
         }
 
