@@ -178,7 +178,7 @@ if(MSVC)
 ##MODIFIED: Moving APPLE *BEFORE* UNIX
 elseif(APPLE)
   if(${TARGET_ARCH} STREQUAL "x86_64")
-    list(APPEND b2Args toolset=clang cxxflags=-fPIC cxxflags=-std=c++11 architecture=x86_64 address-model=64 --layout=tagged)
+    list(APPEND b2Args toolset=clang cxxflags=-fPIC cxxflags=-std=c++11 address-model=64 --layout=tagged)
   else()
     list(APPEND b2Args toolset=clang cxxflags=-fPIC cxxflags=-std=c++11 "cxxflags=-arch\ i386" architecture=x86 address-model=32 --layout=tagged)
   endif()
