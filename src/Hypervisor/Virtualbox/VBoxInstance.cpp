@@ -837,7 +837,7 @@ int VBoxInstance::loadSessions( const FiniteTaskPtr & pf ) {
             // Quit if we have no sessions left
             if (this->sessions.size() == 0) break;
 
-            // Rewind sessions
+            // Rewind iterator
             it = this->sessions.begin();
 
         }

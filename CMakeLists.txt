@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8)
 
 # Which hypervisors to enable
 set( HV_NAMES Virtualbox )
@@ -14,6 +14,8 @@ if(${GUESS_ARCH} STREQUAL "AMD64")
 endif()
 
 # Static build by default
+option(LOGGING "Set to ON to enable verbose logging on screen" OFF)
+option(CRASH_REPORTING "Set to ON to enable crash reporting" OFF)
 option(BUILD_SHARED_LIBS "Set to ON to build shared libraries instead of static" OFF)
 option(USE_SYSTEM_LIBS "Set to ON to use system libraries instead the ones shipped with libcernvm" OFF)
 set(TARGET_ARCH "${GUESS_ARCH}" CACHE STRING "Define the target architecture" )
@@ -294,17 +296,25 @@ elseif(UNIX)
 	file ( GLOB PLATFORM_SOURCES ${PLATFORM_DIR}/*.cpp  )
 endif()
 
+# Include CMAKE pre
+include ( ${PLATFORM_DIR}/platform-pre.cmake )
+
 #############################################################
 # ADDITIONAL BUILD INFORMATION
 #############################################################
 
 # Add custom definitions
-#ADD_DEFINITIONS(-DLOGGING)
+if (LOGGING)
+	add_definitions(-DLOGGING)
+endif()
+if (CRASH_REPORTING)
+	add_definitions(-DCRASH_REPORTING)
+endif()
 
 # Windows additional definitions
 if (WIN32)
 	# Fix: Disable Min/Max macros
-	ADD_DEFINITIONS(-DNOMINMAX)
+	add_definitions(-DNOMINMAX)
 endif(WIN32)
 
 # Include project and headers
@@ -315,15 +325,15 @@ include_directories( ${PROJECT_INCLUDES} )
 # Add additional definitions used in the library
 if (WIN32)
 	IF (${CMAKE_BUILD_TYPE} MATCHES "Debug")
-	  ADD_DEFINITIONS(/D "DEBUG")   
+	  add_definitions(/D "DEBUG")   
 	ELSE (${CMAKE_BUILD_TYPE} MATCHES "Debug")
-	  ADD_DEFINITIONS(/D "NDEBUG")
+	  add_definitions(/D "NDEBUG")
 	ENDIF (${CMAKE_BUILD_TYPE} MATCHES "Debug")
 else(WIN32)
 	IF (${CMAKE_BUILD_TYPE} MATCHES "Debug")
-	  ADD_DEFINITIONS(-DDEBUG)   
+	  add_definitions(-DDEBUG)   
 	ELSE (${CMAKE_BUILD_TYPE} MATCHES "Debug")
-	  ADD_DEFINITIONS(-DNDEBUG)
+	  add_definitions(-DNDEBUG)
 	ENDIF (${CMAKE_BUILD_TYPE} MATCHES "Debug")
 endif(WIN32)
 
