@@ -39,8 +39,8 @@
 #include "contextiso.h"
 #include "floppyIO.h"
 
-#include "Hypervisor/Virtualbox/VBoxCommon.h"
-#include "Hypervisor/Virtualbox/VBoxSession.h"
+#include <CernVM/Hypervisor/Virtualbox/VBoxCommon.h>
+#include <CernVM/Hypervisor/Virtualbox/VBoxSession.h>
 
 using namespace std;
 namespace fs = boost::filesystem;
