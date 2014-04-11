@@ -111,7 +111,7 @@
 /**
  * Hard-coded salt used in some cryptographic functions
  */
-#define		CRYPTO_SALT 					"_WSAStartup@8452"
+#define		CRYPTO_SALT 					"N5boost6system12system_errorE"
 
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
@@ -124,7 +124,7 @@
 /**
  * Default CernVM Version 
  */
-#define 	DEFAULT_CERNVM_VERSION  		"1.13-12"
+#define 	DEFAULT_CERNVM_VERSION  		"1.17-8"
 
 /**
  * Default CernVM Flavor 
