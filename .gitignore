@@ -16,7 +16,7 @@
 build
 
 # Exclude archives from the extern
-*
+extern/*
 !extern/zlib/CMakeLists.txt
 !extern/jsoncpp/CMakeLists.txt
 !extern/boost/CMakeLists.txt
