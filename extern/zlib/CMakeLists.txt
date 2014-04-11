@@ -253,5 +253,14 @@ if(UNIX)
    set_target_properties(zlibstatic PROPERTIES OUTPUT_NAME z)
 endif()
 
+##MODIFIED: On linux we should add a flag to define the architecture we are building for
+if (UNIX)
+    if ("${TARGET_ARCH}" STREQUAL "x86_64")
+        add_compile_flags( zlibstatic -m64 )
+    else()
+        add_compile_flags( zlibstatic -m32 )
+    endif()
+endif()
+
 ##MODIFIED: Installation removed
 ##MODIFIED: Example binaries removed

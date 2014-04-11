@@ -4,12 +4,17 @@ cmake_minimum_required (VERSION 2.8)
 set( HV_NAMES Virtualbox )
 
 # Guess system architecture
-set(GUESS_ARCH ${CMAKE_SYSTEM_PROCESSOR})
-if(CMAKE_OSX_ARCHITECTURES)
-	set(GUESS_ARCH ${CMAKE_OSX_ARCHITECTURES})
+set(GUESS_ARCH "i386") 							# 1) Fallback to x86
+if(CMAKE_SYSTEM_PROCESSOR) 						# 2) Build on the same processor
+	set(GUESS_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+	if(${GUESS_ARCH} STREQUAL "AMD64")
+		# We don't do any differentiation for AMD64 instruction set
+		set(GUESS_ARCH "x86_64")
+	endif()
 endif()
-# We don't do any differentiation for AMD64 instruction set
-if(${GUESS_ARCH} STREQUAL "AMD64")
+if(CMAKE_OSX_ARCHITECTURES)						# 3) Lookup on OSX Architectures
+	set(GUESS_ARCH ${CMAKE_OSX_ARCHITECTURES})
+elseif ("${CMAKE_GENERATOR}" MATCHES "Win64") 	# 4) Lookup on Windows Generator
 	set(GUESS_ARCH "x86_64")
 endif()
 
@@ -18,12 +23,16 @@ option(LOGGING "Set to ON to enable verbose logging on screen" OFF)
 option(CRASH_REPORTING "Set to ON to enable crash reporting" OFF)
 option(BUILD_SHARED_LIBS "Set to ON to build shared libraries instead of static" OFF)
 option(USE_SYSTEM_LIBS "Set to ON to use system libraries instead the ones shipped with libcernvm" OFF)
-set(TARGET_ARCH "${GUESS_ARCH}" CACHE STRING "Define the target architecture" )
+set(TARGET_ARCH "${GUESS_ARCH}" CACHE STRING "Override the identified target architecture (x86_64 or i386)" )
 
 # Validation banner
-set(CMAKE_OSX_ARCHITECTURES ${TARGET_ARCH})
-set(OSX_ARCHITECTURES ${TARGET_ARCH})
 message(STATUS "Building libcernvm for arch: ${TARGET_ARCH}")
+
+# Change OSX architectures
+if (APPLE)
+	set(CMAKE_OSX_ARCHITECTURES ${TARGET_ARCH})
+	set(OSX_ARCHITECTURES ${TARGET_ARCH})
+endif()
 
 # CernVM Library
 project ( libcernvm )
