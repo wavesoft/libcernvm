@@ -26,11 +26,10 @@
 #include <map>
 #include <algorithm>
 
-#include "CernVM/Config.h"
-
-#include "VBoxInstance.h"
-#include "CernVM/Hypervisor.h"
-#include "CernVM/Utilities.h"
+#include <CernVM/Config.h>
+#include <CernVM/Hypervisor/Virtualbox/VBoxInstance.h>
+#include <CernVM/Hypervisor.h>
+#include <CernVM/Utilities.h>
 
 using namespace std;
 

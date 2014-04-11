@@ -18,10 +18,9 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "VBoxSession.h"
-#include "VBoxInstance.h"
-
-#include "CernVM/Config.h"
+#include <CernVM/Config.h>
+#include <CernVM/Hypervisor/Virtualbox/VBoxSession.h>
+#include <CernVM/Hypervisor/Virtualbox/VBoxInstance.h>
 
 using namespace std;
 

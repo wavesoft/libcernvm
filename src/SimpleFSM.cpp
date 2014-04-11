@@ -18,7 +18,7 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "SimpleFSM.h"
+#include <CernVM/SimpleFSM.h>
 #include <cstdarg>
 #include <stdexcept>
 #include <iostream>

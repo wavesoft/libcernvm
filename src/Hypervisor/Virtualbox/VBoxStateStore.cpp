@@ -18,7 +18,7 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "VBoxStateStore.h"
+#include <CernVM/Hypervisor/Virtualbox/VBoxStateStore.h>
 
 /**
  * Return a LocalConfig instance that points to the specified state file

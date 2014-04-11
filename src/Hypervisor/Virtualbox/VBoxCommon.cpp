@@ -18,8 +18,8 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "VBoxCommon.h"
-#include "VBoxInstance.h"
+#include <CernVM/Hypervisor/Virtualbox/VBoxCommon.h>
+#include <CernVM/Hypervisor/Virtualbox/VBoxInstance.h>
 
 #include "CernVM/Config.h"
 
