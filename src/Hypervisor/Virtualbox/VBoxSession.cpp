@@ -1887,8 +1887,14 @@ int VBoxSession::mountDisk ( const std::string & controller,
         << " --port "       << port
         << " --device "     << device
         << " --type "       << type
-        << " --setuuid "    << diskGUID
         << " --medium "     <<  masterDiskPath;
+
+    // If we are having a disk
+    if (dtype != T_DVD) {
+        args << " --setuuid " << diskGUID;
+    } else {
+        diskGUID = "<irrelevant>";
+    }
 
     // Append multiattach flag if we are instructed to do so
     if (multiAttach)
