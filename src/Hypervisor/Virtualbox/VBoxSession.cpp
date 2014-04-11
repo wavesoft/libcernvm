@@ -719,13 +719,19 @@ void VBoxSession::DownloadMedia() {
     //   contains the version of the VM to be downloaded.                            //
     // ============================================================================= //
     else {
+        
+        // Pick architecture depending on the machine architecture
+        string machineArch = "x86_64";
+        if (flags & HVF_SYSTEM_64BIT == 0) {
+            machineArch = "i386";
+        }
 
         // URL Filename
         string urlFilename = URL_CERNVM_RELEASES "/ucernvm-images." + parameters->get("cernvmVersion", DEFAULT_CERNVM_VERSION)  \
-                                + ".cernvm." + parameters->get("cernvmArch", "x86_64") \
+                                + ".cernvm." + machineArch \
                                 + "/ucernvm-" + parameters->get("cernvmFlavor", "devel") \
                                 + "." + parameters->get("cernvmVersion", DEFAULT_CERNVM_VERSION) \
-                                + ".cernvm." + parameters->get("cernvmArch", "x86_64") + ".iso";
+                                + ".cernvm." + machineArch + ".iso";
 
         // Download boot disk
         FiniteTaskPtr pfDownload;
