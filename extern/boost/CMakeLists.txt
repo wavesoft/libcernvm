@@ -78,7 +78,7 @@ endif()
 file(TO_CMAKE_PATH "${BOOST_CACHE_DIR}" BoostCacheDir)
 
 # Prepare folders to download to
-set(BoostDownloadFolder "${BoostFolderName}_${CMAKE_CXX_COMPILER_ID}_${CMAKE_CXX_COMPILER_VERSION}")
+set(BoostDownloadFolder "${BoostFolderName}_${TARGET_ARCH}_${CMAKE_CXX_COMPILER_ID}_${CMAKE_CXX_COMPILER_VERSION}")
 if(HAVE_LIBC++)
   set(BoostDownloadFolder "${BoostDownloadFolder}_LibCXX")
 endif()
@@ -105,7 +105,7 @@ file(DOWNLOAD http://sourceforge.net/projects/boost/files/boost/${BoostVersion}/
 # Extract boost if required
 string(FIND "${Status}" "returning early" Found)
 if(Found LESS 0 OR NOT IS_DIRECTORY "${BoostDownloadFolder}")
-  message(STATUS "Extracting boost ${BoostVersion} to ${BoostDownloadFolder}")
+  message(STATUS "Extracting boost ${BoostVersion}(${TARGET_ARCH}) to ${BoostDownloadFolder}")
   file(MAKE_DIRECTORY "${BoostDownloadFolder}")
   execute_process(COMMAND ${CMAKE_COMMAND} -E tar xfz ${BoostCacheDir}/${BoostFolderName}.tar.bz2
                   WORKING_DIRECTORY ${BoostDownloadFolder}
