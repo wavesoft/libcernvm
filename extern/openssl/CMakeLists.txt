@@ -72,7 +72,7 @@ endif()
 
 # Setup directories
 set( OPENSSL_SRC_DIR ${ARCHIVE_DIR})
-set( OPENSSL_BIN_DIR ${ARCHIVE_DIR}/Build )
+set( OPENSSL_BIN_DIR ${ARCHIVE_DIR}/build-${TARGET_ARCH} )
 
 # Mark the build directory part of clean process
 set_directory_properties( 
@@ -218,7 +218,7 @@ else()
         openssl
         build_clean
         COMMENT "Cleaning previous build"
-        COMMAND make clean
+        COMMAND make -i clean
         WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
         DEPENDEES configure
         DEPENDERS build
