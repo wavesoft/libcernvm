@@ -721,7 +721,7 @@ void VBoxSession::DownloadMedia() {
         
         // Pick architecture depending on the machine architecture
         string machineArch = "x86_64";
-        if (flags & HVF_SYSTEM_64BIT == 0) {
+        if ((flags & HVF_SYSTEM_64BIT) == 0) {
             machineArch = "i386";
         }
 
