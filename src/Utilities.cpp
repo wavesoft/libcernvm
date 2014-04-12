@@ -40,6 +40,7 @@
 #include <CernVM/Hypervisor.h>
 
 using namespace std;
+using namespace boost;
 
 /* Base64 Helper */
 static const char b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
