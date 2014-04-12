@@ -19,7 +19,8 @@
  */
 
 #include "RollbackTransaction.h"
-
+#include <stdarg.h>
+ 
 /**
  * Fire the callback function, ignoring any possible exceptions
  */
