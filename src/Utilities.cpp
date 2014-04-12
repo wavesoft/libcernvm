@@ -32,6 +32,7 @@
 #include <iostream>
 #include <sstream>
 
+#include <boost/filetime/path.hpp>
 #include <openssl/evp.h>
 #include "zlib.h"
 
@@ -1827,7 +1828,7 @@ unsigned long long getFileTimeMs ( const std::string& file ) {
     #if STAT_HAVE_NSEC
         return attrib.st_mtime.tv_sec * 1000 + attrib.st_mtime.tv_nsec / 1000000;
     #else
-        return attrib.st_mtime.tv_sec * 1000;
+        return attrib.st_mtime * 1000;
     #endif
 
 #endif
@@ -1866,14 +1867,14 @@ void getLinuxInfo ( LINUX_INFO * info ) {
     if (file_exists("/usr/bin/lsb_release")) {
         
         // First, get release
-        if (sysExec( "/usr/bin/lsb_release", "-i -s", &vLines, &stdError ) == 0) {
+        if (sysExec( "/usr/bin/lsb_release", "-i -s", &vLines, &stdError, SysExecConfig::Default() ) == 0) {
             if (vLines[0].compare("n/a") != 0) {
                 info->osDistID = vLines[0];
             }
         }
         
         // Then get codename
-        if (sysExec( "/usr/bin/lsb_release", "-c -s", &vLines, &stdError ) == 0) {
+        if (sysExec( "/usr/bin/lsb_release", "-c -s", &vLines, &stdError, SysExecConfig::Default() ) == 0) {
             if (vLines[0].compare("n/a") != 0) {
                 // Put separator and get version
                 info->osDistID += "-";
