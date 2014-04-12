@@ -264,6 +264,14 @@ else()
 
 endif()
 
+#
+# [PThread] required by BOOST only on Linux
+#
+set( EXTRA_LIBRARIES "" )
+if (UNIX AND NOT APPLE)
+	set( EXTRA_LIBRARIES pthread )
+endif()
+
 # Include libraries
 set( PROJECT_INCLUDES
 	${ZLIB_INCLUDE_DIRS}
@@ -280,6 +288,7 @@ set( PROJECT_LIBRARIES
 	${OPENSSL_LIBRARIES}
 	${CURL_LIBRARIES}
 	${BOOST_LIBRARIES}
+	${EXTRA_LIBRARIES}
 )
 
 #############################################################
