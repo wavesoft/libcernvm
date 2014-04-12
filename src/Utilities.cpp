@@ -40,7 +40,6 @@
 #include <CernVM/Hypervisor.h>
 
 using namespace std;
-using namespace boost;
 
 /* Base64 Helper */
 static const char b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -1898,18 +1897,18 @@ void getLinuxInfo ( LINUX_INFO * info ) {
  * Helper to traverse the /proc/<pid>/fd descriptors
  * in order to see what points to the fileName
  */
-bool _isLinkInDir( string fileName, const fs::path& path ) {
+bool _isLinkInDir( string fileName, const boost::fs::path& path ) {
     CRASH_REPORT_BEGIN;
 
     // Start iterating /proc/<id>/fd
-    fs::directory_iterator end_iter;
-    for ( fs::directory_iterator dir_itr( path );
+    boost::fs::directory_iterator end_iter;
+    for ( boost::fs::directory_iterator dir_itr( path );
           dir_itr != end_iter;
           ++dir_itr ) {
         
         // Resolve symlink & Check if the filename is used
         try {
-            fs::path resolved = fs::canonical( dir_itr->path() );
+            boost::fs::path resolved = boost::fs::canonical( dir_itr->path() );
             if (resolved.string().compare( fileName ) == 0)
                 return true;
         }
@@ -1932,25 +1931,25 @@ bool isFileOpen( string fileName ) {
     CRASH_REPORT_BEGIN;
     
     // Get access to /proc
-    fs::path full_path( fs::initial_path<fs::path>() );
-    full_path = fs::system_complete( fs::path( "/proc" ) );
+    boost::fs::path full_path( boost::fs::initial_path<boost::fs::path>() );
+    full_path = boost::fs::system_complete( boost::fs::path( "/proc" ) );
 
     // Start iterating /proc
-    fs::directory_iterator end_iter;
-    for ( fs::directory_iterator dir_itr( full_path );
+    boost::fs::directory_iterator end_iter;
+    for ( boost::fs::directory_iterator dir_itr( full_path );
           dir_itr != end_iter;
           ++dir_itr ) {
 
       // Ensure no error occurs
       try {
-        if ( fs::is_directory( dir_itr->status() ) ) {
+        if ( boost::fs::is_directory( dir_itr->status() ) ) {
 
             // Check the /fd directory
             string sPath = dir_itr->path().string() + "/fd";
-            fs::path subPath = fs::system_complete( fs::path( sPath ) );
+            boost::fs::path subPath = boost::fs::system_complete( boost::fs::path( sPath ) );
 
             // Check if the subPath is directory
-            if ( fs::is_directory( subPath ) ) {
+            if ( boost::fs::is_directory( subPath ) ) {
 
                 // Check if the filename is inside the /proc/<pid>/fd descriptors
                 if (_isLinkInDir( fileName, subPath ))
