@@ -23,6 +23,11 @@ option(LOGGING "Set to ON to enable verbose logging on screen" OFF)
 option(CRASH_REPORTING "Set to ON to enable crash reporting" OFF)
 option(BUILD_SHARED_LIBS "Set to ON to build shared libraries instead of static" OFF)
 option(USE_SYSTEM_LIBS "Set to ON to use system libraries instead the ones shipped with libcernvm" OFF)
+option(SYSTEM_ZLIB "Set to ON to use zlib from the system" OFF)
+option(SYSTEM_JSONCPP "Set to ON to use jsoncpp from the system" OFF)
+option(SYSTEM_OPENSSL "Set to ON to use openssl from the system" OFF)
+option(SYSTEM_CURL "Set to ON to use CURL from the system" OFF)
+option(SYSTEM_BOOST "Set to ON to use BOOST from the system" OFF)
 set(TARGET_ARCH "${GUESS_ARCH}" CACHE STRING "Override the identified target architecture (x86_64 or i386)" )
 
 # Validation banner
@@ -80,7 +85,7 @@ if ( NOT DEFINED(ZLIB_LIBRARIES) OR NOT DEFINED(ZLIB_INCLUDE_DIRS) )
 
 	# Check if we should check for local
 	set( USE_LOCAL 1 )
-	if (${USE_SYSTEM_LIBS})
+	if (${USE_SYSTEM_LIBS} OR ${SYSTEM_ZLIB})
 		# Check if we can find it on the system
 		find_package(ZLIB)
 		if(ZLIB_FOUND)
@@ -136,7 +141,7 @@ if ( NOT DEFINED(OPENSSL_LIBRARIES) OR NOT DEFINED(OPENSSL_INCLUDE_DIRS) )
 
 	# Check if we should check for local
 	set( USE_LOCAL 1 )
-	if (${USE_SYSTEM_LIBS})
+	if (${USE_SYSTEM_LIBS} OR ${SYSTEM_OPENSSL})
 		# Check if we can find it on the system
 		find_package(OpenSSL)
 		if(OPENSSL_FOUND)
@@ -172,7 +177,7 @@ if ( NOT DEFINED(CURL_LIBRARIES) OR NOT DEFINED(CURL_INCLUDE_DIRS) )
 
 	# Check if we should check for local
 	set( USE_LOCAL 1 )
-	if (${USE_SYSTEM_LIBS})
+	if (${USE_SYSTEM_LIBS} OR ${SYSTEM_CURL})
 		# Check if we can find it on the system
 		find_package(CURL)
 		if(CURL_FOUND)
@@ -213,7 +218,7 @@ if ( NOT DEFINED(BOOST_LIBRARIES) OR NOT DEFINED(BOOST_INCLUDE_DIRS) )
 
 	# Check if we should check for local
 	set( USE_LOCAL 1 )
-	if (${USE_SYSTEM_LIBS})
+	if (${USE_SYSTEM_LIBS} OR ${SYSTEM_BOOST})
  		# Check if we can find it on the system
 		set(Boost_USE_MULTITHREADED ON)  
 		set(Boost_USE_STATIC_RUNTIME NOT BUILD_SHARED_LIBS) 
