@@ -165,7 +165,7 @@ elseif(UNIX)
 
     if (${TARGET_ARCH} STREQUAL "x86_64")
         # 64-bit MacOSX, Any Compiler
-        set( OPENSSL_TARGET "linux-generic64" )
+        set( OPENSSL_TARGET "linux-x86_64" )
     elseif (${TARGET_ARCH} STREQUAL "i386")
         # 32-bit Intel processor, Any Compiler
         set( OPENSSL_TARGET "linux-generic32" )
