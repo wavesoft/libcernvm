@@ -159,8 +159,8 @@ elseif(UNIX)
 
     # Expose library names to parent scope
     set (OPENSSL_LIBRARIES  
-        ${OPENSSL_BIN_DIR}/lib/libcrypto${OPENSSL_LIB_SUFFIX}
         ${OPENSSL_BIN_DIR}/lib/libssl${OPENSSL_LIB_SUFFIX}
+        ${OPENSSL_BIN_DIR}/lib/libcrypto${OPENSSL_LIB_SUFFIX}
         PARENT_SCOPE)
 
     if (${TARGET_ARCH} STREQUAL "x86_64")

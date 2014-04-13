@@ -1503,6 +1503,8 @@ int VBoxSession::update ( bool waitTillInactive ) {
                     newState = SS_POWEROFF;
                 } else if (logState == SS_SAVED) {
                     newState = SS_SAVED;
+                } else if (logState == SS_AVAILABLE) {
+                    newState = SS_AVAILABLE;
                 } else {
                     CVMWA_LOG("Error", "Mismatching VM state " << logState << " to " << newState );
                 }

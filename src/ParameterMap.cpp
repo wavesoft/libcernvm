@@ -22,6 +22,8 @@
 #include <CernVM/Utilities.h>
 #include <CernVM/ParameterMap.h>
 
+const std::string SAFE_KEY_CHARS("0123456789_-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
 /**
  * Allocate a new shared pointer
  */
@@ -34,9 +36,18 @@ ParameterMapPtr ParameterMap::instance ( ) {
 /**
  * Return a string parameter value
  */
-std::string ParameterMap::get( const std::string& kname, std::string defaultValue ) {
+std::string ParameterMap::get( const std::string& kname, std::string defaultValue, bool strict ) {
     CRASH_REPORT_BEGIN;
-    std::string name = prefix + kname;
+    // Replace invalid chars in strict mode
+    std::string name = kname;
+    if (strict) {
+        for (size_t i=0; i<name.length(); i++) {
+            if (SAFE_KEY_CHARS.find(name[i]) == std::string::npos)
+                name[i] = '_';
+        }
+    }
+    // Append prefix
+    name = prefix + name;
     if (parameters->find(name) == parameters->end())
         return defaultValue;
     return (*parameters)[name];

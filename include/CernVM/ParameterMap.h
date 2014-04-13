@@ -57,7 +57,7 @@ public:
 	/**
 	 * Create a new blank parameter map
 	 */
-	ParameterMap( ) : parameters(), prefix(""), parent(), locked(false), changed(false) {
+	ParameterMap( ) : parameters(), prefix(""), locked(false), parent(),  changed(false) {
 
 		// Allocate a new shared pointer
 		parameters = boost::make_shared< std::map< std::string, std::string > >( );
@@ -67,14 +67,14 @@ public:
 	/**
 	 * Create a new parameter map with the specified parameters
 	 */
-	ParameterMap( ParameterDataMapPtr parametersptr, std::string pfx ) : parameters(parametersptr), prefix(pfx), parent(), locked(false), changed(false) 
+	ParameterMap( ParameterDataMapPtr parametersptr, std::string pfx ) : parameters(parametersptr), prefix(pfx), locked(false), parent(), changed(false)
 		{ };
 
 
 	/**
 	 * Create a new parameter map by using the specified as parent
 	 */
-	ParameterMap( ParameterMapPtr parentptr, std::string pfx ) : parameters(), prefix(pfx), parent(parentptr), locked(false), changed(false) {
+	ParameterMap( ParameterMapPtr parentptr, std::string pfx ) : parameters(), prefix(pfx), locked(false), parent(parentptr), changed(false) {
 
 		// Use the pointer from the parent class
 		parameters = parentptr->parameters;
@@ -100,7 +100,7 @@ public:
 	/**
 	 * Return a string parameter value
 	 */
-    virtual std::string         get             ( const std::string& name, std::string defaultValue = "" );
+    virtual std::string         get             ( const std::string& name, std::string defaultValue = "", bool strict = false );
 
     /**
      * Set a string parameter
