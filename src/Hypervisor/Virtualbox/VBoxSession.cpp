@@ -1511,7 +1511,10 @@ int VBoxSession::update ( bool waitTillInactive ) {
 
             }
         }
+
     }
+
+    // TODO: Detect poweringg-up from standby phases
 
     // Handle state switches
     if (newState != lastState) {
