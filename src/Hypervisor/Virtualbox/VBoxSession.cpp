@@ -128,9 +128,10 @@ int getStateFromFile( std::string logPath ) {
     if (seekSize > 81920) seekSize = 81920;
 
     // Move 80kb before te end of the file
-    fIn.seekg( seekSize, fIn.end );
+    fIn.clear();
+    fIn.seekg( -seekSize, fIn.end );
 
-    CVMWA_LOG("Debug", "File metrics: fileSize=" << fSize << ", seekSize=" << seekSize << ", tellg=" << fIn.tellg() << ". eof=" << fIn.eof() << ", bad=" << fIn.bad() << ", fail=" << fIn.fail());
+//    CVMWA_LOG("Debug", "File metrics: fileSize=" << fSize << ", seekSize=" << seekSize << ", tellg=" << fIn.tellg() << ". eof=" << fIn.eof() << ", bad=" << fIn.bad() << ", fail=" << fIn.fail());
 
     // Start scanning
     while (!fIn.eof()) {
@@ -140,12 +141,12 @@ int getStateFromFile( std::string logPath ) {
 
         // Handle it via higher-level API
         inBufferLine.assign( inBuffer );
-        CVMWA_LOG("Debug", "Got line: " << inBufferLine);
-        CVMWA_LOG("Debug", "File metrics: tellg=" << fIn.tellg() << ", eof=" << fIn.eof() << ", bad=" << fIn.bad() << ", fail=" << fIn.fail());
+//        CVMWA_LOG("Debug", "Got line: " << inBufferLine);
+//        CVMWA_LOG("Debug", "File metrics: tellg=" << fIn.tellg() << ", eof=" << fIn.eof() << ", bad=" << fIn.bad() << ", fail=" << fIn.fail());
 
         if ((iStart = inBufferLine.find("Changing the VM state from")) != string::npos) {
 
-            CVMWA_LOG("Debug", "Found relevant line: " << inBufferLine);
+//            CVMWA_LOG("Debug", "Found relevant line: " << inBufferLine);
 
             // Pick the appropriate ending
             iEnd = inBufferLine.length();
@@ -167,16 +168,16 @@ int getStateFromFile( std::string logPath ) {
             if (qEnd == string::npos) continue;
 
             // Extract string
-            stateStr = inBufferLine.substr( qStart+1, qEnd-qStart-2 );
+            stateStr = inBufferLine.substr( qStart+1, qEnd-qStart-1 );
 
             // Compare to known state names
             CVMWA_LOG("Debug","Got switch to " << stateStr);
             if      (stateStr.compare("RUNNING") == 0) state = SS_RUNNING;
-            else if (stateStr.compare("OFF") == 0) state = SS_POWEROFF;
             else if (stateStr.compare("SUSPENDED") == 0) state = SS_PAUSED;
+            else if (stateStr.compare("OFF") == 0) state = SS_POWEROFF;
 
             // If we got 'SAVING' it means the VM was saved
-            if      (stateStr.compare("SAVING") == 0) {
+            if (stateStr.compare("SAVING") == 0) {
                 fIn.close();
                 return SS_SAVED;
             }
@@ -1505,6 +1506,11 @@ int VBoxSession::update ( bool waitTillInactive ) {
                     newState = SS_SAVED;
                 } else if (logState == SS_AVAILABLE) {
                     newState = SS_AVAILABLE;
+                } else if (logState == SS_RUNNING) {
+                    // isPIDAlive failed, but we are still running?
+                    // This means the PID is wrong, update it...
+                    newState = SS_RUNNING;
+                    local->setNum<int>("pid", getPIDFromFile( machine->get("Log folder")));
                 } else {
                     CVMWA_LOG("Error", "Mismatching VM state " << logState << " to " << newState );
                 }
@@ -1514,7 +1520,38 @@ int VBoxSession::update ( bool waitTillInactive ) {
 
     }
 
-    // TODO: Detect poweringg-up from standby phases
+    // If the machine was powered off, look for changes on the log file 
+    // and read the new state if something gets changed.
+    else if ((newState == SS_POWEROFF) || (newState == SS_SAVED) || (newState == SS_AVAILABLE)) {
+
+        // If the file exists, look for changes
+        std::string logFile = machine->get("Log folder") + "/VBox.log";
+        if (file_exists(logFile)) {
+            unsigned long long newFileTime = getFileTimeMs(logFile);
+            if (lastLogTime != newFileTime) {
+                lastLogTime = newFileTime;
+
+                // Try to read the status from the log folder
+                int logState = getStateFromFile( machine->get("Log folder") );
+
+                // Check for some valid states from the logfile
+                if (logState == SS_PAUSED) {
+                    newState = SS_PAUSED;
+                } else if (logState == SS_RUNNING) {
+                    newState = SS_RUNNING;
+                } else {
+                    CVMWA_LOG("Error", "Mismatching VM recovery " << logState << " to " << newState );
+                }
+
+            }
+        } else {
+            
+            // If the file has gone away, we are missing
+            newState = SS_MISSING;
+
+        }
+
+    }
 
     // Handle state switches
     if (newState != lastState) {

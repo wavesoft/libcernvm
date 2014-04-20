@@ -43,18 +43,6 @@ enum VBoxDiskType {
 };
 
 /**
- * VirtualBox Session State
- */
-enum VBoxSessionState {
-    SS_MISSING = 0,
-    SS_AVAILABLE,
-    SS_POWEROFF,
-    SS_SAVED,
-    SS_PAUSED,
-    SS_RUNNING
-};
-
-/**
  * Virtualbox Session, built around a Finite-State-Machine model
  */
 class VBoxSession : public SimpleFSM, public HVSession {
@@ -279,6 +267,9 @@ protected:
     std::string             errorMessage;
     int                     errorCount;
     unsigned long           errorTimestamp;
+
+    // Detection of virtualbox log modification time
+    unsigned long long      lastLogTime;
 
     /*  Default sysExecConfig */
     SysExecConfig           execConfig;

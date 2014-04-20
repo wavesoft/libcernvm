@@ -34,9 +34,25 @@
 #include <CernVM/ParameterMap.h>
 #include <CernVM/UserInteraction.h>
 
-/* Hypervisor types */
-#define HV_NONE                 0
-#define HV_VIRTUALBOX           1
+/**
+ * Hypervisor types 
+ */
+enum HypervisorType {
+    HV_NONE = 0,
+    HV_VIRTUALBOX
+};
+
+/**
+ * Session states
+ */
+enum HVSessionState {
+    SS_MISSING = 0,
+    SS_AVAILABLE,
+    SS_POWEROFF,
+    SS_SAVED,
+    SS_PAUSED,
+    SS_RUNNING
+};
 
 /* Error messages */
 #define HVE_ALREADY_EXISTS      2
@@ -65,16 +81,6 @@
 #define HVE_NOT_VALIDATED       -12 /* Same to HVE_NOT_VALIDATED */
 #define HVE_NOT_TRUSTED         -13 /* Same to HVE_NOT_TRUSTED */
 #define CVME_PASSWORD_DENIED    -20
-
-/* Session states */
-#define STATE_CLOSED            0
-#define STATE_DESTROYED         0
-#define STATE_OPPENING          1
-#define STATE_OPEN              2
-#define STATE_STARTING          3
-#define STATE_STARTED           4
-#define STATE_ERROR             5
-#define STATE_PAUSED            6
 
 /* Extra parameters supported by getExtraInfo() */
 #define EXIF_VIDEO_MODE         1

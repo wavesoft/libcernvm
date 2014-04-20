@@ -1098,7 +1098,7 @@ int HVInstance::checkDaemonNeed() {
         HVSessionPtr sess = (*i).second;
         int daemonControlled = sess->parameters->getNum<int>("daemonControlled");
         CVMWA_LOG( "Info", "Session " << sess->uuid << ", daemonControlled=" << daemonControlled << ", state=" << sess->state );
-        if ( daemonControlled && ((sess->state == STATE_OPEN) || (sess->state == STATE_STARTED) || (sess->state == STATE_PAUSED)) ) {
+        if ( daemonControlled && ((sess->state == SS_AVAILABLE) || (sess->state == SS_RUNNING) || (sess->state == SS_PAUSED)) ) {
             daemonNeeded = true;
             break;
         }
