@@ -21,6 +21,7 @@
 #include <CernVM/Config.h>
 #include <CernVM/Hypervisor/Virtualbox/VBoxSession.h>
 #include <CernVM/Hypervisor/Virtualbox/VBoxInstance.h>
+#include <CernVM/Utilities.h>
 
 using namespace std;
 
@@ -124,7 +125,6 @@ int getStateFromFile( std::string logPath ) {
     // Calculate file length
     fIn.seekg( 0, fIn.end );
     int seekSize = fIn.tellg();
-    int fSize = fIn.tellg();
     if (seekSize > 81920) seekSize = 81920;
 
     // Move 80kb before te end of the file
@@ -510,44 +510,111 @@ void VBoxSession::ConfigureVM() {
         local->setNum<int>("rdpPort", rdpPort);
     }
 
-    /* Pick the boot medium depending on the mount type */
+    // Pick the boot medium depending on the mount type
     string bootMedium = "dvd";
     if ((flags & HVF_DEPLOYMENT_HDD) != 0) bootMedium = "disk";
 
     // Modify VM to match our needs
     args.str("");
-    args << "modifyvm "
-        << parameters->get("vboxid")
-        << " --cpus "                   << parameters->get("cpus", "2")
-        << " --memory "                 << parameters->get("memory", "1024")
-        << " --cpuexecutioncap "        << parameters->get("executionCap", "80")
-        << " --vram "                   << "32"
-        << " --acpi "                   << "on"
-        << " --ioapic "                 << "on"
-        << " --vrde "                   << "on"
-        << " --vrdeaddress "            << "127.0.0.1"
-        << " --vrdeauthtype "           << "null"
-        << " --vrdeport "               << rdpPort
-        << " --boot1 "                  << bootMedium
-        << " --boot2 "                  << "none"
-        << " --boot3 "                  << "none" 
-        << " --boot4 "                  << "none"
-        << " --nic1 "                   << "nat"
-        << " --natdnshostresolver1 "    << "on";
-    
-    // Enable graphical additions if instructed to do so
-    if ((flags & HVF_GRAPHICAL) != 0) {
-        args << " --draganddrop "       << "hosttoguest"
-             << " --clipboard "         << "bidirectional";
-    }
+    args << "modifyvm " << parameters->get("vboxid");
 
-    // Setup network
-    if ((flags & HVF_DUAL_NIC) != 0) {
-        // Create two adapters if DUAL_NIC is specified
-        args << " --nic2 "              << "hostonly" << " --hostonlyadapter2 \"" << local->get("hostonlyif") << "\"";
-    } else {
-        // Otherwise create a NAT rule
-        args << " --natpf1 "            << "guestapi,tcp,127.0.0.1," << local->get("apiPort") << ",," << parameters->get("apiPort");
+    // Go through the machine configuration
+    {
+        string vM, vC;
+
+        // 1) CPUS
+        vC = parameters->get("cpus", "2"); vM = machine->get("Number of CPUs", "");
+        if (vC != vM)
+            args << " --cpus "                  << vC;
+
+        // 2) Memory
+        vC = parameters->get("memory", "1024"); vM = machine->get("Memory size", "");
+        if (vM.find("MB") != string::npos) vM = vM.substr(0, vM.length()-2);
+        if (vC != vM)
+            args << " --memory "                << vC;
+
+        // 3) Execution cap
+        vC = parameters->get("executionCap", "80"); vM = machine->get("CPU exec cap", "");
+        if (vM.find("%") != string::npos) vM = vM.substr(0, vM.length()-1);
+        if (vC != vM)
+            args << " --cpuexecutioncap "       << vC;
+
+        // 4) VRAM
+        vC = parameters->get("vram", "32"); vM = machine->get("VRAM size", "");
+        if (vM.find("MB") != string::npos) vM = vM.substr(0, vM.length()-2);
+        if (vC != vM)
+            args << " --vram "                  << vC;
+
+        // 5) ACPI
+        vC = "on"; vM = machine->get("ACPI", "");
+        if (vC != vM)
+            args << " --acpi "                  << vC;
+
+        // 5) IOAPIC
+        vC = "on"; vM = machine->get("IOAPIC", "");
+        if (vC != vM)
+            args << " --ioapic "                << vC;
+
+        // 6) VRDE
+        vM = machine->get("VRDE", "");
+        if (vM.empty() || (vM == "disabled")) {
+            args << " --vrde "                   << "on"
+                 << " --vrdeaddress "            << "127.0.0.1"
+                 << " --vrdeauthtype "           << "null"
+                 << " --vrdeport "               << rdpPort;
+        } else {
+
+            std::vector< std::string > argList;
+            std::map< std::string, std::string > vrdeOptions;
+            explodeStr( vM.substr(8, vM.length()-9), ", ", &argList );
+            parseLines( &argList, &vrdeOptions, ":", " ", 0, 1 );
+
+            // Stringify rtpPort
+            vC = ntos<int>(rdpPort);
+            
+            // Check for misconfigured VRDE
+            vM = ""; if (vrdeOptions.find("Address")!=vrdeOptions.end()) vM=vrdeOptions["Address"];
+            if (vM != "127.0.0.1")
+                args << " --vrdeaddress "        << "127.0.0.1";
+            vM = ""; if (vrdeOptions.find("Ports")!=vrdeOptions.end()) vM=vrdeOptions["Ports"];
+            if (vM != vC)
+                args << " --vrdeaddress "        << rdpPort;
+            vM = ""; if (vrdeOptions.find("Authentication type")!=vrdeOptions.end()) vM=vrdeOptions["Authentication type"];
+            if (vM != "null")
+                args << " --vrdeaddress "        << "null";
+
+        }
+
+        // 7) Boot medium
+        vC = bootMedium; vM = machine->get("Boot Device (1)", "");
+        std::transform(vM.begin(), vM.end(), vM.begin(), ::tolower);
+        if (vC != vM)
+            args << " --boot1 "             << vC;
+
+        // 8) NIC 1
+        vM = machine->get("NIC 1", "");
+        if (vM.empty() || (vM == "disabled")) {
+            args << " --nic1 "              << "nat";
+        }
+
+        // 9) NAT DNS Host Resolver (bugfix for hibernate cases)
+        args << " --natdnshostresolver1 "    << "on";
+
+        // 10) Enable graphical additions if instructed to do so
+        if ((flags & HVF_GRAPHICAL) != 0) {
+            args << " --draganddrop "       << "hosttoguest"
+                 << " --clipboard "         << "bidirectional";
+        }
+
+        // 11) Second nost-only NIC
+        if ((flags & HVF_DUAL_NIC) != 0) {
+            vM = machine->get("NIC 2", "");
+            if (vM.empty() || (vM == "disabled")) {
+                args << " --nic2 "          << "hostonly" 
+                     << " --hostonlyadapter2 \"" << local->get("hostonlyif") << "\"";
+            }
+        }
+
     }
 
     // Execute and handle errors
@@ -556,6 +623,54 @@ void VBoxSession::ConfigureVM() {
         errorOccured("Unable to modify the Virtual Machine", HVE_EXTERNAL_ERROR);
         return;
     }
+
+    // We add the NIC rules in a separate step, because if the NIC was previously
+    // disabled, there was no way to know which rules there were applied 
+    if ((flags & HVF_DUAL_NIC) == 0) {
+        args.str("");
+        args << "modifyvm " 
+             << parameters->get("vboxid")
+             << " --natpf1 " << "guestapi,tcp,127.0.0.1," << local->get("apiPort") << ",," << parameters->get("apiPort");
+
+        // Use custom execConfig to ignore "already exists" errors
+        SysExecConfig localExecCfg( execConfig );
+        localExecCfg.handleErrString( "A NAT rule of this name already exists", 100 );
+
+        // Add NAT rule
+        ans = this->wrapExec(args.str(), &lines, NULL, localExecCfg);
+        if ((ans != 0) && (ans != 100)) {
+            errorOccured("Unable to modify the Virtual Machine", HVE_EXTERNAL_ERROR);
+            return;
+        }
+
+    }
+
+
+//        << " --cpus "                   << parameters->get("cpus", "2")
+//        << " --memory "                 << parameters->get("memory", "1024")
+//        << " --cpuexecutioncap "        << parameters->get("executionCap", "80")
+//        << " --vram "                   << "32"
+//        << " --acpi "                   << "on"
+//        << " --ioapic "                 << "on"
+//        << " --vrde "                   << "on"
+//        << " --vrdeaddress "            << "127.0.0.1"
+//        << " --vrdeauthtype "           << "null"
+//        << " --vrdeport "               << rdpPort
+//        << " --boot1 "                  << bootMedium
+//        << " --boot2 "                  << "none"
+//        << " --boot3 "                  << "none" 
+//        << " --boot4 "                  << "none"
+//        << " --nic1 "                   << "nat"
+//        << " --natdnshostresolver1 "    << "on";
+//    
+//    // Setup network
+//    if ((flags & HVF_DUAL_NIC) != 0) {
+//        // Create two adapters if DUAL_NIC is specified
+//        args << " --nic2 "              << "hostonly" << " --hostonlyadapter2 \"" << local->get("hostonlyif") << "\"";
+//    } else {
+//        // Otherwise create a NAT rule
+//        args << " --natpf1 "            << "guestapi,tcp,127.0.0.1," << local->get("apiPort") << ",," << parameters->get("apiPort");
+//    }
 
     // We are initialized
     local->set("initialized","1");
@@ -1481,76 +1596,29 @@ int VBoxSession::update ( bool waitTillInactive ) {
     // Get the new state
     int newState = local->getNum<int>("state", 0);
 
-    // Check for some obvious cases, where the PID has gone
-    // away while we expect it to be there - this is much faster
-    // than quering VirtualBox.
-    if ((newState == SS_PAUSED) || (newState == SS_RUNNING)) {
-
-        // In these cases, the VM is supposed to be running
-        if (!isPIDAlive( local->getNum<int>("pid") )) {
-
-            // If the VBox logs are also missing, it means that
-            // the VM has gone away
-            if (!vboxLogExists( machine->get("Log folder") )) {
-                newState = SS_MISSING;
-
-            } else {
-
-                // Try to read the status from the log folder
-                int logState = getStateFromFile( machine->get("Log folder") );
-
-                // Check for some valid states from the logfile
-                if (logState == SS_POWEROFF) {
-                    newState = SS_POWEROFF;
-                } else if (logState == SS_SAVED) {
-                    newState = SS_SAVED;
-                } else if (logState == SS_AVAILABLE) {
-                    newState = SS_AVAILABLE;
-                } else if (logState == SS_RUNNING) {
-                    // isPIDAlive failed, but we are still running?
-                    // This means the PID is wrong, update it...
-                    newState = SS_RUNNING;
-                    local->setNum<int>("pid", getPIDFromFile( machine->get("Log folder")));
-                } else {
-                    CVMWA_LOG("Error", "Mismatching VM state " << logState << " to " << newState );
-                }
-
-            }
-        }
-
-    }
-
-    // If the machine was powered off, look for changes on the log file 
-    // and read the new state if something gets changed.
-    else if ((newState == SS_POWEROFF) || (newState == SS_SAVED) || (newState == SS_AVAILABLE)) {
-
-        // If the file exists, look for changes
+    //
+    // If after the sync we are still in the same state, this means that
+    // other instances of the library have not changed state. Try to read
+    // state from VirtualBox log file (faster than using VBoxManage).
+    //
+    if (lastState == newState) {
+        
+        // Check if log file is missing
         std::string logFile = machine->get("Log folder") + "/VBox.log";
         if (file_exists(logFile)) {
+            
+            // Look for changes in the timestamp
             unsigned long long newFileTime = getFileTimeMs(logFile);
             if (lastLogTime != newFileTime) {
                 lastLogTime = newFileTime;
-
-                // Try to read the status from the log folder
-                int logState = getStateFromFile( machine->get("Log folder") );
-
-                // Check for some valid states from the logfile
-                if (logState == SS_PAUSED) {
-                    newState = SS_PAUSED;
-                } else if (logState == SS_RUNNING) {
-                    newState = SS_RUNNING;
-                } else {
-                    CVMWA_LOG("Error", "Mismatching VM recovery " << logState << " to " << newState );
-                }
-
+                // Update the state from the log file
+                newState = getStateFromFile( machine->get("Log folder") );
             }
-        } else {
             
+        } else {
             // If the file has gone away, we are missing
             newState = SS_MISSING;
-
         }
-
     }
 
     // Handle state switches

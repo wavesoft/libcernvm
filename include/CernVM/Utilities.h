@@ -352,9 +352,10 @@ int                                                 decompressFile  ( const std:
 std::string                                         urlEncode       ( const std::string& url );
 
 /**
- * Explode function
+ * Explode functions
  */
 void                                                explode         ( std::string const &input, char sep, std::vector<std::string> * output );
+void                                                explodeStr      ( std::string const &input, std::string const &sep, std::vector<std::string> * output );
 
 /**
  * Get current date/time as a string

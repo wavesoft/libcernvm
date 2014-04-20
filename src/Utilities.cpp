@@ -1738,7 +1738,7 @@ std::string urlEncode ( const std::string &s ) {
 }
 
 /**
- * Explode the given string on the given character as separator
+ * Explode the given string using the given character as separator
  */
 void explode( std::string const &input, char sep, std::vector<std::string> * output ) {
     CRASH_REPORT_BEGIN;
@@ -1746,6 +1746,33 @@ void explode( std::string const &input, char sep, std::vector<std::string> * out
     std::string temp;
     while (std::getline(buffer, temp, sep))
         output->push_back(temp);
+    CRASH_REPORT_END;
+}
+
+/**
+ * Explode the given string using the given string as separator
+ */
+void explodeStr( std::string const &input, std::string const &sep, std::vector<std::string> * output ) {
+    CRASH_REPORT_BEGIN;
+    std::string temp;
+    size_t i=0, lp=0;
+    while (true) {
+        i = input.find(sep, lp);
+
+        // Check if we are done
+        if (i == string::npos) {
+            i = input.length();
+            temp = input.substr(lp, i);
+            if (!temp.empty())
+                output->push_back(temp);
+            break;
+        } else {
+            temp = input.substr(lp, i);
+            output->push_back(temp);
+            lp = i + sep.length();
+        }
+
+    }
     CRASH_REPORT_END;
 }
 
