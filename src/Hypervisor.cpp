@@ -737,6 +737,11 @@ int HVInstance::downloadFileGZ ( const std::string & fileURL, const std::string 
                 continue;
             }
 
+        }
+
+        // (2) If input file exists, but no extracted file exists, decompress
+        if ( !file_exists(sExtractedFilename) && file_exists(sOutFilename) ) {
+
             // Validate downloaded file checksum
             std::string  sChecksumFile = "";
             sha256_file( sOutFilename, &sChecksumFile );
@@ -749,17 +754,13 @@ int HVInstance::downloadFileGZ ( const std::string & fileURL, const std::string 
                 continue;
             }
 
-        }
-
-        // (2) If input file exists, but no extracted file exists, decompress
-        if ( !file_exists(sExtractedFilename) && file_exists(sOutFilename) ) {
-
             // Decompress GZip file
             if (pf) pf->doing("Extracting file");
             if (decompressFile( sOutFilename, sExtractedFilename ) != HVE_OK) {
                 // Could not extract. Erase and re-download
                 if (pf) pf->doing("Could not extract file. Re-downloading.");
                 ::remove( sOutFilename.c_str());
+                ::remove( sExtractedFilename.c_str());
                 continue;
             };
 
@@ -799,109 +800,6 @@ int HVInstance::downloadFileGZ ( const std::string & fileURL, const std::string 
     CRASH_REPORT_END;
 }
 
-
-/**
- * Download the specified CernVM version
- */
-/*
-int HVInstance::cernVMDownload( std::string version, std::string * filename, const FiniteTaskPtr & pf, std::string flavor, std::string arch ) {
-    CRASH_REPORT_BEGIN;
-    string sURL = URL_CERNVM_RELEASES "/ucernvm-images." + version + ".cernvm." + arch + "/ucernvm-" + flavor + "." + version + ".cernvm." + arch + ".iso";
-    string sOutput = this->dirDataCache + "/ucernvm-" + version + ".iso";
-
-    string sChecksumURL = sURL + ".sha256";
-    string sChecksumOutput = sOutput + ".sha256";
-
-    // Create a variable task for the download process
-    VariableTaskPtr downloadPf;
-    if (pf) {
-        downloadPf = pf->begin<VariableTask>( "Downloading CernVM" );
-    }
-
-    // Start downloading
-    *filename = sOutput;
-    if (file_exists(sOutput)) {
-        if (downloadPf) {
-            downloadPf->complete("File already exists");
-        }
-        return 0;
-    } else {
-        return downloadProvider->downloadFile(sURL, sOutput, downloadPf);
-    }
-
-    CRASH_REPORT_END;
-};
-*/
-
-/**
- * Download the specified generic, compressed disk image
- */
-/*
-int HVInstance::diskImageDownload( std::string url, std::string checksum, std::string * filename, const FiniteTaskPtr & pf ) {
-    CRASH_REPORT_BEGIN;
-    string sURL = url;
-    int res;
-    
-    CVMWA_LOG("Info", "Downloading disk image from " << url);
-
-    // Set maximum number of tasks to perform
-    if (pf) {
-        pf->doing("Downloading disk image");
-        pf->setMax(2);
-    }
-    
-    // Calculate the SHA256 checksum of the URL
-    string sChecksum = "";
-    sha256_buffer( url, &sChecksum );
-    
-    // Use the checksum as index
-    string sGZOutput = this->dirDataCache + "/disk-" + sChecksum + ".vdi.gz";
-    string sOutput = this->dirDataCache + "/disk-" + sChecksum + ".vdi";
-    CVMWA_LOG("Info", "Target disk file " << sGZOutput);
-
-    // Check if we have the uncompressed image in place
-    *filename = sOutput;
-    if (file_exists(sOutput) && !file_exists(sGZOutput)) {
-        CVMWA_LOG("Info", "Uncompressed file already exists");
-        if (pf) pf->complete("Uncompressed file already in place");
-        return HVE_ALREADY_EXISTS;
-
-    }
-    
-    // Try again if we failed/aborted the image decompression
-    if (file_exists(sGZOutput)) {
-
-        // Prepare the decompress sub-task if for some reason we already have the disk file in place
-        VariableTaskPtr compressPf;
-        if (pf) compressPf = pf->begin<VariableTask>("Extracting disk file");
-        
-        // Check decompressing file
-        res = __diskExtract( sGZOutput, checksum, sOutput, compressPf );
-
-        // If checksum is invalid, re-download the file.
-        // Otherwise we are good to exit.
-        if (res != HVE_NOT_VALIDATED) return res;
-
-    }
-    
-    // Prepare the download sub-task
-    VariableTaskPtr downloadPf;
-    if (pf) downloadPf = pf->begin<VariableTask>("Downloading disk file");
-
-    // Download the file to sGZOutput
-    CVMWA_LOG("Info", "Performing download from '" << sURL << "' to '" << sGZOutput << "'" );
-    res = downloadProvider->downloadFile(sURL, sGZOutput, downloadPf);
-    if (res != HVE_OK) return res;
-    
-    // Prepare the decompress sub-task
-    VariableTaskPtr compressPf;
-    if (pf) compressPf = pf->begin<VariableTask>("Extracting disk file");
-
-    // Validate & Decompress
-    return __diskExtract( sGZOutput, checksum, sOutput, compressPf );
-    CRASH_REPORT_END;
-};
-*/
 
 /**
  * Cross-platform exec and return for the hypervisor control binary
