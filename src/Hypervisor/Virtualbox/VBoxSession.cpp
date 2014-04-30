@@ -798,6 +798,7 @@ void VBoxSession::DownloadMedia() {
         string urlFilenamePart = getURLFilename(urlFilename);
         if (pf) pfDownload = pf->begin<FiniteTask>("Downloading CernVM ISO");
         if (urlFilenamePart.find(".gz") != std::string::npos) {
+            
             // Download compressed disk
             ans = hypervisor->downloadFileGZ(
                             urlFilename,
@@ -805,6 +806,10 @@ void VBoxSession::DownloadMedia() {
                             &sFilename,
                             pfDownload
                         );
+
+            // Strip .gz from the filename
+            sFilename = sFilename.substr(0, sFilename.length() - 3 );
+
         } else {
             // Download boot disk
             ans = hypervisor->downloadFile(

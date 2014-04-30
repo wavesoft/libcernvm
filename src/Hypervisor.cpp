@@ -737,6 +737,18 @@ int HVInstance::downloadFileGZ ( const std::string & fileURL, const std::string 
                 continue;
             }
 
+            // Validate downloaded file checksum
+            std::string  sChecksumFile = "";
+            sha256_file( sOutFilename, &sChecksumFile );
+
+            // Compare checksums
+            if (sChecksumFile.compare( checksumString ) != 0) {
+                // Invalid contents. Erase and re-download
+                if (pf) pf->doing("Downloaded file checksum invalid. Re-downloading.");
+                ::remove( sOutFilename.c_str());
+                continue;
+            }
+
         }
 
         // (2) If input file exists, but no extracted file exists, decompress
@@ -744,24 +756,17 @@ int HVInstance::downloadFileGZ ( const std::string & fileURL, const std::string 
 
             // Decompress GZip file
             if (pf) pf->doing("Extracting file");
-            decompressFile( sOutFilename, sExtractedFilename );
+            if (decompressFile( sOutFilename, sExtractedFilename ) != HVE_OK) {
+                // Could not extract. Erase and re-download
+                if (pf) pf->doing("Could not extract file. Re-downloading.");
+                ::remove( sOutFilename.c_str());
+                continue;
+            };
 
         }
 
         // (3) If extracted AND source file exists, validate checksum and delete source file
         if ( file_exists(sExtractedFilename) && file_exists(sOutFilename) ) {
-
-            // Calculate checksum
-            std::string     sChecksumFile = "";
-            sha256_file( sExtractedFilename, &sChecksumFile );
-
-            // Compare checksums
-            if (sChecksumFile.compare( checksumString ) != 0) {
-                // Invalid contents. Erase and re-download
-                if (pf) pf->doing("Extracted file checksum invalid. Re-downloading.");
-                ::remove( sExtractedFilename.c_str());
-                continue;
-            }
 
             // It was extracted. Remove compressed, downloaded file
             ::remove( sOutFilename.c_str());
