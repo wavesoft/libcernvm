@@ -484,6 +484,11 @@ public:
     virtual void            sessionDelete       ( const HVSessionPtr& session ) = 0;
 
     /**
+     * Remove a session from the list of open sessions
+     */
+    virtual void            sessionClose        ( const HVSessionPtr& session ) = 0;
+
+    /**
      * Validate a session using the specified input parameters
      */
     virtual int             sessionValidate     ( const ParameterMapPtr& parameters );

@@ -1547,7 +1547,7 @@ std::string VBoxSession::getExtraInfo ( int extraInfo ) {
 
     if (extraInfo == EXIF_VIDEO_MODE) {
         CVMWA_LOG("Debug", "Getting video mode")
-        map<string, string> info = this->getMachineInfo( 2000 );
+        map<string, string> info = this->getMachineInfo( 2, 2000 );
         
         for (std::map<string, string>::iterator it=info.begin(); it!=info.end(); ++it) {
             string pname = (*it).first;
@@ -1726,7 +1726,7 @@ void VBoxSession::FSMEnteringState( const int state, const bool final ) {
         if (final) this->fire( "stateChanged", ArgumentList( SS_MISSING ) );
     } else if (state == 8) { // Exists
         local->setNum<int>( "state", SS_AVAILABLE );
-        if (final) this->fire( "stateChanged", ArgumentList( SS_AVAILABLE ) );
+        //if (final) this->fire( "stateChanged", ArgumentList( SS_AVAILABLE ) );
     } else if (state == 4) { // Power off
         local->setNum<int>( "state", SS_POWEROFF );
         if (final) this->fire( "stateChanged", ArgumentList( SS_POWEROFF ) );
@@ -1944,7 +1944,7 @@ int VBoxSession::mountDisk ( const std::string & controller,
     std::string type;
     if (dtype == T_HDD) type="hdd";
     else if (dtype == T_DVD) type="dvddrive";
-    else if (dtype == T_FLOPPY) type="floppy";
+    else if (dtype == T_FLOPPY) type="fdd";
 
     // Calculate the name of the disk slot
     std::string DISK_SLOT = controller + " (" + port + ", " + device + ")";

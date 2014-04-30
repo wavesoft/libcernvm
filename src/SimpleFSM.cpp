@@ -329,6 +329,7 @@ void SimpleFSM::FSMSkew(int state) {
  * Local function to do FSMContinue when needed in a threaded way
  */
 void SimpleFSM::FSMThreadLoop() {
+	fsmThreadActive = true;
 
 	// Catch interruptions
 	try {
@@ -359,7 +360,7 @@ void SimpleFSM::FSMThreadLoop() {
 	}
 
 	// Cleanup
-	fsmThread = NULL;
+	fsmThreadActive = false;
 }
 
 /**
@@ -368,11 +369,15 @@ void SimpleFSM::FSMThreadLoop() {
 void SimpleFSM::FSMThreadStop() {
 
 	// Ensure we have a running thread
-	if (fsmThread == NULL) return;
+	if ((fsmThread == NULL) || (!fsmThreadActive)) 
+		return;
 
 	// Interrupt and reap
 	fsmThread->interrupt();
 	fsmThread->join();
+
+	// Cleanup thread
+	fsmThread = NULL;
 
 }
 

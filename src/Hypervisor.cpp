@@ -763,11 +763,6 @@ int HVInstance::downloadFileGZ ( const std::string & fileURL, const std::string 
                 continue;
             };
 
-        }
-
-        // (3) If extracted AND source file exists, validate checksum and delete source file
-        if ( file_exists(sExtractedFilename) && file_exists(sOutFilename) ) {
-
             // It was extracted. Remove compressed, downloaded file
             ::remove( sOutFilename.c_str());
 

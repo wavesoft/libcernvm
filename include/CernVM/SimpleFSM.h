@@ -192,6 +192,7 @@ protected:
 	std::list<FSMNode*>				fsmCurrentPath;
 	int								fsmTargetState;
 	bool 							fsmInsideHandler;
+	bool 							fsmThreadActive;
 	boost::thread *					fsmThread;
 
 private:

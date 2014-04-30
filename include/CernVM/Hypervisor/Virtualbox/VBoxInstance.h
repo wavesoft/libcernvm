@@ -70,6 +70,7 @@ public:
 
     virtual HVSessionPtr    sessionOpen         ( const ParameterMapPtr& parameters, const FiniteTaskPtr& pf );
     virtual void            sessionDelete       ( const HVSessionPtr& session );
+    virtual void            sessionClose        ( const HVSessionPtr& session );
 
     virtual int             getType             ( ) { return HV_VIRTUALBOX; };
     virtual int             loadSessions        ( const FiniteTaskPtr & pf = FiniteTaskPtr() );

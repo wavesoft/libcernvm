@@ -389,275 +389,6 @@ int __getPIDFromFile( std::string logPath ) {
 
 }
 
-/*
-int VBoxInstance::updateSession( HVSession * session, bool fast ) {
-    CRASH_REPORT_BEGIN;
-    vector<string> lines;
-    map<string, string> vms, diskinfo;
-    string secret, kk, kv;
-    string err;
-    bool prevEditable;
-
-    // Don't update session if we are in middle of something
-    if ((session->state == STATE_STARTING) || (session->state == STATE_OPPENING) || ((VBoxSession*)session)->updateLock)
-        return HVE_INVALID_STATE;
-    
-    // Get session's uuid
-    string uuid = session->uuid;
-    if (uuid.empty()) return HVE_USAGE_ERROR;
-    
-    // Collect details
-    map<string, string> info = this->getMachineInfo( uuid, 2000 );
-    if (info.empty()) 
-        return HVE_NOT_FOUND;
-    if (info.find(":ERROR:") != info.end())
-        return HVE_IO_ERROR;
-    
-    // Reset flags
-    prevEditable = session->editable;
-    session->flags = 0;
-    session->editable = true;
-    
-    // Check state
-    session->state = STATE_OPEN;
-    if (info.find("State") != info.end()) {
-        string state = info["State"];
-        if (state.find("running") != string::npos) {
-            session->state = STATE_STARTED;
-        } else if (state.find("paused") != string::npos) {
-            session->state = STATE_PAUSED;
-            session->editable = false;
-        } else if (state.find("saved") != string::npos) {
-            session->state = STATE_OPEN;
-            session->editable = false;
-        } else if (state.find("aborted") != string::npos) {
-            session->state = STATE_OPEN;
-        }
-    }
-    
-    // If session switched to editable state, commit pending property changes
-    if (session->editable && !prevEditable && !((VBoxSession*)session)->unsyncedProperties.empty()) {
-        for (std::map<string, string>::iterator it=((VBoxSession*)session)->unsyncedProperties.begin(); 
-                it!=((VBoxSession*)session)->unsyncedProperties.end(); ++it) {
-            string name = (*it).first;
-            string value = (*it).second;
-            
-            // Session is now editable
-            session->setProperty(name, value);
-        }
-    }
-    
-    // Reset property maps
-    ((VBoxSession*)session)->unsyncedProperties.clear();
-    ((VBoxSession*)session)->properties.clear();
-    
-    // Get CPU
-    if (info.find("Number of CPUs") != info.end()) {
-        session->cpus = ston<int>( info["Number of CPUs"] );
-    }
-    
-    // Check flags
-    if (info.find("Guest OS") != info.end()) {
-        string guestOS = info["Guest OS"];
-        if (guestOS.find("64 bit") != string::npos) {
-            session->flags |= HVF_SYSTEM_64BIT;
-        }
-    }
-
-    // Find configuration folder
-    if (info.find("Guest OS") != info.end()) {
-        string settingsFolder = info["Settings file"];
-
-        // Skip empty files
-        if (!settingsFolder.empty()) {
-
-            // Strip quotation marks
-            if ((settingsFolder[0] == '"') || (settingsFolder[0] == '\''))
-                settingsFolder = settingsFolder.substr( 1, settingsFolder.length() - 2);
-
-            // Strip the settings file (leave path) and store it on dataPath
-            ((VBoxSession*)session)->dataPath = stripComponent( settingsFolder );
-
-        } else {
-
-            // No data path found? Use system's temp directory
-            ((VBoxSession*)session)->dataPath = getTmpDir();
-
-        }
-
-    }
-
-    // Parse RDP info
-    if (info.find("VRDE") != info.end()) {
-        string rdpInfo = info["VRDE"];
-
-        // Example line: 'enabled (Address 127.0.0.1, Ports 39211, MultiConn: off, ReuseSingleConn: off, Authentication type: null)'
-        if (rdpInfo.find("enabled") != string::npos) {
-            size_t pStart = rdpInfo.find("Ports ");
-            if (pStart == string::npos) {
-                ((VBoxSession *)session)->rdpPort = 0;
-                CVMWA_LOG("Debug", "VRDE 'Ports' anchor not found");
-
-            } else {
-                pStart += 6;
-                size_t pEnd = rdpInfo.find(",", pStart);
-                string rdpPort = rdpInfo.substr( pStart, pEnd-pStart );
-
-                // Apply the rdp port
-                ((VBoxSession *)session)->rdpPort = ston<int>(rdpPort);
-                CVMWA_LOG("Debug", "VRDE Port is " << rdpPort);
-            }
-        } else {
-            ((VBoxSession *)session)->rdpPort = 0;
-            CVMWA_LOG("Debug", "VRDE not enabled");
-        }
-    } else {
-        CVMWA_LOG("Debug", "VRDE config not found");
-    }
-    
-    // Parse memory
-    if (info.find("Memory size") != info.end()) {
-        session->cpus = ston<int>( info["Number of CPUs"] );
-
-        // Parse memory
-        string mem = info["Memory size"];
-        mem = mem.substr(0, mem.length()-2);
-        session->memory = ston<int>(mem);
-
-    }
-    
-    // Parse CernVM Version from the ISO
-    session->version = DEFAULT_CERNVM_VERSION;
-    if (info.find( BOOT_DSK ) != info.end()) {
-
-        // Get the filename of the iso
-        getKV( info[ BOOT_DSK ], &kk, &kv, '(', 0 );
-        kk = kk.substr(0, kk.length()-1);
-        
-        // Extract CernVM Version from file
-        session->version = this->cernVMVersion( kk );
-        if (session->version.empty()) { 
-            // (If we could not find a version number it's a disk-deployment)
-            session->version = getFilename( kk );
-            session->flags |= HVF_DEPLOYMENT_HDD;
-        }
-    }
-    
-    // Check if there are guest additions mounted and update flags
-    if (info.find( GUESTADD_DSK ) != info.end()) {
-        
-        // Get the filename of the iso
-        getKV( info[ GUESTADD_DSK ], &kk, &kv, '(', 0 );
-        kk = kk.substr(0, kk.length()-1);
-        
-        // Check if we have the guest additions disk
-        if ( kk.compare(this->hvGuestAdditions) == 0 ) 
-            session->flags |= HVF_GUEST_ADDITIONS;
-        
-    }
-    
-    // Check if we have floppy adapter. If we do, it means we are using floppyIO -> updateFlags
-    if (info.find( FLOPPYIO_ENUM_NAME ) != info.end()) {
-        session->flags |= HVF_FLOPPY_IO;
-    }
-    
-    // Parse disk size
-    session->disk = 1024;
-    if (info.find( SCRATCH_DSK ) != info.end()) {
-
-        // Get the filename of the iso
-        getKV( info[ SCRATCH_DSK ], &kk, &kv, '(', 0 );
-        kk = kk.substr(0, kk.length()-1);
-        
-        // Collect disk info
-        int ans;
-        NAMED_MUTEX_LOCK(kk);
-        ans = this->exec("showhdinfo \""+kk+"\"", &lines, &err, 2, 2000);
-        NAMED_MUTEX_UNLOCK;
-        if (ans == 0) {
-        
-            // Tokenize data
-            diskinfo = tokenize( &lines, ':' );
-            if (diskinfo.find("Logical size") != diskinfo.end()) {
-                kk = diskinfo["Logical size"];
-                kk = kk.substr(0, kk.length()-7); // Strip " MBytes"
-                session->disk = ston<int>(kk);
-            }
-            
-        }
-    }
-    
-    // Parse execution cap
-    session->executionCap = 100;
-    if (info.find( "CPU exec cap" ) != info.end()) {
-        
-        // Get execution cap
-        kk = info["CPU exec cap"];
-        kk = kk.substr(0, kk.length()-1); // Strip %
-        
-        // Convert to number
-        session->executionCap = ston<int>( kk );
-        
-    }
-    
-    // If we want to be fast, skip time-consuming operations
-    if (!fast) {
-
-        // Parse all properties concurrently
-        map<string, string> allProps = this->getAllProperties( uuid );
-
-        if (allProps.find("/CVMWeb/daemon/controlled") == allProps.end()) {
-            session->daemonControlled = false;
-        } else {
-            session->daemonControlled = (allProps["/CVMWeb/daemon/controlled"].compare("1") == 0);
-        }
-
-        if (allProps.find("/CVMWeb/daemon/cap/min") == allProps.end()) {
-            session->daemonMinCap = 0;
-        } else {
-            session->daemonMinCap = ston<int>(allProps["/CVMWeb/daemon/cap/min"]);
-        }
-
-        if (allProps.find("/CVMWeb/daemon/cap/max") == allProps.end()) {
-            session->daemonMaxCap = 0;
-        } else {
-            session->daemonMaxCap = ston<int>(allProps["/CVMWeb/daemon/cap/max"]);
-        }
-
-        if (allProps.find("/CVMWeb/daemon/flags") == allProps.end()) {
-            session->daemonFlags = 0;
-        } else {
-            session->daemonFlags = ston<int>(allProps["/CVMWeb/daemon/flags"]);
-        }
-
-        if (allProps.find("/CVMWeb/userData") == allProps.end()) {
-            //session->userData = "";
-        } else {
-            //session->userData = base64_decode(allProps["/CVMWeb/userData"]);
-        }
-
-        if (allProps.find("/CVMWeb/localApiPort") == allProps.end()) {
-            ((VBoxSession *)session)->localApiPort = 0;
-        } else {
-            ((VBoxSession *)session)->localApiPort = ston<int>(allProps["/CVMWeb/localApiPort"]);
-        }
-        CVMWA_LOG("Debug", "LocalAPI Port = " << ((VBoxSession *)session)->localApiPort);
-
-        // Get hypervisor pid from file
-        if (info.find("Log folder") != info.end())
-            session->pid = __getPIDFromFile( info["Log folder"] );
-        
-        // Store allProps to properties
-        ((VBoxSession*)session)->properties = allProps;
-
-    }
-
-    // Updated successfuly
-    return HVE_OK;
-    CRASH_REPORT_END;
-}
-*/
-
 /**
  * Return a VirtualBox Session based on the VirtualBox UUID specified
  */
@@ -731,6 +462,26 @@ void VBoxInstance::sessionDelete ( const HVSessionPtr& session ) {
 
             // Done
             return;
+        }
+    }
+
+    CRASH_REPORT_END;
+}
+
+/**
+ * Remove session from open sessions
+ */
+void VBoxInstance::sessionClose( const HVSessionPtr& session ) {
+    CRASH_REPORT_BEGIN;
+
+    // Loook for the session object in the open sessions & remove it
+    for (std::list< HVSessionPtr >::iterator jt = openSessions.begin(); jt != openSessions.end(); ++jt) {
+        HVSessionPtr openSess = (*jt);
+        // Check if the session has gone away
+        if ( session->uuid.compare(openSess->uuid) == 0 ) {
+            // Remove from open sessions
+            openSessions.erase( jt );
+            break;
         }
     }
 
