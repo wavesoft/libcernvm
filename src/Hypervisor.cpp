@@ -462,7 +462,7 @@ externalContinue:
         if (!file_exists(sOutChecksum)) {
 
             // Restart VariableTaskPtr
-            if (pfDownload) pfDownload->restart("Downloading checksum file");
+            if (pfDownload) pfDownload->restart("Downloading checksum file", false);
 
             // Download file
             ans = downloadProvider->downloadFile( checksumURL, sOutChecksum, pfDownload );
@@ -552,7 +552,7 @@ int __downloadFile( const std::string & fileURL, const std::string & sOutFilenam
         if (!file_exists(sOutFilename)) {
 
             // Restart VariableTaskPtr
-            if (pfDownload) pfDownload->restart("Downloading file");
+            if (pfDownload) pfDownload->restart("Downloading file", false);
 
             // Download file
             ans = downloadProvider->downloadFile( fileURL, sOutFilename, pfDownload );
@@ -726,7 +726,7 @@ int HVInstance::downloadFileGZ ( const std::string & fileURL, const std::string 
         if ( !file_exists(sExtractedFilename) && !file_exists(sOutFilename) ) {
 
             // Restart VariableTaskPtr
-            if (pfDownload) pfDownload->restart("Downloading compressed file");
+            if (pfDownload) pfDownload->restart("Downloading compressed file", false);
 
             // Download file
             ans = downloadProvider->downloadFile( fileURL, sOutFilename, pfDownload );

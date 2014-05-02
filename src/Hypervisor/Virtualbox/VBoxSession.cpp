@@ -767,7 +767,7 @@ void VBoxSession::ConfigNetwork() {
  */
 void VBoxSession::DownloadMedia() {
     FiniteTaskPtr pf = FSMBegin<FiniteTask>("Downloading required media");
-    if (pf) pf->setMax(1);
+    if (pf) pf->setMax(2);
 
     // Extract flags
     int flags = parameters->getNum<int>("flags", 0);
