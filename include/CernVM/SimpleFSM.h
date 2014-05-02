@@ -210,6 +210,9 @@ private:
 	boost::mutex 					fsmwWaitMutex;
 	boost::condition_variable 		fsmwWaitCond;
 
+	// Mutex for safely stopping the thread
+	boost::mutex 					fsmmThreadSafe;
+
 	// Mutex for FSMGoto
 	boost::mutex  					fsmGotoMutex;
 

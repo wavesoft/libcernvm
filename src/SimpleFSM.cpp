@@ -336,9 +336,16 @@ void SimpleFSM::FSMThreadLoop() {
 
 		// Infinite thread loop
 		while (true) {
+			bool res = true;
 
 			// Keep running until we run out of steps
-			while (FSMContinue(true)) {
+			while (res) {
+
+				// Critical section
+				{
+					boost::unique_lock<boost::mutex> lock(fsmmThreadSafe);
+			        res = FSMContinue(true);
+				}
 
 				// Yield our time slice after executing an action
 				fsmThread->yield();
@@ -373,8 +380,11 @@ void SimpleFSM::FSMThreadStop() {
 		return;
 
 	// Interrupt and reap
-	fsmThread->interrupt();
-	fsmThread->join();
+	{
+		boost::unique_lock<boost::mutex> lock(fsmmThreadSafe);
+		fsmThread->interrupt();
+		fsmThread->join();
+	}
 
 	// Cleanup thread
 	fsmThread = NULL;

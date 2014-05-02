@@ -1095,6 +1095,40 @@ void VBoxSession::CheckVMAPI() {
     FSMDone("VM API medium does not need to be modified");
 }
 
+/**
+ * Check the integrity of the VM Configuration before booting it
+ */
+void VBoxSession::CheckIntegrity() {
+    FSMDoing("Checking VM integrity");
+
+    // Query VM status and fetch local state variable
+    map<string, string> info = getMachineInfo();
+
+    // Check if machine configuration is excactly the same as stored
+    bool valid = true;
+    for (map<string, string>::iterator it = info.begin(); it != info.end(); ++it) {
+        string key = (*it).first;
+        string v1 = (*it).second;
+        string v2 = machine->get(key, "");
+        // Validate key
+        if (v1.compare(v2) != 0) {
+            valid = false;
+            break;
+        }
+    }
+
+    // Take this opportunity to update the machine configuration
+    machine->fromMap( &info, true );    
+
+    // Skew towards network configuration
+    if (!valid) {
+        FSMSkew( 210 );
+    }
+
+
+    FSMDone("VM Integrity validated");
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
