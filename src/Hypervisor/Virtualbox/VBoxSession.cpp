@@ -583,6 +583,9 @@ void VBoxSession::ConfigureVM() {
             if (vM != "null")
                 args << " --vrdeaddress "        << "null";
 
+            // And of course, enable
+            args << " --vrde "                   << "on";
+
         }
 
         // 7) Boot medium

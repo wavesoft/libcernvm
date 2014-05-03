@@ -77,11 +77,7 @@ public:
             FSM_HANDLER(104, &VBoxSession::CreateVM,                8);         // Create new VM
 
             // 202: CONFIGURE SEQUENCE
-            FSM_HANDLER(202, &VBoxSession::DownloadMedia,           210);       // Download required media files
-                FSM_HANDLER(210, &VBoxSession::ConfigNetwork,       203);       // Configure the network devices
-                FSM_HANDLER(203, &VBoxSession::ConfigureVMBoot,     204);       // Configure Boot media
-                FSM_HANDLER(204, &VBoxSession::ConfigureVMScratch,  201);       // Configure Scratch storage
-                FSM_HANDLER(201, &VBoxSession::ConfigureVM,         4);         // Configure VM
+            FSM_HANDLER(202, &VBoxSession::DownloadMedia,           4);         // Download required media files
 
             // 105: DESTROY SEQUENCE
             FSM_HANDLER(105, &VBoxSession::ReleaseVMScratch,        207);       // Release Scratch storage
@@ -102,9 +98,12 @@ public:
                 FSM_HANDLER(209, &VBoxSession::ReleaseVMAPI,        4);         // Release the VM API media
 
             // 108: START SEQUENCE
-            FSM_HANDLER(108, &VBoxSession::PrepareVMBoot,           205);       // Prepare start parameters
-                FSM_HANDLER(205, &VBoxSession::ConfigureVMAPI,      212);       // Configure API Disks
-                FSM_HANDLER(212, &VBoxSession::CheckIntegrity,      206);       // Check integrity of the configured VM
+            FSM_HANDLER(108, &VBoxSession::PrepareVMBoot,           210);       // Prepare start parameters
+                FSM_HANDLER(210, &VBoxSession::ConfigNetwork,       203);       // Configure the network devices
+                FSM_HANDLER(203, &VBoxSession::ConfigureVMBoot,     204);       // Configure Boot media
+                FSM_HANDLER(204, &VBoxSession::ConfigureVMScratch,  201);       // Configure Scratch storage
+                FSM_HANDLER(201, &VBoxSession::ConfigureVM,         205);       // Configure VM
+                FSM_HANDLER(205, &VBoxSession::ConfigureVMAPI,      206);       // Configure API Disks
                 FSM_HANDLER(206, &VBoxSession::StartVM,             7);         // Launch the VM
 
             // 109: SAVE STATE SEQUENCE
