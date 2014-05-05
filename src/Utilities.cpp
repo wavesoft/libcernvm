@@ -1826,8 +1826,7 @@ unsigned long long getFileTimeMs ( const std::string& file ) {
     }
 
     // Get file times
-    FILETIME ftCreate, ftAccess, ftWrite;
-    DWORD dwRet;
+    FILETIME ftCreate, ftAccess;
     if (!GetFileTime(hFile, &ftCreate, &ftAccess, (FILETIME*)&llWriteTime)) {
         CVMWA_LOG("Error", "Could not read file times of " << file);
         CloseHandle( hFile );
