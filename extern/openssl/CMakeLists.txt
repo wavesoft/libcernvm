@@ -14,12 +14,12 @@ string(REPLACE "." "_" OPENSSL_VER_DASHED ${OPENSSL_VERSION})
 
 # Setup archive
 set( ARCHIVE_URL  "https://github.com/openssl/openssl/archive/OpenSSL_${OPENSSL_VER_DASHED}.zip" )
-set( ARCHIVE_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/openssl-${OPENSSL_VERSION}" )
+set( ARCHIVE_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/openssl-${OPENSSL_VERSION}-${CMAKE_BUILD_TYPE}" )
 set( ARCHIVE_EXT  ".zip" )
 
 # Check if we have the archive
 if ( NOT EXISTS ${ARCHIVE_DIR} )
-    set( ARCHIVE_FILE "${ARCHIVE_DIR}${ARCHIVE_EXT}" )
+    set( ARCHIVE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/openssl-${OPENSSL_VERSION}${ARCHIVE_EXT}")
 
     # Make the directory
     FILE( MAKE_DIRECTORY ${ARCHIVE_DIR} )
