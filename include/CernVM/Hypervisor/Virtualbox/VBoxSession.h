@@ -61,7 +61,6 @@ public:
             FSM_STATE(5, 107,211);  // Saved
             FSM_STATE(6, 109,111);  // Paused
             FSM_STATE(7, 110,106);  // Running
-            FSM_STATE(8, 202,208);  // Exists
 
             // 100: INITIALIZE HYPERVISOR
             FSM_HANDLER(100, &VBoxSession::Initialize,              101);
@@ -74,17 +73,12 @@ public:
                 FSM_HANDLER(103, &VBoxSession::CureError,           101);       // Try to recover error and recheck state
 
             // 104: CREATE SEQUENCE
-            FSM_HANDLER(104, &VBoxSession::CreateVM,                8);         // Create new VM
-
-            // 202: CONFIGURE SEQUENCE
-            FSM_HANDLER(202, &VBoxSession::DownloadMedia,           4);         // Download required media files
+            FSM_HANDLER(104, &VBoxSession::CreateVM,                4);         // Create new VM
 
             // 105: DESTROY SEQUENCE
             FSM_HANDLER(105, &VBoxSession::ReleaseVMScratch,        207);       // Release Scratch storage
-                FSM_HANDLER(207, &VBoxSession::ReleaseVMBoot,       8);         // Release Boot Media
-
-            // 208: CLEANUP SEQUENCE
-            FSM_HANDLER(208, &VBoxSession::DestroyVM,               3);         // Destroy VM
+                FSM_HANDLER(207, &VBoxSession::ReleaseVMBoot,       208);       // Release Boot Media
+                FSM_HANDLER(208, &VBoxSession::DestroyVM,           3);         // Destroy VM
 
             // 106: POWEROFF SEQUENCE
             FSM_HANDLER(106, &VBoxSession::PoweroffVM,              209);       // Power off the VM
@@ -99,10 +93,11 @@ public:
 
             // 108: START SEQUENCE
             FSM_HANDLER(108, &VBoxSession::PrepareVMBoot,           210);       // Prepare start parameters
-                FSM_HANDLER(210, &VBoxSession::ConfigNetwork,       203);       // Configure the network devices
+                FSM_HANDLER(210, &VBoxSession::ConfigNetwork,       201);       // Configure the network devices
+                FSM_HANDLER(201, &VBoxSession::ConfigureVM,         202);       // Configure VM
+                FSM_HANDLER(202, &VBoxSession::DownloadMedia,       203);       // Download required media files
                 FSM_HANDLER(203, &VBoxSession::ConfigureVMBoot,     204);       // Configure Boot media
-                FSM_HANDLER(204, &VBoxSession::ConfigureVMScratch,  201);       // Configure Scratch storage
-                FSM_HANDLER(201, &VBoxSession::ConfigureVM,         205);       // Configure VM
+                FSM_HANDLER(204, &VBoxSession::ConfigureVMScratch,  205);       // Configure Scratch storage
                 FSM_HANDLER(205, &VBoxSession::ConfigureVMAPI,      206);       // Configure API Disks
                 FSM_HANDLER(206, &VBoxSession::StartVM,             7);         // Launch the VM
 
@@ -125,6 +120,7 @@ public:
         errorTimestamp = 0;
         errorCode = 0;
         errorMessage = "";
+        lastMachineInfoTimestamp = 0;
 
     }
 
@@ -268,6 +264,11 @@ protected:
     std::string             errorMessage;
     int                     errorCount;
     unsigned long           errorTimestamp;
+
+    // getMachineInfo helpers
+    std::map<std::string,
+        std::string>        lastMachineInfo;
+    long                    lastMachineInfoTimestamp;
 
     // Detection of virtualbox log modification time
     unsigned long long      lastLogTime;

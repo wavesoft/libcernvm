@@ -107,7 +107,7 @@ std::string macroReplace( ParameterMapPtr mapData, std::string iString ) {
  * state change.
  */
 int getStateFromFile( std::string logPath ) {
-    int state = SS_AVAILABLE;
+    int state = SS_POWEROFF;
 
     // Locate Logfile
     string logFile = logPath + "/VBox.log";
@@ -311,39 +311,28 @@ void VBoxSession::UpdateSession() {
         // Route according to state
         if (info.find("State") != info.end()) {
 
-            // Check if we are not initialized
-            if (localInitialized == 0) {
-
-                // We are not initialized, so just switch to 'exists' state and
-                // let it be re-initialized.
-                FSMSkew(8);
-                FSMDone("Session is not initialized");
-
+            // Switch according to state
+            string state = info["State"];
+            if (state.find("running") != string::npos) {
+                FSMSkew(7); // Running state
+                FSMDone("Session is running");
+            } else if (state.find("paused") != string::npos) {
+                FSMSkew(6); // Paused state
+                FSMDone("Session is paused");
+            } else if (state.find("saved") != string::npos) {
+                FSMSkew(5); // Saved state
+                FSMDone("Session is saved");
+            } else if (state.find("aborted") != string::npos) {
+                FSMSkew(4); // Aborted is also a 'powered-off' state
+                FSMDone("Session is aborted");
+            } else if (state.find("powered off") != string::npos) {
+                FSMSkew(4); // Powered off state
+                FSMDone("Session is powered off");
             } else {
-
-                string state = info["State"];
-                if (state.find("running") != string::npos) {
-                    FSMSkew(7); // Running state
-                    FSMDone("Session is running");
-                } else if (state.find("paused") != string::npos) {
-                    FSMSkew(6); // Paused state
-                    FSMDone("Session is paused");
-                } else if (state.find("saved") != string::npos) {
-                    FSMSkew(5); // Saved state
-                    FSMDone("Session is saved");
-                } else if (state.find("aborted") != string::npos) {
-                    FSMSkew(4); // Aborted is also a 'powered-off' state
-                    FSMDone("Session is aborted");
-                } else if (state.find("powered off") != string::npos) {
-                    FSMSkew(4); // Powered off state
-                    FSMDone("Session is powered off");
-                } else {
-                    // UNKNOWN STATE //
-                    CVMWA_LOG("ERROR", "Unknown state");
-                }
-                
+                // UNKNOWN STATE //
+                CVMWA_LOG("ERROR", "Unknown state");
             }
-
+            
         } else {
             // ERROR //
             CVMWA_LOG("ERROR", "Missing state info");
@@ -561,6 +550,7 @@ void VBoxSession::ConfigureVM() {
             args << " --vrde "                   << "on"
                  << " --vrdeaddress "            << "127.0.0.1"
                  << " --vrdeauthtype "           << "null"
+                 << " --vrdemulticon "           << "on"
                  << " --vrdeport "               << rdpPort;
         } else {
 
@@ -576,15 +566,18 @@ void VBoxSession::ConfigureVM() {
             vM = ""; if (vrdeOptions.find("Address")!=vrdeOptions.end()) vM=vrdeOptions["Address"];
             if (vM != "127.0.0.1")
                 args << " --vrdeaddress "        << "127.0.0.1";
-            vM = ""; if (vrdeOptions.find("Ports")!=vrdeOptions.end()) vM=vrdeOptions["Ports"];
-            if (vM != vC)
-                args << " --vrdeaddress "        << rdpPort;
             vM = ""; if (vrdeOptions.find("Authentication type")!=vrdeOptions.end()) vM=vrdeOptions["Authentication type"];
             if (vM != "null")
-                args << " --vrdeaddress "        << "null";
+                args << " --vrdeauthtype "        << "null";
+            vM = ""; if (vrdeOptions.find("Ports")!=vrdeOptions.end()) vM=vrdeOptions["Ports"];
+            if (vM != vC)
+                args << " --vrdeport "            << rdpPort;
+            vM = ""; if (vrdeOptions.find("MultiConn")!=vrdeOptions.end()) vM=vrdeOptions["MultiConn"];
+            if (vM != "on")
+                args << " --vrdemulticon "        << "on";
 
             // And of course, enable
-            args << " --vrde "                   << "on";
+            args << " --vrde "                    << "on";
 
         }
 
@@ -702,6 +695,8 @@ void VBoxSession::ConfigNetwork() {
         //  any kind of traffic to pass through to the VM. The API URL will be built upon  //
         //  this IP address.                                                               //
         // =============================================================================== //
+
+        FSMDoing("Configuring host-only adapter");
 
         // Don't touch the host-only interface if we have one already defined
         if (!local->contains("hostonlyif")) {
@@ -1266,7 +1261,7 @@ void VBoxSession::ReleaseVMAPI() {
 void VBoxSession::PrepareVMBoot() {
     FSMDoing("Preparing for VM Boot");
 
-    FSMDone("VM Booted");
+    FSMDone("VM prepared for boot");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1586,11 +1581,13 @@ std::string VBoxSession::getExtraInfo ( int extraInfo ) {
         CVMWA_LOG("Debug", "Getting video mode")
         map<string, string> info = this->getMachineInfo( 2, 2000 );
         
+        /*
         for (std::map<string, string>::iterator it=info.begin(); it!=info.end(); ++it) {
             string pname = (*it).first;
             string pvalue = (*it).second;
             CVMWA_LOG("Debug", "getMachineInfo(): '" << pname << "' = '" << pvalue << "'");
         }
+        */
         
         if (info.find("Video mode") != info.end())
             return info["Video mode"];
@@ -1670,8 +1667,6 @@ int VBoxSession::update ( bool waitTillInactive ) {
         // Handle state switches
         if (newState == SS_MISSING) {
             FSMSkew( 3 ); // Goto 'Destroyed'
-        } else if (newState == SS_AVAILABLE) {
-            FSMSkew( 8 ); // Goto 'Exists'
         } else if (newState == SS_POWEROFF) {
             FSMSkew( 4 ); // Goto 'Power Off'
         } else if (newState == SS_SAVED) {
@@ -1761,9 +1756,6 @@ void VBoxSession::FSMEnteringState( const int state, const bool final ) {
     if (state == 3) { // Destroyed
         local->setNum<int>( "state", SS_MISSING );
         if (final) this->fire( "stateChanged", ArgumentList( SS_MISSING ) );
-    } else if (state == 8) { // Exists
-        local->setNum<int>( "state", SS_AVAILABLE );
-        //if (final) this->fire( "stateChanged", ArgumentList( SS_AVAILABLE ) );
     } else if (state == 4) { // Power off
         local->setNum<int>( "state", SS_POWEROFF );
         if (final) this->fire( "stateChanged", ArgumentList( SS_POWEROFF ) );
@@ -2026,7 +2018,7 @@ int VBoxSession::mountDisk ( const std::string & controller,
                 if ( (disk["Type"].compare("multiattach") == 0) && (disk["Parent UUID"].compare("base") == 0) && samePath(disk["Location"],diskFile) ) {
                     // Use the master UUID instead of the filename
                     CVMWA_LOG("Info", "Found master with UUID " << disk["UUID"]);
-                    masterDiskUUID = "{" + disk["UUID"] + "}";
+                    masterDiskUUID = disk["UUID"]; //{" + disk["UUID"] + "}";
                     break;
                 }
             }
@@ -2343,8 +2335,14 @@ int VBoxSession::getHostOnlyAdapter ( std::string * adapterName, const FiniteTas
  */
 std::map<std::string, std::string> VBoxSession::getMachineInfo ( int retries, int timeout ) {
     CRASH_REPORT_BEGIN;
-    vector<string> lines;
     map<string, string> dat;
+    vector<string> lines;
+
+    // Check cached response
+    long ms = getMillis();
+    if (ms < lastMachineInfoTimestamp + 500) {
+        return lastMachineInfo;
+    }
 
     // Local SysExecConfig
     SysExecConfig config(execConfig);
@@ -2359,7 +2357,10 @@ std::map<std::string, std::string> VBoxSession::getMachineInfo ( int retries, in
     }
     
     /* Tokenize response */
-    return tokenize( &lines, ':' );
+    lastMachineInfo = tokenize( &lines, ':' );
+    lastMachineInfoTimestamp = ms;
+    return lastMachineInfo;
+
     CRASH_REPORT_END;
 }
 

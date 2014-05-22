@@ -778,6 +778,12 @@ int __sysExec( string app, string cmdline, vector<string> * stdoutList, string *
         /* Release the writing end */
         close(outfd[1]); close(errfd[1]);
 
+        /* Nasty way of closing any other debris from the parent */
+        int maxFD = getdtablesize();
+        for (int cfd=3; cfd<maxFD; cfd++) {
+            close(cfd);
+        }
+
         /* Split cmdline into string components */
         char *parts[512];
         parts[0] = (char *)app.c_str();
