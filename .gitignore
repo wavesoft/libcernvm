@@ -23,3 +23,6 @@ extern/nss/nss-*
 extern/openssl/openssl-*
 extern/curl/curl-*
 *.~vsd
+
+# Some tests for netstat
+netstat*
