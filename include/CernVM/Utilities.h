@@ -36,6 +36,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <curl/curl.h>
 #include <curl/easy.h>
 
@@ -329,7 +330,7 @@ int                                                 splitArguments  ( std::strin
 /**
  * Check if the specified port is accepting connections
  */
-bool                                                isPortOpen      ( const char * host, int port, unsigned char handshake = HSK_NONE );
+bool                                                isPortOpen      ( const char * host, int port, unsigned char handshake = HSK_NONE, int timeoutSec = 1 );
 
 /**
  * Display a hexdump of the given buffer

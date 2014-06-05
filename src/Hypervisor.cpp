@@ -334,11 +334,11 @@ int __diskExtract( const std::string& sGZOutput, const std::string& checksum, co
  * Try to connect to the API port and check if it succeeded
  */
 
-bool HVSession::isAPIAlive( unsigned char handshake ) {
+bool HVSession::isAPIAlive( unsigned char handshake, int timeoutSec ) {
     CRASH_REPORT_BEGIN;
-    std::string ip = this->getAPIHost();;
+    std::string ip = this->getAPIHost();
     if (ip.empty()) return false;
-    return isPortOpen( ip.c_str(), this->getAPIPort(), handshake );
+    return isPortOpen( ip.c_str(), this->getAPIPort(), handshake, timeoutSec );
     CRASH_REPORT_END;
 }
 

@@ -1415,11 +1415,13 @@ string compactID( string id ) {
 /**
  * Check if the given port is open
  */
-bool isPortOpen( const char * host, int port, unsigned char handshake ) {
+bool isPortOpen( const char * host, int port, unsigned char handshake, int timeoutSec ) {
     CRASH_REPORT_BEGIN;
     SOCKET sock;
+    char readBuf[1024];
+    int nDataArrived = 0;
 
-    struct sockaddr_in client;
+    struct sockaddr_in client;    
     memset(&client, 0, sizeof(struct sockaddr_in));
     client.sin_family = AF_INET;
     client.sin_port = htons( port );
@@ -1427,25 +1429,59 @@ bool isPortOpen( const char * host, int port, unsigned char handshake ) {
 
     // Open a connection
     sock = (SOCKET) socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) return false;
+    if (sock < 0) {
+        return false;
+    }
 
     // Set timeouts
     struct timeval timeout;      
-    timeout.tv_sec = 1;
+    timeout.tv_sec = timeoutSec;
     timeout.tv_usec = 0;
     if (setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
                 sizeof(timeout)) < 0) return false;
     if (setsockopt (sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,
                 sizeof(timeout)) < 0) return false;
 
+    // don't leave the socket in a TIME_WAIT state if we close the connection
+    struct linger fix_ling;
+    fix_ling.l_onoff = 1;
+    fix_ling.l_linger = 0;
+    int result = setsockopt(sock, SOL_SOCKET, SO_LINGER, &fix_ling, sizeof(fix_ling));
+    if (result < 0) {
+        #ifdef _WIN32
+            shutdown(sock, SD_BOTH ); 
+            closesocket(sock);
+        #else
+            ::shutdown(sock, SHUT_RDWR);
+            ::close(sock);
+        #endif
+        return false;
+    }
+
+    // fix the socket options
+    int sockopt = 1;
+    result = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &sockopt, sizeof(sockopt));
+    if (result < 0) {
+        #ifdef _WIN32
+            shutdown(sock, SD_BOTH ); 
+            closesocket(sock);
+        #else
+            ::shutdown(sock, SHUT_RDWR);
+            ::close(sock);
+        #endif
+        return false;
+    }
+
     // Try to connect
-    int result = connect(sock, (struct sockaddr *) &client,sizeof(client));
+    result = connect(sock, (struct sockaddr *) &client,sizeof(client));
 
     // Check for open failures
     if (result < 0) {
         #ifdef _WIN32
+            shutdown(sock, SD_BOTH ); 
             closesocket(sock);
         #else
+            ::shutdown(sock, SHUT_RDWR);
             ::close(sock);
         #endif
         return false;
@@ -1458,8 +1494,10 @@ bool isPortOpen( const char * host, int port, unsigned char handshake ) {
         int n = send(sock," \n",2,0);
         if (n < 0) {
             #ifdef _WIN32
+                shutdown(sock, SD_BOTH ); 
                 closesocket(sock);
             #else
+                ::shutdown(sock, SHUT_RDWR);
                 ::close(sock);
             #endif
             return false;
@@ -1471,8 +1509,27 @@ bool isPortOpen( const char * host, int port, unsigned char handshake ) {
         getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*) &errorCode, &szErrorCode );
         if (errorCode != 0 ){
             #ifdef _WIN32
+                shutdown(sock, SD_BOTH ); 
                 closesocket(sock);
             #else
+                ::shutdown(sock, SHUT_RDWR);
+                ::close(sock);
+            #endif
+            return false;
+        }
+
+        // Drain buffer
+        while ( (n = recv(sock, &readBuf, 1024, 0)) >= 0 ) {
+            nDataArrived += n;
+        }
+
+        // Check for errors
+        if (n < 0) {
+            #ifdef _WIN32
+                shutdown(sock, SD_BOTH ); 
+                closesocket(sock);
+            #else
+                ::shutdown(sock, SHUT_RDWR);
                 ::close(sock);
             #endif
             return false;
@@ -1483,7 +1540,7 @@ bool isPortOpen( const char * host, int port, unsigned char handshake ) {
 
         // Prepare the request
         std::ostringstream oss;
-        oss << "GET / HTTP/1.1\r\n"
+        oss << "GET / HTTP/1.0\r\n"
             << "Host: " << host << "\r\n"
             << "Connection: close\r\n"
             << "\r\n";
@@ -1492,41 +1549,71 @@ bool isPortOpen( const char * host, int port, unsigned char handshake ) {
         int n = send(sock, oss.str().c_str() , oss.str().length(), 0);
         if (n < 0) {
             #ifdef _WIN32
+                shutdown(sock, SD_BOTH ); 
                 closesocket(sock);
             #else
+                ::shutdown(sock, SHUT_RDWR);
                 ::close(sock);
             #endif
             return false;
         }
 
-        // Try to read a chunk
-        char readBuf[1024];
-        n = recv(sock, readBuf, 1024, 0);
-        if (n <= 0) {
-
-            // Either an error, or connection closed without
-            // any data sent. However we did provide a valid HTTP 
-            // request, which means the remote endpoint is not really
-            // an HTTP server, or something went really wrong.
+        // Check if it's still connected
+        int errorCode = 0;
+        socklen_t szErrorCode = sizeof(errorCode);
+        getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*) &errorCode, &szErrorCode );
+        if (errorCode != 0 ){
             #ifdef _WIN32
+                shutdown(sock, SD_BOTH ); 
                 closesocket(sock);
             #else
+                ::shutdown(sock, SHUT_RDWR);
                 ::close(sock);
             #endif
             return false;
+        }
 
+        // Drain buffer
+        while ( (n = recv(sock, &readBuf, 1024, 0)) > 0 ) {
+            nDataArrived += n;
+        }
+
+        // Check for errors
+        if (n < 0) {
+            #ifdef _WIN32
+                shutdown(sock, SD_BOTH ); 
+                closesocket(sock);
+            #else
+                ::shutdown(sock, SHUT_RDWR);
+                ::close(sock);
+            #endif
+            return false;
+        }
+
+        // Check if we got a blank response
+        if (nDataArrived == 0) {
+            #ifdef _WIN32
+                shutdown(sock, SD_BOTH ); 
+                closesocket(sock);
+            #else
+                ::shutdown(sock, SHUT_RDWR);
+                ::close(sock);
+            #endif
+            return false;
         }
 
     }
 
     // It works
     #ifdef _WIN32
+        shutdown(sock, SD_BOTH ); 
         closesocket(sock);
     #else
+        ::shutdown(sock, SHUT_RDWR);
         ::close(sock);
     #endif
-    return true;
 
+    return true;
     CRASH_REPORT_END;
 }
 

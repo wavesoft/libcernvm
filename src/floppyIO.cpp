@@ -145,9 +145,11 @@ void FloppyIO::reset() {
     if (this->fIO == NULL) return;
 
     // Reset buffers
-    this->fIO->seekp(0);
+    this->fIO->seekp(0, ios_base::beg);
     char * buffer = new char[this->szFloppy];
+    memset(buffer,0,this->szFloppy);
     this->fIO->write(buffer, this->szFloppy);
+    this->fIO->flush();
     delete[] buffer;      
     CRASH_REPORT_END;
 }
@@ -179,11 +181,11 @@ void FloppyIO::send(string strData) {
     }
     
     // Write the data to file
-    this->fIO->seekp(this->ofsOutput);
+    this->fIO->seekp(this->ofsOutput, ios_base::beg);
     this->fIO->write(dataToSend, this->szOutput);
     
     // Notify the client that we placed data (Client should clear this on read)
-    this->fIO->seekp(this->ofsCtrlByteOut);
+    this->fIO->seekp(this->ofsCtrlByteOut, ios_base::beg);
     this->fIO->write("\x01", 1);
 
     // Delete buffer
@@ -213,7 +215,7 @@ string FloppyIO::receive() {
     this->fIO->read(dataToReceive, this->szInput);
     
     // Notify the client that we have read the data
-    this->fIO->seekp(this->ofsCtrlByteIn);
+    this->fIO->seekp(this->ofsCtrlByteIn, ios_base::beg);
     this->fIO->write("\x00", 1);
     
     // Copy input data to string object

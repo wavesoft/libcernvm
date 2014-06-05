@@ -69,6 +69,10 @@ public:
     virtual int                 downloadFile( const std::string &URL, const std::string &destination, const VariableTaskPtr& pf = VariableTaskPtr() ) = 0;
     virtual int                 downloadText( const std::string &URL, std::string *buffer, const VariableTaskPtr& pf = VariableTaskPtr() ) = 0;
     
+    // Abort flag
+    virtual int                 abort() = 0;
+    virtual int                 abortAll() = 0;
+
     // Get/set system default download provider
     static DownloadProviderPtr  Default();
     static void                 setDefault( const DownloadProviderPtr& provider );
@@ -98,6 +102,8 @@ public:
         }
 
         // Reset vars
+        this->abortFlag = false;
+        this->abortPersistsFlag = false;
         this->maxStreamSize = 0;
 
     };
@@ -108,11 +114,15 @@ public:
     // Curl I/O
     virtual int                 downloadFile( const std::string &URL, const std::string &destination, const VariableTaskPtr& pf = VariableTaskPtr()  ) ;
     virtual int                 downloadText( const std::string &URL, std::string *buffer, const VariableTaskPtr& pf = VariableTaskPtr() );
+    virtual int                 abort();
+    virtual int                 abortAll();
 
-    // Private functions
+    // Private variables
     CURL                        * curl;
     VariableTaskPtr             pf;
     long                        maxStreamSize;
+    bool                        abortFlag;
+    bool                        abortPersistsFlag;
     std::ofstream               fStream;
     std::ostringstream          sStream;
     

@@ -53,7 +53,7 @@ using namespace std;
 // Default floppy disk size (In bytes)
 // 
 // VirtualBox complains if bigger than 28K
-// It's supposed to go till 1474560 however (!.44 Mb)
+// It's supposed to go till 1474560 however (1.44 Mb)
 
 #define DEFAULT_FLOPPY_SIZE 28672
 

@@ -383,7 +383,7 @@ public:
      * - HSK_HTTP   : Send a basic HTTP GET / request and expect some data as response 
      *
      */
-    virtual bool            isAPIAlive( unsigned char handshake = HSK_HTTP );
+    virtual bool            isAPIAlive( unsigned char handshake = HSK_HTTP, int timeoutSec = 1 );
 
     /**
      * Get extra information from the session that were not thought

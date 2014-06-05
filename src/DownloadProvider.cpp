@@ -140,6 +140,24 @@ size_t __curl_datacb_string(void *ptr, size_t size, size_t nmemb, CURLProvider *
 }
 
 /**
+ * Callback function for checking for aborted CURL state
+ */
+int __curl_xferinfo(CURLProvider * self, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
+    CRASH_REPORT_BEGIN;
+
+    // If we are aborted return -1
+    if (self->abortFlag) {
+        self->abortFlag = self->abortPersistsFlag;
+        return -1;
+    }
+
+    // Return 0 to continue downlad
+    return 0;
+
+    CRASH_REPORT_END;
+}
+
+/**
  * Download a file using CURL
  */
 int CURLProvider::downloadFile( const std::string& url, const std::string& destination, const VariableTaskPtr& pf ) {
@@ -160,8 +178,11 @@ int CURLProvider::downloadFile( const std::string& url, const std::string& desti
     //CURLProviderPtr sharedPtr = boost::dynamic_pointer_cast< CURLProvider >( shared_from_this() );
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, __curl_headerfunc);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, __curl_datacb_file);
+    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, __curl_xferinfo);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, this); //sharedPtr.get() );
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, this); //sharedPtr.get() );
+    curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
     
     // Open local file
     CVMWA_LOG("Debug", "Oppening local output stream '" << destination << "'");
@@ -239,3 +260,24 @@ int CURLProvider::downloadText( const std::string& url, std::string * destinatio
     
     CRASH_REPORT_END;
 }
+
+/**
+ * Abort a single file transfer
+ */
+int CURLProvider::abort() {
+    CRASH_REPORT_BEGIN;
+    abortFlag = true;
+    abortPersistsFlag = false;
+    CRASH_REPORT_END;
+}
+
+/**
+ * Block all possible file transfers
+ */
+int CURLProvider::abortAll() {
+    CRASH_REPORT_BEGIN;
+    abortFlag = true;
+    abortPersistsFlag = true;
+    CRASH_REPORT_END;
+}
+
