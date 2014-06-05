@@ -522,11 +522,14 @@ void VBoxSession::ConfigureVM() {
         if (vC != vM)
             args << " --memory "                << vC;
 
+        /*
         // 3) Execution cap
         vC = parameters->get("executionCap", "80"); vM = machine->get("CPU exec cap", "");
         if (vM.find("%") != string::npos) vM = vM.substr(0, vM.length()-1);
         if (vC != vM)
-            args << " --cpuexecutioncap "       << vC;
+        */
+        // 3) Always apply execution cap
+        args    << " --cpuexecutioncap "       << parameters->get("executionCap", "80");
 
         // 4) VRAM
         vC = parameters->get("vram", "32"); vM = machine->get("VRAM size", "");
