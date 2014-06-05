@@ -21,6 +21,7 @@
 #include <CernVM/Config.h>
 #include <CernVM/Hypervisor/Virtualbox/VBoxSession.h>
 #include <CernVM/Hypervisor/Virtualbox/VBoxInstance.h>
+#include <CernVM/Hypervisor/Virtualbox/VBoxProbes.h>
 #include <CernVM/Utilities.h>
 
 using namespace std;
@@ -103,93 +104,10 @@ std::string macroReplace( ParameterMapPtr mapData, std::string iString ) {
 };
 
 /**
- * Get last 100kb of the VirtualBox log and try to locate the string that mentions
- * state change.
+ * Function to cleanup a folder and all of it's sub-files
  */
-int getStateFromFile( std::string logPath ) {
-    int state = SS_POWEROFF;
-
-    // Locate Logfile
-    string logFile = logPath + "/VBox.log";
-    CVMWA_LOG("Debug", "Looking for state change  in " << logFile );
-    if (!file_exists(logFile)) return SS_MISSING;
-
-    // Open input stream
-    ifstream fIn(logFile.c_str(), ifstream::in);
-
-    // Read as few bytes as possible
-    string inBufferLine, stateStr;
-    size_t iStart, iEnd, i1, i2, qStart, qEnd;
-    char inBuffer[1024];
-
-    // Calculate file length
-    fIn.seekg( 0, fIn.end );
-    int seekSize = fIn.tellg();
-    if (seekSize > 81920) seekSize = 81920;
-
-    // Move 80kb before te end of the file
-    fIn.clear();
-    fIn.seekg( -seekSize, fIn.end );
-
-//    CVMWA_LOG("Debug", "File metrics: fileSize=" << fSize << ", seekSize=" << seekSize << ", tellg=" << fIn.tellg() << ". eof=" << fIn.eof() << ", bad=" << fIn.bad() << ", fail=" << fIn.fail());
-
-    // Start scanning
-    while (!fIn.eof()) {
-
-        // Read line
-        fIn.getline( inBuffer, 1023 );
-
-        // Handle it via higher-level API
-        inBufferLine.assign( inBuffer );
-//        CVMWA_LOG("Debug", "Got line: " << inBufferLine);
-//        CVMWA_LOG("Debug", "File metrics: tellg=" << fIn.tellg() << ", eof=" << fIn.eof() << ", bad=" << fIn.bad() << ", fail=" << fIn.fail());
-
-        if ((iStart = inBufferLine.find("Changing the VM state from")) != string::npos) {
-
-//            CVMWA_LOG("Debug", "Found relevant line: " << inBufferLine);
-
-            // Pick the appropriate ending
-            iEnd = inBufferLine.length();
-            i1 = inBufferLine.find("\r");
-            i2 = inBufferLine.find("\n");
-            if (i1 < iEnd) iEnd=i1;
-            if (i2 < iEnd) iEnd=i2;
-
-            // Find first quotation
-            qStart = inBufferLine.find('\'', iStart);
-            if (qStart == string::npos) continue;
-            qEnd = inBufferLine.find('\'', qStart+1);
-            if (qEnd == string::npos) continue;
-
-            // Find second quotation
-            qStart = inBufferLine.find('\'', qEnd+1);
-            if (qStart == string::npos) continue;
-            qEnd = inBufferLine.find('\'', qStart+1);
-            if (qEnd == string::npos) continue;
-
-            // Extract string
-            stateStr = inBufferLine.substr( qStart+1, qEnd-qStart-1 );
-
-            // Compare to known state names
-            CVMWA_LOG("Debug","Got switch to " << stateStr);
-            if      (stateStr.compare("RUNNING") == 0) state = SS_RUNNING;
-            else if (stateStr.compare("SUSPENDED") == 0) state = SS_PAUSED;
-            else if (stateStr.compare("OFF") == 0) state = SS_POWEROFF;
-
-            // If we got 'SAVING' it means the VM was saved
-            if (stateStr.compare("SAVING") == 0) {
-                fIn.close();
-                return SS_SAVED;
-            }
-
-        }
-
-    }
-
-    fIn.close();
-
-    // Return the found state
-    return state;
+bool cleanupFolder( const std::string& baseDir ) {
+    
 }
 
 /**
@@ -240,6 +158,22 @@ int getPIDFromFile( std::string logPath ) {
     // Close and return PID
     fIn.close();
     return pid;
+
+}
+
+/**
+00:00:03.491776 Guest Log: int13_harddisk: function 08, unmapped device for ELDL=82
+00:00:03.560687 Display::handleDisplayResize(): uScreenId = 0, pvVRAM=0000000110f0c000 w=640 h=480 bpp=0 cbLine=0x140, flags=0x1
+00:00:08.028567 Display::handleDisplayResize(): uScreenId = 0, pvVRAM=0000000000000000 w=720 h=400 bpp=0 cbLine=0x0, flags=0x1
+00:00:08.084451 Guest Log: BIOS: KBD: unsupported int 16h function 03
+00:00:08.084921 Guest Log: BIOS: AX=0305 BX=0000 CX=3c00 DX=c000 
+00:00:08.092280 Guest Log: int13_harddisk: function 02, unmapped device for ELDL=82
+00:00:08.092768 Guest Log: int13_harddisk_ext: function 41, unmapped device for ELDL=82
+00:00:08.123366 Display::handleDisplayResize(): uScreenId = 0, pvVRAM=0000000110f0c000 w=1024 h=768 bpp=24 cbLine=0xC00, flags=0x1
+ * Check last entries of the log file and look for resolution change
+ * if such chane appears, forward the new resolution information to the parameters.
+ */
+bool checkResolutionChange( std::string logPath, int* w, int* h ) {
 
 }
 
@@ -383,11 +317,16 @@ void VBoxSession::CreateVM() {
     string osType = "Linux26";
     if ((flags & HVF_SYSTEM_64BIT) != 0) osType="Linux26_64";
 
+    // Create a base folder for this VM
+    string baseFolder = LocalConfig::runtime()->getPath(uuid);
+    local->set("baseFolder", baseFolder);
+
     // Create and register a new VM
     args.str("");
     args << "createvm"
         << " --name \"" << parameters->get("name") << "\""
         << " --ostype " << osType
+        << " --basefolder \"" << baseFolder << "\""
         << " --register";
     
     // Execute and handle errors
@@ -1582,7 +1521,8 @@ std::string VBoxSession::getExtraInfo ( int extraInfo ) {
 
     if (extraInfo == EXIF_VIDEO_MODE) {
         CVMWA_LOG("Debug", "Getting video mode")
-        map<string, string> info = this->getMachineInfo( 2, 2000 );
+
+        //map<string, string> info = this->getMachineInfo( 2, 2000 );
         
         /*
         for (std::map<string, string>::iterator it=info.begin(); it!=info.end(); ++it) {
@@ -1591,9 +1531,11 @@ std::string VBoxSession::getExtraInfo ( int extraInfo ) {
             CVMWA_LOG("Debug", "getMachineInfo(): '" << pname << "' = '" << pvalue << "'");
         }
         */
-        
-        if (info.find("Video mode") != info.end())
-            return info["Video mode"];
+
+        // Return cached video mode        
+        if (machine->contains("Video mode"))
+            return machine->get("Video mode");
+
     }
 
     return "";
@@ -1648,13 +1590,42 @@ int VBoxSession::update ( bool waitTillInactive ) {
         // Check if log file is missing
         std::string logFile = machine->get("Log folder") + "/VBox.log";
         if (file_exists(logFile)) {
-            
+
             // Look for changes in the timestamp
             unsigned long long newFileTime = getFileTimeMs(logFile);
             if (lastLogTime != newFileTime) {
                 lastLogTime = newFileTime;
-                // Update the state from the log file
-                newState = getStateFromFile( machine->get("Log folder") );
+        
+                // Create a log probe in order to extract as many information
+                // as possible from a single pass.
+                VBoxLogProbe logProbe( machine->get("Log folder") );
+                logProbe.analyze();
+
+                // Check if we had a state change
+                if (logProbe.hasState)
+                    newState = logProbe.state;
+
+                // Check if we had a resolution change
+                if (logProbe.hasResolutionChange) {
+                    ostringstream oss;
+                    oss << logProbe.resWidth << "x" 
+                        << logProbe.resHeight << "x" 
+                        << logProbe.resBpp;
+
+                    // Check if video mode has changed
+                    std::string vC = machine->get("Video mode", ""),
+                                vM = oss.str();
+
+                    // Check if video mode has changed
+                    if (vC != vM) {
+                        // Update video mde
+                        machine->set("Video mode", vM);
+                        // Notify listeners that resolution has changed
+                        this->fire( "resolutionChanged", ArgumentList(logProbe.resWidth)(logProbe.resHeight)(logProbe.resBpp) );
+                    }
+
+                }
+
             }
             
         } else {

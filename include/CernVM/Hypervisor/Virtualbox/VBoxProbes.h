@@ -19,8 +19,8 @@
  */
 
 #pragma once
-#ifndef VBOXSTATESTORE_H
-#define VBOXSTATESTORE_H
+#ifndef VBOXPROBES_H
+#define VBOXPROBES_H
 
 #include <CernVM/Utilities.h>
 #include <CernVM/LocalConfig.h>
@@ -28,14 +28,50 @@
 #include <string>
 #include <map>
 
-class VBoxStateStore {
+using namespace std;
+
+class VBoxLogProbe {
 public:
 
 	/**
-	 * Return the record entry for the specified UUID
+	 * Create log probe class
 	 */
-	static LocalConfigPtr	configFor( const std::string& uuid );
+	VBoxLogProbe( const string& path, int tailSize = 81920 ) {
+		this->logFile = path + "/VBox.log";
+		this->tailSize = tailSize;
+	};
+
+	/**
+	 * Check if the file exists
+	 */
+	bool 			exists();
+
+	/**
+	 * Analyze the log file
+	 */
+	void 			analyze();
+
+	/**
+	 * Flag and information regarding state change
+	 */
+	bool 			hasState;
+	int 			state;
+
+	/**
+	 * Flag and information regarding state change
+	 */
+	bool 			hasResolutionChange;
+	int 			resWidth;
+	int 			resHeight;
+	int 			resBpp;
+
+	/**
+	 * The path to the log file
+	 */
+	string 			logFile;
+	int				tailSize;
 
 };
 
-#endif /* end of include guard: VBOXSTATESTORE_H */
+
+#endif /* end of include guard: VBOXPROBES_H */

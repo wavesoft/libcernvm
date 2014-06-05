@@ -242,7 +242,7 @@ private:
 class VariableTask: public ProgressTask {
 public:
 
-	VariableTask() : ProgressTask(), max(0), current(0) { };
+	VariableTask() : ProgressTask(), max(0), current(0), showSpinner(true), spinnerIndex(0) { };
 
 	/**
 	 * Update the default message for all the tasks 
@@ -258,6 +258,11 @@ public:
 	 * Update value
 	 */
 	void 				update 			( size_t value );
+
+	/**
+	 * Set spinner visibility
+	 */
+	void 				setSpinner		( bool enabled ) { showSpinner = enabled; };
 
     /**
      * Reset state and restart
@@ -287,6 +292,10 @@ private:
 	// Variable size
 	size_t 							max;
 	size_t							current;
+
+	// Spinner options
+	bool 							showSpinner;
+	unsigned char					spinnerIndex;
 
 
 };

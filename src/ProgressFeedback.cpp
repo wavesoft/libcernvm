@@ -464,8 +464,27 @@ void VariableTask::update ( size_t value ) {
 	// Update value
 	current = value;
 
+	// Check spinner suffix
+	std::string suffix = "";
+	if (showSpinner) {
+		const char suffixes[] = { '|', '/', '-', '\\' };
+
+		// Trim 
+		if (lastMessage[lastMessage.length()-1] == suffixes[spinnerIndex]) {
+			lastMessage = lastMessage.substr( 0, lastMessage.length() - 4 );
+		}
+
+		// Advance spinner
+		if (++spinnerIndex > 4)
+			spinnerIndex = 0;
+
+		// calculate suffix
+		suffix  = "   ";
+		suffix += suffixes[spinnerIndex];
+	}
+
 	// Trigger update
-	_notifyUpdate( lastMessage );
+	_notifyUpdate( lastMessage + suffix );
 
 }
 
