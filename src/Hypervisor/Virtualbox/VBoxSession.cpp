@@ -162,22 +162,6 @@ int getPIDFromFile( std::string logPath ) {
 }
 
 /**
-00:00:03.491776 Guest Log: int13_harddisk: function 08, unmapped device for ELDL=82
-00:00:03.560687 Display::handleDisplayResize(): uScreenId = 0, pvVRAM=0000000110f0c000 w=640 h=480 bpp=0 cbLine=0x140, flags=0x1
-00:00:08.028567 Display::handleDisplayResize(): uScreenId = 0, pvVRAM=0000000000000000 w=720 h=400 bpp=0 cbLine=0x0, flags=0x1
-00:00:08.084451 Guest Log: BIOS: KBD: unsupported int 16h function 03
-00:00:08.084921 Guest Log: BIOS: AX=0305 BX=0000 CX=3c00 DX=c000 
-00:00:08.092280 Guest Log: int13_harddisk: function 02, unmapped device for ELDL=82
-00:00:08.092768 Guest Log: int13_harddisk_ext: function 41, unmapped device for ELDL=82
-00:00:08.123366 Display::handleDisplayResize(): uScreenId = 0, pvVRAM=0000000110f0c000 w=1024 h=768 bpp=24 cbLine=0xC00, flags=0x1
- * Check last entries of the log file and look for resolution change
- * if such chane appears, forward the new resolution information to the parameters.
- */
-bool checkResolutionChange( std::string logPath, int* w, int* h ) {
-
-}
-
-/**
  * Check if the VM logs exist - This means that the VM is still alive
  */
 bool vboxLogExists( std::string logPath ) {

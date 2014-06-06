@@ -37,8 +37,10 @@ public:
 	 * Create log probe class
 	 */
 	VBoxLogProbe( const string& path, int tailSize = 81920 ) {
+        CRASH_REPORT_BEGIN;
 		this->logFile = path + "/VBox.log";
 		this->tailSize = tailSize;
+        CRASH_REPORT_END;
 	};
 
 	/**

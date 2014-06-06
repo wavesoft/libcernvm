@@ -29,12 +29,14 @@ using namespace std;
  * Allocate a new hypervisor using the specified paths
  */
 HVInstancePtr __vboxInstance( string hvRoot, string hvBin, string hvAdditionsIso ) {
+    CRASH_REPORT_BEGIN;
     VBoxInstancePtr hv;
 
     // Create a new hypervisor instance
     hv = boost::make_shared<VBoxInstance>( hvRoot, hvBin, hvAdditionsIso );
 
     return hv;
+    CRASH_REPORT_END;
 }
 
 /**
@@ -42,6 +44,7 @@ HVInstancePtr __vboxInstance( string hvRoot, string hvBin, string hvAdditionsIso
  * VBoxInstance object if it was found.
  */
 HVInstancePtr vboxDetect() {
+    CRASH_REPORT_BEGIN;
     HVInstancePtr hv;
     vector<string> paths;
     string bin, iso, p;
@@ -119,7 +122,7 @@ HVInstancePtr vboxDetect() {
 
     // Return hypervisor instance or nothing
 	return hv;
-
+    CRASH_REPORT_END;
 }
 
 /**

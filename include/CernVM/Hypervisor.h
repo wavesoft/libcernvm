@@ -219,6 +219,7 @@ public:
     HVSession( ParameterMapPtr param, HVInstancePtr hv ) : 
         Callbacks(), overridableVars(), parameters(param)
     {
+        CRASH_REPORT_BEGIN;
 
         // Prepare default parameter values
         parameters->setDefault("cpus",                  "1");
@@ -255,6 +256,7 @@ public:
         this->state = parameters->getNum<int>("state", 0);
         this->hypervisor = hv;
 
+        CRASH_REPORT_END;
     };
     
     ////////////////////////////////////////

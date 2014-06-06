@@ -49,6 +49,7 @@ class VBoxSession : public SimpleFSM, public HVSession {
 public:
 
     VBoxSession( ParameterMapPtr param, HVInstancePtr hv ) : SimpleFSM(), HVSession(param, hv), execConfig() {
+        CRASH_REPORT_BEGIN;
 
         FSM_REGISTRY(1,             // Entry point is on '1'
         {
@@ -122,6 +123,7 @@ public:
         errorMessage = "";
         lastMachineInfoTimestamp = 0;
 
+        CRASH_REPORT_END;
     }
 
     /////////////////////////////////////

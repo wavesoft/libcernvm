@@ -18,6 +18,7 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
+#include <CernVM/CrashReport.h>
 #include <CernVM/Hypervisor/Virtualbox/VBoxProbes.h>
 #include <CernVM/Hypervisor.h>
 
@@ -32,6 +33,7 @@ bool VBoxLogProbe::exists() {
  * Analyze log file
  */
 void VBoxLogProbe::analyze() {
+    CRASH_REPORT_BEGIN;
 
 	// Reset state
 	hasState = false;
@@ -157,4 +159,5 @@ void VBoxLogProbe::analyze() {
 
     fIn.close();
 
+    CRASH_REPORT_END;
 }

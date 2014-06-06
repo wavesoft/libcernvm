@@ -91,6 +91,7 @@ public:
 
     // Constructor & Destructor
     CURLProvider() : DownloadProvider(), pf(), fStream(), sStream() {
+        CRASH_REPORT_BEGIN;
         
         // Initialize curl
         curl = curl_easy_init();
@@ -106,9 +107,13 @@ public:
         this->abortPersistsFlag = false;
         this->maxStreamSize = 0;
 
+        CRASH_REPORT_END;
+
     };
     virtual ~CURLProvider() {
+        CRASH_REPORT_BEGIN;
         curl_easy_cleanup(curl);
+        CRASH_REPORT_END;
     };
 
     // Curl I/O

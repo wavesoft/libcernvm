@@ -342,6 +342,7 @@ std::vector< std::map< std::string, std::string > > VBoxInstance::getDiskList() 
  * Parse VirtualBox Log file in order to get the launched process PID
  */
 int __getPIDFromFile( std::string logPath ) {
+    CRASH_REPORT_BEGIN;
     int pid = 0;
 
     /* Locate Logfile */
@@ -386,7 +387,7 @@ int __getPIDFromFile( std::string logPath ) {
     // Close and return PID
     fIn.close();
     return pid;
-
+    CRASH_REPORT_END;
 }
 
 /**
@@ -409,6 +410,7 @@ HVSessionPtr VBoxInstance::sessionByVBID ( const std::string& virtualBoxGUID ) {
 }
 
 HVSessionPtr VBoxInstance::sessionOpen ( const ParameterMapPtr& parameters, const FiniteTaskPtr & pf ) {
+    CRASH_REPORT_BEGIN;
 
     // Call parent function to open session
     HVSessionPtr  sess = HVInstance::sessionOpen(parameters,pf);
@@ -423,6 +425,7 @@ HVSessionPtr VBoxInstance::sessionOpen ( const ParameterMapPtr& parameters, cons
     // Return instance
     return vbs;
 
+    CRASH_REPORT_END;
 }
 
 /**
@@ -635,6 +638,7 @@ int VBoxInstance::loadSessions( const FiniteTaskPtr & pf ) {
  * Abort what's happening and prepare for shutdown
  */
 void VBoxInstance::abort() {
+    CRASH_REPORT_BEGIN;
 
     // Abort all open sessions
     for (std::list< HVSessionPtr >::iterator it = openSessions.begin(); it != openSessions.end(); ++it) {
@@ -646,6 +650,7 @@ void VBoxInstance::abort() {
     openSessions.clear();
     sessions.clear();
 
+    CRASH_REPORT_END;
 }
 
 /**

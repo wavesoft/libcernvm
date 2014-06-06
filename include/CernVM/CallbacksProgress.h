@@ -36,25 +36,41 @@ public:
 	 * Fire 'started' event
 	 */
 	void fireStarted( const std::string & msg )
-		{ fire("started", ArgumentList(msg) ); };
+		{ 
+	        CRASH_REPORT_BEGIN;
+			fire("started", ArgumentList(msg) ); 
+	        CRASH_REPORT_END;
+		};
 
 	/**
 	 * Fire 'completed' event
 	 */
 	void fireCompleted( const std::string & msg )
-		{ fire("completed", ArgumentList(msg) ); };
+		{ 
+	        CRASH_REPORT_BEGIN;
+			fire("completed", ArgumentList(msg) ); 
+	        CRASH_REPORT_END;
+		};
 
 	/**
 	 * Fire 'failed' event
 	 */
 	void fireFailed( const std::string & msg, const int errorCode )
-		{ fire("failed", ArgumentList(msg)(errorCode) ); };
+		{ 
+	        CRASH_REPORT_BEGIN;
+			fire("failed", ArgumentList(msg)(errorCode) ); 
+	        CRASH_REPORT_END;
+		};
 
 	/**
 	 * Fire 'progress' event
 	 */
 	void fireProgress( const std::string& msg, const double progress )
-		{ fire("progress", ArgumentList(msg)(progress) ); };
+		{ 
+	        CRASH_REPORT_BEGIN;
+			fire("progress", ArgumentList(msg)(progress) ); 
+	        CRASH_REPORT_END;
+		};
 
 
 };

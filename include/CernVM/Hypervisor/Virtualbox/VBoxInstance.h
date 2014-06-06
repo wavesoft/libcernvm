@@ -42,6 +42,7 @@ class VBoxInstance : public HVInstance {
 public:
 
     VBoxInstance( std::string fRoot, std::string fBin, std::string fIso ) : HVInstance(), execConfig() {
+        CRASH_REPORT_BEGIN;
 
         // Populate variables
         this->sessionLoaded = false;
@@ -61,6 +62,7 @@ public:
         if (out.size() > 0)
             version.set( out[0] );
 
+        CRASH_REPORT_END;
     };
 
 
