@@ -105,6 +105,7 @@ template std::string ntos<float>( float &value );
  * Alloc/get a boost::mutex with the given name
  */
 sharedMutex __nmutex_get( std::string name ) {
+    CRASH_REPORT_BEGIN;
     
     // If we don't have a mutex under this name, allocate it now
     if (namedMutexStack.find(name) == namedMutexStack.end()) {
@@ -118,6 +119,7 @@ sharedMutex __nmutex_get( std::string name ) {
         return namedMutexStack[name];
     }
 
+    CRASH_REPORT_END;
 }
 
 /**
@@ -173,9 +175,11 @@ void flushNamedMutexes() {
  * Allocate a new GUID using BOOST's UUID
  */
 std::string newGUID( ) {
+    CRASH_REPORT_BEGIN;
     boost::uuids::uuid uuid = boost::uuids::random_generator()();
     std::stringstream out; out << uuid;
     return out.str();
+    CRASH_REPORT_END;
 }
 
 /**
@@ -717,6 +721,7 @@ void abortSysExec() {
  * Check for buffer
  */
 int checkMatchingErrorCode( const std::string& buffer, const SysExecConfig& config ) {
+    CRASH_REPORT_BEGIN;
     for (std::map<std::string,int>::const_iterator it = config.errStrings.begin(); it != config.errStrings.end(); ++it) {
         std::string k = (*it).first;
         int c = (*it).second;
@@ -725,6 +730,7 @@ int checkMatchingErrorCode( const std::string& buffer, const SysExecConfig& conf
         }
     }
     return 0;
+    CRASH_REPORT_END;
 }
 
 /**
@@ -1621,6 +1627,7 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
  * Get current date/time as a string
  */
 char * getTimestamp () {
+    CRASH_REPORT_BEGIN;
 	static char timeBuffer[80];
     memset( timeBuffer, 0, 80 );
 
@@ -1632,6 +1639,7 @@ char * getTimestamp () {
 	strftime(timeBuffer, 80, "%d/%m/%Y %H:%M:%S", timeinfo);
 
     return timeBuffer;
+    CRASH_REPORT_END;
 }
 
 /**

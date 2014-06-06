@@ -32,18 +32,21 @@ void SimpleFSM::FSMEnteringState( const int state, bool final ) { }
  * Reset FSM registry variables
  */
 void SimpleFSM::FSMRegistryBegin() {
+    CRASH_REPORT_BEGIN;
     // Reset
     fsmNodes.clear();
     fsmTmpRouteLinks.clear();
     fsmCurrentPath.clear();
     fsmRootNode = NULL;
     fsmCurrentNode = NULL;
+    CRASH_REPORT_END;
 }
 
 /**
  * Add entry to the FSM registry
  */
 void SimpleFSM::FSMRegistryAdd( int id, fsmHandler handler, ... ) {
+    CRASH_REPORT_BEGIN;
     std::vector<int> v;
     va_list pl;
     int l;
@@ -61,13 +64,14 @@ void SimpleFSM::FSMRegistryAdd( int id, fsmHandler handler, ... ) {
     }
     va_end(pl);
     fsmTmpRouteLinks[id] = v;
-
+    CRASH_REPORT_END;
 }
 
 /**
  * Complete FSM registry decleration and build FSM tree
  */
 void SimpleFSM::FSMRegistryEnd( int rootID ) {
+    CRASH_REPORT_BEGIN;
 	std::map<int,FSMNode>::iterator pt;
 	std::vector<FSMNode*> 			nodePtr;
 	std::vector<int> 				links;
@@ -103,13 +107,14 @@ void SimpleFSM::FSMRegistryEnd( int rootID ) {
 
 	// Flush temp arrays
 	fsmTmpRouteLinks.clear();
-
+    CRASH_REPORT_END;
 }
 
 /**
  * Helper function to call a handler
  */
 bool SimpleFSM::_callHandler( FSMNode * node, bool inThread ) {
+    CRASH_REPORT_BEGIN;
 
 	// Use guarded execution
 	try {
@@ -147,12 +152,14 @@ bool SimpleFSM::_callHandler( FSMNode * node, bool inThread ) {
 	// Executed successfully
 	return true;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Run next action in the FSM
  */
 bool SimpleFSM::FSMContinue( bool inThread ) {
+    CRASH_REPORT_BEGIN;
 	if (fsmInsideHandler) return false;
 	if (fsmCurrentPath.empty() && (fsmCurrentNode != NULL)) return false;
 	fsmInsideHandler = true;
@@ -179,6 +186,7 @@ bool SimpleFSM::FSMContinue( bool inThread ) {
 	// We are now outside the handler
 	fsmInsideHandler = false;
     return true;
+    CRASH_REPORT_END;
 }
 
 /**
@@ -187,6 +195,7 @@ bool SimpleFSM::FSMContinue( bool inThread ) {
  */
 void findShortestPath( std::vector< FSMNode * > path, FSMNode * node, int state,	// Arguments
 					  size_t * clipLength, std::vector< FSMNode * > ** bestPath ) {	// State
+    CRASH_REPORT_BEGIN;
 
 	// Update path
 	path.push_back( node );
@@ -230,12 +239,14 @@ void findShortestPath( std::vector< FSMNode * > path, FSMNode * node, int state,
 		// Continue with the items
 		findShortestPath( path, n, state, clipLength, bestPath );
 	}
+    CRASH_REPORT_END;
 }
 
 /**
  * Build the path to go to the given state and start the FSM subsystem
  */
 void SimpleFSM::FSMGoto(int state) {
+    CRASH_REPORT_BEGIN;
 
 	// Allow only one thread to steer the FSM
 	boost::mutex::scoped_lock lock(fsmGotoMutex);
@@ -296,6 +307,7 @@ void SimpleFSM::FSMGoto(int state) {
 	CVMWA_LOG("Debug", "Best path: " << oss.str() );
 #endif
 
+    CRASH_REPORT_END;
 }
 
 
@@ -304,6 +316,7 @@ void SimpleFSM::FSMGoto(int state) {
  * to the state pointed by goto
  */
 void SimpleFSM::FSMSkew(int state) {
+    CRASH_REPORT_BEGIN;
     CVMWA_LOG("Debug", "Skewing through " << state << " towards " << fsmTargetState);
 	std::map<int,FSMNode>::iterator pt;
 
@@ -323,12 +336,14 @@ void SimpleFSM::FSMSkew(int state) {
 		FSMGoto( fsmTargetState );
 	}
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Local function to do FSMContinue when needed in a threaded way
  */
 void SimpleFSM::FSMThreadLoop() {
+    CRASH_REPORT_BEGIN;
 	fsmThreadActive = true;
 
 	// Catch interruptions
@@ -368,12 +383,14 @@ void SimpleFSM::FSMThreadLoop() {
 
 	// Cleanup
 	fsmThreadActive = false;
+    CRASH_REPORT_END;
 }
 
 /**
  * Local function to exit the FSM Thread
  */
 void SimpleFSM::FSMThreadStop() {
+    CRASH_REPORT_BEGIN;
 
 	// Ensure we have a running thread
 	if ((fsmThread == NULL) || (!fsmThreadActive)) 
@@ -389,12 +406,14 @@ void SimpleFSM::FSMThreadStop() {
 	// Cleanup thread
 	fsmThread = NULL;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Infinitely pause, waiting for a wakeup signal
  */
 void SimpleFSM::_fsmPause() {
+    CRASH_REPORT_BEGIN;
 	CVMWA_LOG("Debug", "Entering paused state");
 
 	// If we are already not paused, don't
@@ -409,13 +428,14 @@ void SimpleFSM::_fsmPause() {
     // Reset paused state
     fsmtPaused = true;
 	CVMWA_LOG("Debug", "Exiting paused state");
-
+    CRASH_REPORT_END;
 }
 
 /**
  * Send a wakeup signal
  */
 void SimpleFSM::_fsmWakeup() {
+    CRASH_REPORT_BEGIN;
 	CVMWA_LOG("Debug", "Waking-up paused thread");
 
     {
@@ -423,6 +443,7 @@ void SimpleFSM::_fsmWakeup() {
         fsmtPaused = false;
     }
     fsmtPauseChanged.notify_all();
+    CRASH_REPORT_END;
 }
 
 /**
@@ -433,8 +454,10 @@ void SimpleFSM::_fsmWakeup() {
  *
  */
 void SimpleFSM::FSMUseProgress ( const FiniteTaskPtr & pf, const std::string & resetMessage ) {
+    CRASH_REPORT_BEGIN;
 	fsmProgress = pf;
 	fsmProgressResetMsg = resetMessage;
+    CRASH_REPORT_END;
 }
 
 /**
@@ -444,10 +467,12 @@ void SimpleFSM::FSMUseProgress ( const FiniteTaskPtr & pf, const std::string & r
  * to provide more meaningul message to the user.
  */
 void SimpleFSM::FSMDoing ( const std::string & message ) {
+    CRASH_REPORT_BEGIN;
 	CVMWA_LOG("Debug", "Doing " << message);
 	if (fsmProgress) {
 		fsmProgress->doing(message);
 	}
+    CRASH_REPORT_END;
 }
 
 /**
@@ -457,10 +482,12 @@ void SimpleFSM::FSMDoing ( const std::string & message ) {
  * to provide more meaningul message to the user.
  */
 void SimpleFSM::FSMDone ( const std::string & message ) {
+    CRASH_REPORT_BEGIN;
 	CVMWA_LOG("Debug", "Done " << message);
 	if (fsmProgress) {
 		fsmProgress->done(message);
 	}
+    CRASH_REPORT_END;
 }
 
 /**
@@ -469,27 +496,32 @@ void SimpleFSM::FSMDone ( const std::string & message ) {
  */
 template <typename T> boost::shared_ptr<T> 
 SimpleFSM::FSMBegin( const std::string& message ) {
+    CRASH_REPORT_BEGIN;
 	boost::shared_ptr<T> ptr = boost::shared_ptr<T>();
 	if (fsmProgress) {
 		ptr = fsmProgress->begin<T>(message);
 	}
 	return ptr;
+    CRASH_REPORT_END;
 }
 
 /**
  * Trigger the "Fail" action of the SimpleFSM progress feedback -if available-
  */
 void SimpleFSM::FSMFail ( const std::string & message, const int errorCode ) {
+    CRASH_REPORT_BEGIN;
 	CVMWA_LOG("Debug", "Done " << message);
 	if (fsmProgress) {
 		fsmProgress->fail(message, errorCode);
 	}
+    CRASH_REPORT_END;
 }
 
 /**
  * Wait until the FSM reaches the specified state
  */
 void SimpleFSM::FSMWaitFor ( int state, int timeout ) {
+    CRASH_REPORT_BEGIN;
 
 	// Find the state
 	std::map<int,FSMNode>::iterator pt;
@@ -514,12 +546,14 @@ void SimpleFSM::FSMWaitFor ( int state, int timeout ) {
     boost::unique_lock<boost::mutex> lock(fsmwStateMutex);
     fsmwStateChanged.wait(lock);
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Wait for FSM to complete an active tasm
  */
 void SimpleFSM::FSMWaitInactive ( int timeout ) {
+    CRASH_REPORT_BEGIN;
 
 	// Wait until we are no longer active
 	{
@@ -529,19 +563,23 @@ void SimpleFSM::FSMWaitInactive ( int timeout ) {
 		}
 	}
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Check if FSM is busy navigating through a path
  */
 bool SimpleFSM::FSMActive ( ) {
+    CRASH_REPORT_BEGIN;
 	return !fsmCurrentPath.empty();
+    CRASH_REPORT_END;
 }
 
 /**
  * Start an FSM thread
  */
 boost::thread * SimpleFSM::FSMThreadStart() {
+    CRASH_REPORT_BEGIN;
 	// If we are already running, return the thread
 	if (fsmThread != NULL)
 		return fsmThread;
@@ -553,16 +591,19 @@ boost::thread * SimpleFSM::FSMThreadStart() {
 	// Start and return the new thread
 	fsmThread = new boost::thread(boost::bind(&SimpleFSM::FSMThreadLoop, this));
 	return fsmThread;
+    CRASH_REPORT_END;
 }
 
 /**
  * Release mutex upon destruction
  */
 SimpleFSM::~SimpleFSM() {
+    CRASH_REPORT_BEGIN;
 
 	// Join thread
 	FSMThreadStop();
 
+    CRASH_REPORT_END;
 }
 
 /**

@@ -25,17 +25,20 @@
  * Fire the callback function, ignoring any possible exceptions
  */
 void RollbackTransactionEntry::call() {
+    CRASH_REPORT_BEGIN;
 	try {
 		callback(arguments);
 	} catch (...) {
 		CVMWA_LOG("Error", "Error handling exception");
 	}
+    CRASH_REPORT_END;
 }
 
 /**
  * Register a rollback action
  */
 void RollbackTransaction::add( const callbackTransaction & callback, ... ) {
+    CRASH_REPORT_BEGIN;
     va_list pl;
     void * l;
     std::vector<void *> args;
@@ -49,5 +52,5 @@ void RollbackTransaction::add( const callbackTransaction & callback, ... ) {
 
     // Store in database
     actions.push_back( RollbackTransactionEntry( callback, args ) );
-
+    CRASH_REPORT_END;
 }

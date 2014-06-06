@@ -568,6 +568,7 @@ bool LocalConfig::load ( ) {
  * Conflicts are resolved using 'our' changes as favoured.
  */
 bool LocalConfig::sync ( ) {
+    CRASH_REPORT_BEGIN;
     
     // If the file is missing, save it 
     std::string fName = systemPath(this->configDir + "/" + configName + ".conf");
@@ -646,4 +647,5 @@ bool LocalConfig::sync ( ) {
     this->saveMap( configName, &map );
 
     return true;
+    CRASH_REPORT_END;
 }

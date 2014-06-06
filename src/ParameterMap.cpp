@@ -355,25 +355,30 @@ void ParameterMap::toMap ( std::map< std::string, std::string> * map, bool clear
  * Set a boolean parameter
  */
 ParameterMap& ParameterMap::setBool ( const std::string& name, bool value ) {
+    CRASH_REPORT_BEGIN;
     std::string v = "n";
     if (value) v = "y";
     set(name, v);
     return *this;
+    CRASH_REPORT_END;
 }
 
 /**
  * Get a boolean parameter
  */
 bool ParameterMap::getBool ( const std::string& name, bool defaultValue ) {
+    CRASH_REPORT_BEGIN;
     std::string v = get(name, "");
     if (v.empty()) return defaultValue;
     return ((v[0] == 'y') || (v[0] == 't') || (v[0] == '1'));
+    CRASH_REPORT_END;
 }
 
 /**
  * Synchronize file contents with the dictionary contents
  */
 bool ParameterMap::sync ( ) {
+    CRASH_REPORT_BEGIN;
 
     // If we have parent, forward to the root element
     if (parent) {
@@ -384,6 +389,7 @@ bool ParameterMap::sync ( ) {
     // one way or another.
     return true;
 
+    CRASH_REPORT_END;
 }
 
 /**

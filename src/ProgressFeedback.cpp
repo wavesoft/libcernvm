@@ -28,6 +28,7 @@
  * Mark the task as completed
  */
 void ProgressTask::complete ( const std::string& message ) {
+    CRASH_REPORT_BEGIN;
 //	std::cout << "  complete(" << message << ")" << std::endl;
     std::string msg = message;
 
@@ -41,12 +42,14 @@ void ProgressTask::complete ( const std::string& message ) {
 	// Notify update
 	_notifyCompleted(msg);
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Mark the task as failed
  */
 void ProgressTask::fail ( const std::string& message, const int errorCode ) {
+    CRASH_REPORT_BEGIN;
     std::string msg = message;
 
 	// Build empty message
@@ -66,6 +69,7 @@ void ProgressTask::fail ( const std::string& message, const int errorCode ) {
     if (parent)
         parent->_notifyUpdate(message);
 
+    CRASH_REPORT_END;
 }
 
 
@@ -73,6 +77,7 @@ void ProgressTask::fail ( const std::string& message, const int errorCode ) {
  * Forward a message without any progress update
  */
 void ProgressTask::doing ( const std::string& message ) {
+    CRASH_REPORT_BEGIN;
 //	std::cout << "  doing(" << message << ")" << std::endl;
 
 	// Notify started
@@ -81,12 +86,14 @@ void ProgressTask::doing ( const std::string& message ) {
 	// Notify update
 	_notifyUpdate(message);
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Let listeners know that we are completed
  */
 void ProgressTask::_notifyCompleted ( const std::string& message ) {
+    CRASH_REPORT_BEGIN;
 
 	// If we are alrady completed, do nothing
 	if (completed) return;
@@ -105,12 +112,15 @@ void ProgressTask::_notifyCompleted ( const std::string& message ) {
 	if (parent) {
 		parent->_notifyUpdate( message );
 	}
+
+    CRASH_REPORT_END;
 }
 
 /**
  * Let listeners know that we have failed
  */
 void ProgressTask::_notifyFailed( const std::string& message, const int errorCode ) {
+    CRASH_REPORT_BEGIN;
 
 	// Store the last message
 	lastMessage = message;
@@ -122,12 +132,14 @@ void ProgressTask::_notifyFailed( const std::string& message, const int errorCod
 	if (parent)
 		parent->_notifyFailed( message, errorCode );
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Check for state of this progress event
  */
 void ProgressTask::_notifyUpdate ( const std::string& message ) {
+    CRASH_REPORT_BEGIN;
 
 	// Store the last message
 	lastMessage = message;
@@ -149,12 +161,15 @@ void ProgressTask::_notifyUpdate ( const std::string& message ) {
 		}
 
 	}
+
+    CRASH_REPORT_END;
 }
 
 /**
  * Let everybody know that we started the event
  */
 void ProgressTask::_notifyStarted ( const std::string& message ) {
+    CRASH_REPORT_BEGIN;
 
 	// Don't do such thing if we are already started
 	if (started) return;
@@ -173,6 +188,7 @@ void ProgressTask::_notifyStarted ( const std::string& message ) {
 		parent->_notifyStarted( message );
 	}
 
+    CRASH_REPORT_END;
 }
 
 /**
@@ -180,6 +196,7 @@ void ProgressTask::_notifyStarted ( const std::string& message ) {
  * TODO: Optimizations are needed (too many nested loops on calculating getProgress)
  */
 void ProgressTask::_forwardProgress( const std::string& message ) {
+    CRASH_REPORT_BEGIN;
 
 	// Store the last message
 	lastMessage = message;
@@ -191,6 +208,7 @@ void ProgressTask::_forwardProgress( const std::string& message ) {
 	if (parent)
 		parent->_forwardProgress( message );
 
+    CRASH_REPORT_END;
 }
 
 /** #####################################################################################
@@ -201,6 +219,7 @@ void ProgressTask::_forwardProgress( const std::string& message ) {
  * Check if the task is completed
  */
 bool FiniteTask::isCompleted ( ) {
+    CRASH_REPORT_BEGIN;
 
 	// If I am already completed, return true
 	if (completed) return true;
@@ -230,12 +249,14 @@ bool FiniteTask::isCompleted ( ) {
 	// Everything looks good
 	return true;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Return progress event
  */
 double FiniteTask::getProgress ( ) {
+    CRASH_REPORT_BEGIN;
 
 	// If I am already completed, return 1.0
 	if (completed) return 1.0;
@@ -268,12 +289,14 @@ double FiniteTask::getProgress ( ) {
 	// Return value
 	return value;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Set maximum number of tasks
  */
 void FiniteTask::setMax ( size_t maxTasks, bool triggerUpdate ) {
+    CRASH_REPORT_BEGIN;
 //	std::cout << "  setMax(" << maxTasks << ", " << triggerUpdate << ")" << std::endl;
 
 	// Get the size of the array
@@ -294,12 +317,14 @@ void FiniteTask::setMax ( size_t maxTasks, bool triggerUpdate ) {
 	// Notify update events if we are in the middle of something
 	if (started && triggerUpdate) _notifyUpdate( lastMessage );
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Mark the task as completed
  */
 void FiniteTask::done( const std::string& message ) {
+    CRASH_REPORT_BEGIN;
 //	std::cout << "  done(" << message << ")" << std::endl;
 
 	// Notify started
@@ -322,7 +347,7 @@ void FiniteTask::done( const std::string& message ) {
 	// Forward update
 	_notifyUpdate( message );
 
-
+    CRASH_REPORT_END;
 }
 
 /**
@@ -330,6 +355,7 @@ void FiniteTask::done( const std::string& message ) {
  */
 template <typename T> boost::shared_ptr<T> 
 FiniteTask::begin( const std::string& message ) {
+    CRASH_REPORT_BEGIN;
 
 	// Notify started
 	_notifyStarted( message );
@@ -362,12 +388,14 @@ FiniteTask::begin( const std::string& message ) {
     // Return object
     return newPtr;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Reset state and restart
  */
 void FiniteTask::restart ( const std::string& message, bool triggerUpdate ) {
+    CRASH_REPORT_BEGIN;
 
     // Reset state
 	if (completed) started = false;
@@ -398,6 +426,7 @@ void FiniteTask::restart ( const std::string& message, bool triggerUpdate ) {
     	_notifyUpdate( message );
     }
 
+    CRASH_REPORT_END;
 }
 
 /** #####################################################################################
@@ -408,6 +437,7 @@ void FiniteTask::restart ( const std::string& message, bool triggerUpdate ) {
  * Check if the task is completed
  */
 bool VariableTask::isCompleted ( ) {
+    CRASH_REPORT_BEGIN;
 
 	// If I haven't started, return false
 	if (!started) return false;
@@ -421,12 +451,14 @@ bool VariableTask::isCompleted ( ) {
 	// Otherwise, false
 	return false;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Return progress event
  */
 double VariableTask::getProgress ( ) {
+    CRASH_REPORT_BEGIN;
 
 	// If I am already completed, return 1.0
 	if (completed) return 1.0;
@@ -437,12 +469,14 @@ double VariableTask::getProgress ( ) {
 	// Return ammount of tasks completed
 	return (double)current / (double)max;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Set max value
  */
 void VariableTask::setMax ( size_t maxValue, bool triggerUpdate ) {
+    CRASH_REPORT_BEGIN;
 //	std::cout << "  setMax(" << maxValue << ", " << triggerUpdate << ")" << std::endl;
 
 	// Update max value
@@ -451,12 +485,14 @@ void VariableTask::setMax ( size_t maxValue, bool triggerUpdate ) {
 	// Trigger update if we were in the middle of something
 	if (started && triggerUpdate) _notifyUpdate( lastMessage );
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Update value
  */
 void VariableTask::update ( size_t value ) {
+    CRASH_REPORT_BEGIN;
 
 	// Notify started
 	_notifyStarted( lastMessage );
@@ -486,19 +522,23 @@ void VariableTask::update ( size_t value ) {
 	// Trigger update
 	_notifyUpdate( lastMessage + suffix );
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Update the default value
  */
 void VariableTask::setMessage ( const std::string& message ) {
+    CRASH_REPORT_BEGIN;
 	lastMessage = message;
+    CRASH_REPORT_END;
 }
 
 /**
  * Reset state and restart
  */
 void VariableTask::restart ( const std::string& message, bool triggerUpdate ) {
+    CRASH_REPORT_BEGIN;
 
     // Reset states
 	if (completed) started = false;
@@ -513,6 +553,7 @@ void VariableTask::restart ( const std::string& message, bool triggerUpdate ) {
     	_notifyUpdate( message );
     }
 
+    CRASH_REPORT_END;
 }
 
 /** #####################################################################################
@@ -523,6 +564,7 @@ void VariableTask::restart ( const std::string& message, bool triggerUpdate ) {
  * Check if the task is completed
  */
 bool BooleanTask::isCompleted ( ) {
+    CRASH_REPORT_BEGIN;
 
 	// If I am already completed, return 1.0
 	if (completed) return true;
@@ -533,12 +575,14 @@ bool BooleanTask::isCompleted ( ) {
 	// Otherwise I am not completed
 	return true;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Return progress event
  */
 double BooleanTask::getProgress ( ) {
+    CRASH_REPORT_BEGIN;
 
 	// If I am already completed, return 1.0
 	if (completed) return 1.0;
@@ -548,12 +592,14 @@ double BooleanTask::getProgress ( ) {
 
 	// Otherwise I am not completed
 	return 0.0;
+    CRASH_REPORT_END;
 }
 
 /**
  * Reset the state to non-completed
  */
 void BooleanTask::restart ( const std::string& message, bool triggerUpdate ) {
+    CRASH_REPORT_BEGIN;
 
 	// Reset state
 	if (completed) started = false;
@@ -565,6 +611,7 @@ void BooleanTask::restart ( const std::string& message, bool triggerUpdate ) {
     	_notifyUpdate( message );
     }
 
+    CRASH_REPORT_END;
 }
 
 /**

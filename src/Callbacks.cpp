@@ -24,6 +24,7 @@
  * Register a callback that handles a named event
  */
 NamedEventSlotPtr Callbacks::on ( const std::string& name, cbNamedEvent cb ) {
+    CRASH_REPORT_BEGIN;
 	boost::mutex::scoped_lock lock(shopMutex);
 
     // Allocate missing entry
@@ -34,12 +35,14 @@ NamedEventSlotPtr Callbacks::on ( const std::string& name, cbNamedEvent cb ) {
     NamedEventSlotPtr ptr = boost::make_shared<NamedEventSlot>( cb );
 	cbs->push_back( ptr );
 	return ptr;
+    CRASH_REPORT_END;
 }
 
 /**
  * Unegister a callback that handles a named event
  */
 void Callbacks::off ( const std::string& name, NamedEventSlotPtr cb ) {
+    CRASH_REPORT_BEGIN;
 	if (!cb) return;
 	boost::mutex::scoped_lock lock(shopMutex);
 
@@ -54,22 +57,26 @@ void Callbacks::off ( const std::string& name, NamedEventSlotPtr cb ) {
             return;
         }
     }
+    CRASH_REPORT_END;
 }
 
 /**
  * Register a callback that handles all the events
  */
 AnyEventSlotPtr Callbacks::onAnyEvent ( cbAnyEvent cb ) {
+    CRASH_REPORT_BEGIN;
 	boost::mutex::scoped_lock lock(shopMutex);
 	AnyEventSlotPtr ptr = boost::make_shared<AnyEventSlot>( cb );
 	anyEventCallbacks.push_back( ptr );
 	return ptr;
+    CRASH_REPORT_END;
 }
 
 /**
  * Unregister a callback that handles all the events
  */
 void Callbacks::offAnyEvent ( AnyEventSlotPtr cb ) {
+    CRASH_REPORT_BEGIN;
 	if (!cb) return;
 	boost::mutex::scoped_lock lock(shopMutex);
 
@@ -80,13 +87,14 @@ void Callbacks::offAnyEvent ( AnyEventSlotPtr cb ) {
             return;
 	    }
     }
-
+    CRASH_REPORT_END;
 }
 
 /**
  * Fire an event by it's name
  */
 void Callbacks::fire( const std::string& name, VariantArgList& args ){
+    CRASH_REPORT_BEGIN;
 	boost::mutex::scoped_lock lock(shopMutex);
 
 	// First, call the anyEvent handlers
@@ -111,5 +119,5 @@ void Callbacks::fire( const std::string& name, VariantArgList& args ){
 	        }
         }
     }
-
+    CRASH_REPORT_END;
 }

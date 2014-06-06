@@ -28,6 +28,7 @@ UserInteractionPtr defaultSingleton;
  * Return default user interaction pointer
  */
 UserInteractionPtr UserInteraction::Default() {
+    CRASH_REPORT_BEGIN;
 
 	// Automatically create an 'accept' singleton
 	// if it's not still there.
@@ -37,28 +38,33 @@ UserInteractionPtr UserInteraction::Default() {
 	// Return singleton isntance
 	return defaultSingleton;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Display the specified message and wait for an OK/Cancel response.
  */
 int UserInteraction::confirm ( const std::string& title, const std::string & message, int timeout ) {
+    CRASH_REPORT_BEGIN;
 	if (!cbConfirm) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
 	cbConfirm( title, message, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
+    CRASH_REPORT_END;
 }
 
 /**
  * Display the specified message and wait until the user clicks OK.
  */
 int UserInteraction::alert ( const std::string& title, const std::string& message, int timeout ) {
+    CRASH_REPORT_BEGIN;
 	if (!cbAlert) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
 	cbAlert( title, message, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
+    CRASH_REPORT_END;
 }
 
 /**
@@ -66,56 +72,69 @@ int UserInteraction::alert ( const std::string& title, const std::string& messag
  * wait for user response for accepting or declining it.
  */
 int UserInteraction::confirmLicenseURL	( const std::string& title, const std::string& url, int timeout ) {
+    CRASH_REPORT_BEGIN;
 	if (!cbLicenseURL) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
 	cbLicenseURL( title, url, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
+    CRASH_REPORT_END;
 }
 
 /**
  * Display a licence whose contents is provided as a parameter
  */
 int UserInteraction::confirmLicense	( const std::string& title, const std::string& buffer, int timeout ) {
+    CRASH_REPORT_BEGIN;
 	if (!cbLicense) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
 	cbLicense( title, buffer, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
+    CRASH_REPORT_END;
 }
 
 /**
  * Define a handler for confirm message
  */
 void UserInteraction::setConfirmHandler	( const callbackConfirm & cb ) {
+    CRASH_REPORT_BEGIN;
 	cbConfirm = cb;
+    CRASH_REPORT_END;
 }
 
 /**
  * Define a handler for alert message
  */
 void UserInteraction::setAlertHandler ( const callbackAlert & cb ) {
+    CRASH_REPORT_BEGIN;
 	cbAlert = cb;
+    CRASH_REPORT_END;
 }
 
 /**
  * Define a handler for license message (offline)
  */
 void UserInteraction::setLicenseHandler ( const callbackLicense & cb ) {
+    CRASH_REPORT_BEGIN;
 	cbLicense = cb;
+    CRASH_REPORT_END;
 }
 
 /**
  * Define a handler for license message (online)
  */
 void UserInteraction::setLicenseURLHandler ( const callbackLicense & cb ) {
+    CRASH_REPORT_BEGIN;
 	cbLicenseURL = cb;
+    CRASH_REPORT_END;
 }
 
 /** 
  * Local function to wait for callback
  */
 int UserInteraction::__waitResult ( int timeout ) {
+    CRASH_REPORT_BEGIN;
 
 	// Wait on mutex
 	boost::unique_lock<boost::mutex> lock(mutex);
@@ -126,12 +145,14 @@ int UserInteraction::__waitResult ( int timeout ) {
 	// Return result
 	return result;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Callback function for receiving feedback from the callback handlers
  */
 void UserInteraction::__cbResult( int result ) {
+    CRASH_REPORT_BEGIN;
 
 	// If result is negative, switch to '0' = Undefined
 	if (result < 0) result = 0;
@@ -145,4 +166,5 @@ void UserInteraction::__cbResult( int result ) {
     // Release mutex
     cond.notify_all();
 
+    CRASH_REPORT_END;
 }

@@ -448,6 +448,7 @@ int __downloadChecksum( const std::string & checksumURL, const std::string & sOu
                         const VariableTaskPtr& pfDownload, const FiniteTaskPtr & pf,
                         const DownloadProviderPtr& downloadProvider,
                         const int retries, std::string * sChecksumString ) {
+    CRASH_REPORT_BEGIN;
 
     char linebuf[CHECKSUM_LENGTH+1];
     bool bChecksumOK = false;
@@ -531,6 +532,7 @@ externalContinue:
     // Return OK
     return HVE_OK;
 
+    CRASH_REPORT_END;
 }
 
 /**
@@ -541,6 +543,7 @@ int __downloadFile( const std::string & fileURL, const std::string & sOutFilenam
                     const DownloadProviderPtr& downloadProvider, const std::string& sChecksumString,
                     const int retries ) {
 
+    CRASH_REPORT_BEGIN;
     bool bFileOK = false;
     int ans;
 
@@ -600,6 +603,7 @@ int __downloadFile( const std::string & fileURL, const std::string & sOutFilenam
     // Return OK
     return HVE_OK;
 
+    CRASH_REPORT_END;
 }
 
 /**
@@ -1065,8 +1069,10 @@ HVInstancePtr detectHypervisor() {
  * Install hypervisor
  */
 int installHypervisor( const DownloadProviderPtr& downloadProvider, const UserInteractionPtr & ui, const FiniteTaskPtr & pf, int retries ) {
+    CRASH_REPORT_BEGIN;
     
     // The only hypervisor we currently support is VirtualBox
     return vboxInstall( downloadProvider, ui, pf, retries );
 
+    CRASH_REPORT_END;
 }

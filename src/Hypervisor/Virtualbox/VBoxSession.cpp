@@ -107,13 +107,16 @@ std::string macroReplace( ParameterMapPtr mapData, std::string iString ) {
  * Function to cleanup a folder and all of it's sub-files
  */
 bool cleanupFolder( const std::string& baseDir ) {
+    CRASH_REPORT_BEGIN;
     
+    CRASH_REPORT_END;
 }
 
 /**
  * Parse VirtualBox Log file in order to get the launched process PID
  */
 int getPIDFromFile( std::string logPath ) {
+    CRASH_REPORT_BEGIN;
     int pid = 0;
 
     // Locate Logfile
@@ -159,13 +162,16 @@ int getPIDFromFile( std::string logPath ) {
     fIn.close();
     return pid;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Check if the VM logs exist - This means that the VM is still alive
  */
 bool vboxLogExists( std::string logPath ) {
+    CRASH_REPORT_BEGIN;
     return file_exists( logPath + "/VBox.log" );
+    CRASH_REPORT_END;
 }
 
 /////////////////////////////////////
@@ -182,10 +188,12 @@ bool vboxLogExists( std::string logPath ) {
  * Initialize connection with VirtualBox
  */
 void VBoxSession::Initialize() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Initializing session");
 
 
     FSMDone("Session initialized");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -194,6 +202,7 @@ void VBoxSession::Initialize() {
  * Load VirtualBox session 
  */
 void VBoxSession::UpdateSession() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Loading session information");
 
     // If VBoxID is missing, directly go to 'destroyed'
@@ -258,6 +267,7 @@ void VBoxSession::UpdateSession() {
     }
 
     FSMDone("Session updated");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -266,9 +276,11 @@ void VBoxSession::UpdateSession() {
  * Handle errors
  */
 void VBoxSession::HandleError() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Handling error");
 
     FSMDone("Error handled");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -277,9 +289,11 @@ void VBoxSession::HandleError() {
  * Cure errors
  */
 void VBoxSession::CureError() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Curing Error");
 
     FSMDone("Error cured");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -288,6 +302,7 @@ void VBoxSession::CureError() {
  * Create new VM
  */
 void VBoxSession::CreateVM() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Creating Virtual Machine");
     ostringstream args;
     vector<string> lines;
@@ -395,6 +410,7 @@ void VBoxSession::CreateVM() {
 
 
     FSMDone("Session initialized");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -403,6 +419,7 @@ void VBoxSession::CreateVM() {
  * Configure the new VM instace
  */
 void VBoxSession::ConfigureVM() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Configuring Virtual Machine");
     ostringstream args;
     vector<string> lines;
@@ -598,6 +615,7 @@ void VBoxSession::ConfigureVM() {
     local->set("initialized","1");
 
     FSMDone("Virtual Machine configured");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -606,6 +624,7 @@ void VBoxSession::ConfigureVM() {
  * Configure the VM network
  */
 void VBoxSession::ConfigNetwork() {
+    CRASH_REPORT_BEGIN;
 
     // Extract flags
     int flags = parameters->getNum<int>("flags", 0);
@@ -682,6 +701,7 @@ void VBoxSession::ConfigNetwork() {
 
     }
 
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -690,6 +710,7 @@ void VBoxSession::ConfigNetwork() {
  * Download the required media to the application folder
  */
 void VBoxSession::DownloadMedia() {
+    CRASH_REPORT_BEGIN;
     FiniteTaskPtr pf = FSMBegin<FiniteTask>("Downloading required media");
     if (pf) pf->setMax(2);
 
@@ -800,6 +821,7 @@ void VBoxSession::DownloadMedia() {
 
     // Complete download task
     if (pf) pf->complete("Required media downloaded");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -808,6 +830,7 @@ void VBoxSession::DownloadMedia() {
  * Configure boot media of the VM
  */
 void VBoxSession::ConfigureVMBoot() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Preparing boot medium");
     int ans;
 
@@ -891,6 +914,7 @@ void VBoxSession::ConfigureVMBoot() {
     #endif
 
     FSMDone("Boot medium prepared");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -899,6 +923,7 @@ void VBoxSession::ConfigureVMBoot() {
  * Release Boot media of the VM
  */
 void VBoxSession::ReleaseVMBoot() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Releasing boot medium");
 
     // Extract flags
@@ -920,6 +945,7 @@ void VBoxSession::ReleaseVMBoot() {
     #endif
 
     FSMDone("Boot medium released");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -928,6 +954,7 @@ void VBoxSession::ReleaseVMBoot() {
  * Allocate a new scratch disk for the VM
  */
 void VBoxSession::ConfigureVMScratch() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Preparing scatch storage");
     ostringstream args;
     int ans;
@@ -981,6 +1008,7 @@ void VBoxSession::ConfigureVMScratch() {
         FSMDone("Scratch disk already exists");
     }
 
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -989,12 +1017,14 @@ void VBoxSession::ConfigureVMScratch() {
  * Release the scratch disk from the VM
  */
 void VBoxSession::ReleaseVMScratch() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Releasing scratch storage");
 
     // Unmount boot disk (and delete)
     unmountDisk( SCRATCH_CONTROLLER, SCRATCH_PORT, SCRATCH_DEVICE, T_HDD, true );
 
     FSMDone("Scratch storage released");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1003,6 +1033,7 @@ void VBoxSession::ReleaseVMScratch() {
  * Check if the mounted VMAPI disk has not changed
  */
 void VBoxSession::CheckVMAPI() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Checking VM API medium");
 
     // Get VMAPI Contents and re-generate the VMAPI Data
@@ -1017,12 +1048,14 @@ void VBoxSession::CheckVMAPI() {
     }
 
     FSMDone("VM API medium does not need to be modified");
+    CRASH_REPORT_END;
 }
 
 /**
  * Check the integrity of the VM Configuration before booting it
  */
 void VBoxSession::CheckIntegrity() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Checking VM integrity");
 
     // Query VM status and fetch local state variable
@@ -1051,6 +1084,7 @@ void VBoxSession::CheckIntegrity() {
 
 
     FSMDone("VM Integrity validated");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1059,6 +1093,7 @@ void VBoxSession::CheckIntegrity() {
  * Create a VM API disk (ex. floppyIO or OpenNebula ISO)
  */
 void VBoxSession::ConfigureVMAPI() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Preparing VM API medium");
 
     // Extract flags
@@ -1147,6 +1182,7 @@ void VBoxSession::ConfigureVMAPI() {
     }
 
     FSMDone("VM API medium prepared");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1155,6 +1191,7 @@ void VBoxSession::ConfigureVMAPI() {
  * Release a VM API disk
  */
 void VBoxSession::ReleaseVMAPI() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Releasing VM API medium");
 
     // Extract flags
@@ -1177,6 +1214,7 @@ void VBoxSession::ReleaseVMAPI() {
     }
 
     FSMDone("VM API medium released");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1185,9 +1223,11 @@ void VBoxSession::ReleaseVMAPI() {
  * Prepare the VM for booting
  */
 void VBoxSession::PrepareVMBoot() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Preparing for VM Boot");
 
     FSMDone("VM prepared for boot");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1196,6 +1236,7 @@ void VBoxSession::PrepareVMBoot() {
  * Destroy the VM instance (remove files and everything)
  */
 void VBoxSession::DestroyVM() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Destryoing VM");
     int ans;
 
@@ -1207,6 +1248,7 @@ void VBoxSession::DestroyVM() {
     }
 
     FSMDone("VM Destroyed");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1215,6 +1257,7 @@ void VBoxSession::DestroyVM() {
  * Shut down the VM
  */
 void VBoxSession::PoweroffVM() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Powering VM off");
 
     // Poweroff VM
@@ -1225,6 +1268,7 @@ void VBoxSession::PoweroffVM() {
     }
 
     FSMDone("VM Powered off");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1233,6 +1277,7 @@ void VBoxSession::PoweroffVM() {
  * Discard saved VM state
  */
 void VBoxSession::DiscardVMState() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Discarding saved VM state");
 
     // Discard vm state
@@ -1243,6 +1288,7 @@ void VBoxSession::DiscardVMState() {
     }
 
     FSMDone("Saved VM state discarted");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1251,6 +1297,7 @@ void VBoxSession::DiscardVMState() {
  * Boot the VM
  */
 void VBoxSession::StartVM() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Starting VM");
 
     // Extract flags
@@ -1281,6 +1328,7 @@ void VBoxSession::StartVM() {
 
     // We are done
     FSMDone("VM Started");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1289,6 +1337,7 @@ void VBoxSession::StartVM() {
  * Save the state of the VM
  */
 void VBoxSession::SaveVMState() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Saving VM state");
 
     // Save VM state
@@ -1299,6 +1348,7 @@ void VBoxSession::SaveVMState() {
     }
 
     FSMDone("VM State saved");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1307,6 +1357,7 @@ void VBoxSession::SaveVMState() {
  * Put the VM in paused state
  */
 void VBoxSession::PauseVM() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Pausing the VM");
 
     // Pause VM
@@ -1317,6 +1368,7 @@ void VBoxSession::PauseVM() {
     }
 
     FSMDone("VM Paused");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1325,6 +1377,7 @@ void VBoxSession::PauseVM() {
  * Resume the VM from paused state
  */
 void VBoxSession::ResumeVM() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Resuming VM");
 
     // Resume VM
@@ -1335,6 +1388,7 @@ void VBoxSession::ResumeVM() {
     }
 
     FSMDone("VM Resumed");
+    CRASH_REPORT_END;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1343,12 +1397,14 @@ void VBoxSession::ResumeVM() {
  * Fatal error sink
  */
 void VBoxSession::FatalErrorSink() {
+    CRASH_REPORT_BEGIN;
     FSMDoing("Session unable to continue. Cleaning-up");
 
     // Destroy everything
     destroyVM();
 
     FSMDone("Session cleaned-up");
+    CRASH_REPORT_END;
 }
 
 /////////////////////////////////////
@@ -1363,6 +1419,7 @@ void VBoxSession::FatalErrorSink() {
  * Initialize a new session
  */
 int VBoxSession::open ( ) {
+    CRASH_REPORT_BEGIN;
     
     // Start the FSM thread
     FSMThreadStart();
@@ -1372,19 +1429,23 @@ int VBoxSession::open ( ) {
 
     // We are good
     return HVE_SCHEDULED;
-    
+
+    CRASH_REPORT_END;
 }
 
 /**
  * Pause the VM session
  */
 int VBoxSession::pause ( ) {
+    CRASH_REPORT_BEGIN;
 
     // Switch to paused state
     FSMGoto(6);
 
     // Scheduled for execution
     return HVE_SCHEDULED;
+
+    CRASH_REPORT_END;
 }
 
 /**
@@ -1394,6 +1455,7 @@ int VBoxSession::pause ( ) {
  * shall not wait for the VM to shutdown.
  */
 int VBoxSession::close ( bool unmonitored ) {
+    CRASH_REPORT_BEGIN;
 
     // Switch to destroyed state
     FSMGoto(3);
@@ -1401,12 +1463,14 @@ int VBoxSession::close ( bool unmonitored ) {
     // Scheduled for execution
     return HVE_SCHEDULED;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Resume a paused VM
  */
 int VBoxSession::resume ( ) {
+    CRASH_REPORT_BEGIN;
     
     // Switch to running state
     FSMGoto(7);
@@ -1414,19 +1478,23 @@ int VBoxSession::resume ( ) {
     // Scheduled for execution
     return HVE_SCHEDULED;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Forcefully reboot the VM
  */
 int VBoxSession::reset ( ) {
+    CRASH_REPORT_BEGIN;
     return HVE_NOT_IMPLEMENTED;    
+    CRASH_REPORT_END;
 }
 
 /**
  * Shut down the VM
  */
 int VBoxSession::stop ( ) {
+    CRASH_REPORT_BEGIN;
     
     // Switch to powerOff state
     FSMGoto(4);
@@ -1434,12 +1502,14 @@ int VBoxSession::stop ( ) {
     // Scheduled for execution
     return HVE_SCHEDULED;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Put the VM to saved state
  */
 int VBoxSession::hibernate ( ) {
+    CRASH_REPORT_BEGIN;
     
     // Switch to paused state
     FSMGoto(5);
@@ -1447,12 +1517,14 @@ int VBoxSession::hibernate ( ) {
     // Scheduled for execution
     return HVE_SCHEDULED;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Put the VM to started state
  */
 int VBoxSession::start ( const ParameterMapPtr& userData ) {
+    CRASH_REPORT_BEGIN;
 
     // Update user data
     this->userData->fromParameters( userData, true );
@@ -1463,28 +1535,35 @@ int VBoxSession::start ( const ParameterMapPtr& userData ) {
     // Scheduled for execution
     return HVE_SCHEDULED;
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Change the execution cap of the VM
  */
 int VBoxSession::setExecutionCap ( int cap ) {
+    CRASH_REPORT_BEGIN;
     return HVE_NOT_IMPLEMENTED;
+    CRASH_REPORT_END;
 }
 
 /**
  * Set a property to the VM
  */
 int VBoxSession::setProperty ( std::string name, std::string key ) {
+    CRASH_REPORT_BEGIN;
     properties->set(name, key);
     return HVE_OK;
+    CRASH_REPORT_END;
 }
 
 /**
  * Get a property of the VM
  */
 std::string VBoxSession::getProperty ( std::string name ) {
+    CRASH_REPORT_BEGIN;
     return properties->get(name);
+    CRASH_REPORT_END;
 }
 
 /**
@@ -1492,9 +1571,11 @@ std::string VBoxSession::getProperty ( std::string name ) {
  * in order to get the VM's display.
  */
 std::string VBoxSession::getRDPAddress ( ) {
+    CRASH_REPORT_BEGIN;
     std::ostringstream oss;
     oss << "127.0.0.1:" << local->get("rdpPort");
     return oss.str();
+    CRASH_REPORT_END;
 }
 
 /**
@@ -1531,14 +1612,18 @@ std::string VBoxSession::getExtraInfo ( int extraInfo ) {
  * in order to interact with the VM instance.
  */
 std::string VBoxSession::getAPIHost ( ) {
+    CRASH_REPORT_BEGIN;
     return local->get("apiHost");
+    CRASH_REPORT_END;
 }
 
 /**
  * Return port number allocated for the API
  */
 int VBoxSession::getAPIPort ( ) {
+    CRASH_REPORT_BEGIN;
     return local->getNum<int>("apiPort");
+    CRASH_REPORT_END;
 }
 
 /**
@@ -1546,6 +1631,7 @@ int VBoxSession::getAPIPort ( ) {
  * appropriate state change event callbacks
  */
 int VBoxSession::update ( bool waitTillInactive ) {
+    CRASH_REPORT_BEGIN;
 
     // Wait until the FSM is not doing anything
     if (!waitTillInactive) {
@@ -1642,6 +1728,7 @@ int VBoxSession::update ( bool waitTillInactive ) {
 
     // It was OK
     return HVE_OK;
+    CRASH_REPORT_END;
 }
 
 /**
@@ -1649,19 +1736,23 @@ int VBoxSession::update ( bool waitTillInactive ) {
  * for reaping.
  */
 void VBoxSession::abort ( ) {
+    CRASH_REPORT_BEGIN;
 
     // Stop the FSM thread
     // (This will send an interrupt signal,
     // causing all intermediate code to except)
     FSMThreadStop();
 
+    CRASH_REPORT_END;
 }
 
 /**
  * Wait until FSM is idle
  */
 void VBoxSession::wait ( ) {
+    CRASH_REPORT_BEGIN;
     FSMWaitInactive();
+    CRASH_REPORT_END;
 }
 
 /////////////////////////////////////
@@ -1677,10 +1768,12 @@ void VBoxSession::wait ( ) {
  * has been forcefully destroyed from an external source.
  */
 void VBoxSession::hvNotifyDestroyed () {
+    CRASH_REPORT_BEGIN;
 
     // Stop the FSM thread
     FSMThreadStop();
 
+    CRASH_REPORT_END;
 }
 
 /**
@@ -1689,10 +1782,12 @@ void VBoxSession::hvNotifyDestroyed () {
  * without raising any alert during the handling.
  */
 void VBoxSession::hvStop () {
+    CRASH_REPORT_BEGIN;
 
     // Stop the FSM thread
     FSMThreadStop();
 
+    CRASH_REPORT_END;
 }
 
 /////////////////////////////////////
@@ -1707,6 +1802,7 @@ void VBoxSession::hvStop () {
  * Notification from the SimpleFSM instance when we enter a state
  */
 void VBoxSession::FSMEnteringState( const int state, const bool final ) {
+    CRASH_REPORT_BEGIN;
 
     // On checkpoint states, update the VM state
     // in the local config file.
@@ -1727,6 +1823,8 @@ void VBoxSession::FSMEnteringState( const int state, const bool final ) {
         local->setNum<int>( "state", SS_RUNNING );
         if (final) this->fire( "stateChanged", ArgumentList( SS_RUNNING ) );
     }
+
+    CRASH_REPORT_END;
 }
 
 
