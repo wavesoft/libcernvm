@@ -268,6 +268,7 @@ int CURLProvider::abort() {
     CRASH_REPORT_BEGIN;
     abortFlag = true;
     abortPersistsFlag = false;
+    return HVE_OK;
     CRASH_REPORT_END;
 }
 
@@ -278,6 +279,7 @@ int CURLProvider::abortAll() {
     CRASH_REPORT_BEGIN;
     abortFlag = true;
     abortPersistsFlag = true;
+    return HVE_OK;
     CRASH_REPORT_END;
 }
 

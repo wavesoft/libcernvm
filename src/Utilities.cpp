@@ -1452,7 +1452,7 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
     struct linger fix_ling;
     fix_ling.l_onoff = 1;
     fix_ling.l_linger = 0;
-    int result = setsockopt(sock, SOL_SOCKET, SO_LINGER, &fix_ling, sizeof(fix_ling));
+    int result = setsockopt(sock, SOL_SOCKET, SO_LINGER, (char*)&fix_ling, sizeof(fix_ling));
     if (result < 0) {
         #ifdef _WIN32
             shutdown(sock, SD_BOTH ); 
@@ -1466,7 +1466,7 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
 
     // fix the socket options
     int sockopt = 1;
-    result = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &sockopt, sizeof(sockopt));
+    result = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&sockopt, sizeof(sockopt));
     if (result < 0) {
         #ifdef _WIN32
             shutdown(sock, SD_BOTH ); 
@@ -1525,7 +1525,7 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
         }
 
         // Drain buffer
-        while ( (n = recv(sock, &readBuf, 1024, 0)) >= 0 ) {
+        while ( (n = recv(sock, (char*)&readBuf, 1024, 0)) >= 0 ) {
             nDataArrived += n;
         }
 
@@ -1580,7 +1580,7 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
         }
 
         // Drain buffer
-        while ( (n = recv(sock, &readBuf, 1024, 0)) > 0 ) {
+        while ( (n = recv(sock, (char*)&readBuf, 1024, 0)) > 0 ) {
             nDataArrived += n;
         }
 
