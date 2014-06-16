@@ -24,6 +24,8 @@
 #include <CernVM/Hypervisor/Virtualbox/VBoxProbes.h>
 #include <CernVM/Utilities.h>
 
+#include <boost/filesystem.hpp> 
+
 using namespace std;
 
 /////////////////////////////////////
@@ -108,7 +110,38 @@ std::string macroReplace( ParameterMapPtr mapData, std::string iString ) {
  */
 bool cleanupFolder( const std::string& baseDir ) {
     CRASH_REPORT_BEGIN;
-    
+
+    boost::filesystem::path readDir( baseDir );
+    boost::filesystem::directory_iterator end_iter;
+
+    std::vector< std::string > result;
+
+    // Start scanning configuration directory
+    if ( boost::filesystem::exists(readDir) && boost::filesystem::is_directory(readDir)) {
+        for( boost::filesystem::directory_iterator dir_iter(readDir) ; dir_iter != end_iter ; ++dir_iter) {
+            std::string fn = dir_iter->path().filename().string();
+            if (boost::filesystem::is_regular_file(dir_iter->status()) ) {
+
+                // Get the filename
+                if (fn[0] != '.') {
+                    CVMWA_LOG("Debug", "Erasing file " << baseDir+"/"+fn);
+                    //remove(fn.c_str());
+                }
+
+            } else if (boost::filesystem::is_directory(dir_iter->status()) ) {
+
+                // Get the filename
+                if (fn[0] != '.')
+                    cleanupFolder(baseDir+"/"+fn);
+
+            }
+        }
+    }
+
+    //std::cout << "[rmdir " << baseDir << "]" << std::endl;
+    CVMWA_LOG("Debug", "Erasing folder " << baseDir);
+    //rmdir(baseDir.c_str());
+
     CRASH_REPORT_END;
 }
 
@@ -929,9 +962,9 @@ void VBoxSession::ReleaseVMBoot() {
     // Extract flags
     int flags = parameters->getNum<int>("flags", 0);
 
-    // Unmount boot disk (don't delete)
+    // Unmount boot disk
     if ((flags & HVF_DEPLOYMENT_HDD) != 0) {
-        unmountDisk( BOOT_CONTROLLER, BOOT_PORT, BOOT_DEVICE, T_HDD, false );
+        unmountDisk( BOOT_CONTROLLER, BOOT_PORT, BOOT_DEVICE, T_HDD, true );
     } else {
         unmountDisk( BOOT_CONTROLLER, BOOT_PORT, BOOT_DEVICE, T_DVD, false );
     }
@@ -963,7 +996,7 @@ void VBoxSession::ConfigureVMScratch() {
     if (!machine->contains(SCRATCH_DSK)) {
 
         // Create a hard disk for this VM
-        string vmDisk = getTmpFile(".vdi", this->getDataFolder());
+        string vmDisk = getTmpFile("vdi", this->getDataFolder());
 
         // (4) Create disk
         args.str("");
@@ -1869,6 +1902,9 @@ int VBoxSession::destroyVM () {
         return HVE_EXTERNAL_ERROR;
     }
 
+    // Cleanup folder
+    cleanupFolder( local->get("baseFolder") );
+
     // Reset properties
     local->set("initialized","0");
     local->erase("vboxid");
@@ -1985,10 +2021,26 @@ int VBoxSession::unmountDisk ( const std::string & controller,
 
             // Execute and handle errors
             ans = this->wrapExec(args.str(), NULL, NULL, execConfig);
-            if (ans != HVE_OK) return ans;
+            if (ans != HVE_OK) {
 
-            // Remove file
-            ::remove( kk.c_str() );
+                // Try again with UUID
+                kv = kv.substr(6, kv.length()-7);
+
+                // Close and unregister medium
+                args.str("");
+                args << "closemedium " << type << " "
+                    << "\"" << kv << "\" --delete";
+
+                // Execute and handle errors
+                ans = this->wrapExec(args.str(), NULL, NULL, execConfig);
+                if (ans != HVE_OK) {
+
+                    // Try manual removal
+                    ::remove( kk.c_str() );
+
+                }
+
+            }
 
         }
 

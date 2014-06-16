@@ -178,12 +178,7 @@ static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp) 
 /**
  * Transmit the crash report
  */
-void crashSendReport( const char * function, const char * message, std::string stackTrace ) {
-    static const char alphanum[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
- 
+void crashSendReport( const char * function, const char * message, std::string stackTrace ) { 
 	CURL *curl;
 	CURLcode res;
 
