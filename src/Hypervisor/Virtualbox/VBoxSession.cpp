@@ -141,7 +141,8 @@ bool cleanupFolder( const std::string& baseDir ) {
     //std::cout << "[rmdir " << baseDir << "]" << std::endl;
     CVMWA_LOG("Debug", "Erasing folder " << baseDir);
     //rmdir(baseDir.c_str());
-
+    return true;
+    
     CRASH_REPORT_END;
 }
 

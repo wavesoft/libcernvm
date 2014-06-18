@@ -838,7 +838,7 @@ int HVInstance::exec( string args, vector<string> * stdoutList, string * stderrM
 /**
  * Initialize hypervisor 
  */
-HVInstance::HVInstance() : version(""), sessions(), openSessions(), userInteraction(), downloadProvider() {
+HVInstance::HVInstance() : version(""), openSessions(), sessions(), downloadProvider(), userInteraction() {
     CRASH_REPORT_BEGIN;
     this->sessionID = 1;
     

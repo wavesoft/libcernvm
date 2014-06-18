@@ -76,7 +76,7 @@ LocalConfigPtr LocalConfig::forRuntime( const std::string& name ) {
 /**
  * Create custom configuration file from the given map file
  */
-LocalConfig::LocalConfig ( std::string path, std::string name ) : ParameterMap(), keysDeleted(), timeLoaded(0), timeModified(0) {
+LocalConfig::LocalConfig ( std::string path, std::string name ) : ParameterMap(), timeLoaded(0), timeModified(0), keysDeleted() {
     CRASH_REPORT_BEGIN;
 
     // Prepare names

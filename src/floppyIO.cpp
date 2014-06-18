@@ -169,7 +169,6 @@ void FloppyIO::send(string strData) {
     
     // Initialize variables
     int szData = strData.length();
-    int szPad = 0;
     
     // Copy the first szInput bytes
     if (szData > this->szOutput-1) {
@@ -205,7 +204,6 @@ string FloppyIO::receive() {
     // Prepare buffers
     static string ansBuffer;
     char * dataToReceive = new char[this->szInput];
-    int dataLength = this->szInput;
     
     // Find the size of the input string
     memset( dataToReceive, 0, this->szInput );

@@ -130,7 +130,6 @@ HVInstancePtr vboxDetect() {
  */
 int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInteractionPtr & ui, const FiniteTaskPtr & pf, int retries ) {
     CRASH_REPORT_BEGIN;
-    const int maxSteps = 200;
     HVInstancePtr hv;
     int res;
     string tmpHypervisorInstall;

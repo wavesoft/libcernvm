@@ -79,8 +79,8 @@ public:
 	SimpleFSM() : fsmtPaused(true), fsmThread(NULL), fsmtPauseMutex(), fsmtPauseChanged(),
 			  	  fsmwState(NULL), fsmwStateWaiting(false), fsmwStateMutex(), fsmwStateChanged(),
 				  fsmInsideHandler(false), fsmProgress(), fsmGotoMutex(), fsmTargetState(0), 
-				  fsmwWaitCond(), fsmwWaitMutex(), fsmCurrentPath(), fsmRootNode(NULL), fsmCurrentNode(), 
-				  fsmNodes(), fsmTmpRouteLinks()
+				  fsmwWaitCond(), fsmwWaitMutex(), fsmRootNode(NULL), fsmCurrentNode(),
+				  fsmTmpRouteLinks(), fsmNodes(), fsmCurrentPath()
 				  { };
 
 	/**
