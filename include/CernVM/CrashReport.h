@@ -45,7 +45,7 @@
 		 * If we are using VisualC Compiler, we don't have any other way 
 		 * than using the StalkWalker to get the stack trace. 
 		 */ 
-		#include "Platform/Win/StackWalker.h"
+		#include <cernvm/Platform/win/StackWalker.h>
 
 		/**
 		 * The CVMWebStackWalker subclass, renders all the output
