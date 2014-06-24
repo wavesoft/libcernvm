@@ -205,11 +205,11 @@ include(ExternalProject)
 foreach(Component ${BoostComponents})
   ExternalProject_Add(
       boost_${Component}
-      PREFIX ${CMAKE_BINARY_DIR}/${BoostFolderName}
+      PREFIX ${CMAKE_BINARY_DIR}/extern/${BoostFolderName}
       SOURCE_DIR ${BoostSourceDir}
       BINARY_DIR ${BoostSourceDir}
       CONFIGURE_COMMAND ""
-      BUILD_COMMAND "${b2Args}" --with-${Component}
+      BUILD_COMMAND "${b2Args}" --with-${Component} --prefix=${CMAKE_BINARY_DIR}/extern/${BoostFolderName}
       INSTALL_COMMAND ""
       LOG_BUILD ON
       )

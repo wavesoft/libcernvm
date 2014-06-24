@@ -413,7 +413,6 @@ void SimpleFSM::FSMThreadStop() {
  * Infinitely pause, waiting for a wakeup signal
  */
 void SimpleFSM::_fsmPause() {
-    CRASH_REPORT_BEGIN;
 	CVMWA_LOG("Debug", "Entering paused state");
 
 	// If we are already not paused, don't
@@ -428,7 +427,6 @@ void SimpleFSM::_fsmPause() {
     // Reset paused state
     fsmtPaused = true;
 	CVMWA_LOG("Debug", "Exiting paused state");
-    CRASH_REPORT_END;
 }
 
 /**
@@ -543,6 +541,7 @@ void SimpleFSM::FSMWaitFor ( int state, int timeout ) {
 	*/
 
 	// Wait for state
+	
     boost::unique_lock<boost::mutex> lock(fsmwStateMutex);
     fsmwStateChanged.wait(lock);
 

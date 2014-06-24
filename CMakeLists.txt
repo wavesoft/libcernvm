@@ -29,6 +29,7 @@ option(SYSTEM_OPENSSL "Set to ON to use openssl from the system" OFF)
 option(SYSTEM_CURL "Set to ON to use CURL from the system" OFF)
 option(SYSTEM_BOOST "Set to ON to use BOOST from the system" OFF)
 set(TARGET_ARCH "${GUESS_ARCH}" CACHE STRING "Override the identified target architecture (x86_64 or i386)" )
+set(BUILD_ID "" CACHE STRING "A build ID which is used to address different library configuration")
 
 # Validation banner
 message(STATUS "Building libcernvm for arch: ${TARGET_ARCH}")

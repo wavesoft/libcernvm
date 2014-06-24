@@ -75,7 +75,7 @@ public:
 	/**
 	 * Constructor for user interaction class
 	 */
-	UserInteraction() : cbConfirm(), cbAlert(), cbLicense(), mutex(), cond() { };
+	UserInteraction() : cbConfirm(), cbAlert(), cbLicense(), mutex(), cond(), aborted(false) { };
 
 	/**
 	 * Display the specified message and wait for an OK/Cancel response.
@@ -122,6 +122,23 @@ public:
 	 */
 	void 				setLicenseHandler		( const callbackLicense & cb );
 
+public:
+
+	/**
+	 * Abort a pending operation
+	 */
+	int 				abort 					( bool wait = false, int result = UI_CANCEL );
+
+	/**
+	 * Confirmation from the entity which is handling the aborted event
+	 */
+	void 				abortHandled			( );
+
+	/**
+	 * Flag to determine if the interaction was aborted
+	 */
+	bool 				aborted;
+
 protected:
 
 	/**
@@ -166,6 +183,14 @@ private:
 	 */
 	boost::mutex 				mutex;
 	boost::condition_variable 	cond;
+
+	/**
+	 * Mutex and contition variable for
+	 * abort handling
+	 */
+	boost::mutex 				abortHandledMutex;
+	boost::condition_variable 	abortHandledCond;
+	bool 						abortHandledFlag;
 
 };
 

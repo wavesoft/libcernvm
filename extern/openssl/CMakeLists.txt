@@ -72,7 +72,7 @@ endif()
 
 # Setup directories
 set( OPENSSL_SRC_DIR ${ARCHIVE_DIR})
-set( OPENSSL_BIN_DIR ${ARCHIVE_DIR}/build-${TARGET_ARCH} )
+set( OPENSSL_BIN_DIR ${CMAKE_BINARY_DIR}/extern/openssl-${OPENSSL_VER_DASHED}-${TARGET_ARCH} )
 
 # Mark the build directory part of clean process
 set_directory_properties( 

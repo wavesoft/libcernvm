@@ -1338,11 +1338,15 @@ void VBoxSession::StartVM() {
     int flags = parameters->getNum<int>("flags", 0);
     int ans;
 
+    // Add custom error detection on startVM 
+    SysExecConfig config(execConfig);
+    config.handleErrString("VBoxManage: error:", 200);
+
     // Start VM
     if ((flags & HVF_HEADFUL) != 0) {
-        ans = this->wrapExec("startvm " + parameters->get("vboxid") + " --type gui", NULL, NULL, execConfig);
+        ans = this->wrapExec("startvm " + parameters->get("vboxid") + " --type gui", NULL, NULL, config);
     } else {
-        ans = this->wrapExec("startvm " + parameters->get("vboxid") + " --type headless", NULL, NULL, execConfig);
+        ans = this->wrapExec("startvm " + parameters->get("vboxid") + " --type headless", NULL, NULL, config);
     }
 
     // Handle errors

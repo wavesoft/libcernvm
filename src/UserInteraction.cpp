@@ -130,6 +130,66 @@ void UserInteraction::setLicenseURLHandler ( const callbackLicense & cb ) {
     CRASH_REPORT_END;
 }
 
+/**
+ * Trigger user interaction abort
+ */
+int UserInteraction::abort( bool wait, int result ) {
+	CRASH_REPORT_BEGIN;
+
+	// If there was nothing to abort return 0
+	if (result < 0)
+		return 0;
+
+	// Abort
+	aborted = true;
+
+	// Fire __cbResult to release confirm/alert lock
+	__cbResult( result );
+
+	// Check if we shuold wait for abort_handled
+	if (wait) {
+
+		// Reset abortHandled flag
+		abortHandledFlag = false;
+
+		// Wait on abortHandledMutex
+		boost::unique_lock<boost::mutex> lock(abortHandledMutex);
+		while(!abortHandledFlag) {
+			abortHandledCond.wait(lock);
+		}
+
+	} else {
+
+        boost::unique_lock<boost::mutex> lock(abortHandledMutex);
+        this->abortHandledFlag = true;
+
+	}
+
+	// Otherwise return 1
+	return 1;
+
+	CRASH_REPORT_END;
+}
+
+/**
+ * Callback by the entity which is handling the aborted case
+ */
+void UserInteraction::abortHandled() {
+	CRASH_REPORT_BEGIN;
+
+	// Ensure unique access
+    {
+        boost::unique_lock<boost::mutex> lock(abortHandledMutex);
+        if (this->abortHandledFlag) return;
+        this->abortHandledFlag = true;
+    }
+
+    // Release mutex
+    abortHandledCond.notify_all();
+
+	CRASH_REPORT_END;
+}
+
 /** 
  * Local function to wait for callback
  */
