@@ -202,8 +202,10 @@ int UserInteraction::__waitResult ( int timeout ) {
 		cond.wait(lock);
 	}
 
-	// Return result
-	return result;
+	// Return and reset 
+	int ans = result;
+	result = -1;
+	return ans;
 
     CRASH_REPORT_END;
 }

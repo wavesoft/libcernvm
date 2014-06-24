@@ -13,7 +13,7 @@ set(OPENSSL_SHA1    9ef09e97dfc9f14ac2c042f3b7e301098794fc0f)
 string(REPLACE "." "_" OPENSSL_VER_DASHED ${OPENSSL_VERSION})
 
 # Setup archive
-set( ARCHIVE_URL  "https://github.com/openssl/openssl/archive/OpenSSL_${OPENSSL_VER_DASHED}.zip" )
+set( ARCHIVE_URL  "http://github.com/openssl/openssl/archive/OpenSSL_${OPENSSL_VER_DASHED}.zip" )
 set( ARCHIVE_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/openssl-${OPENSSL_VERSION}-${CMAKE_BUILD_TYPE}" )
 set( ARCHIVE_EXT  ".zip" )
 
