@@ -137,7 +137,7 @@ int UserInteraction::abort( bool wait, int result ) {
 	CRASH_REPORT_BEGIN;
 
 	// If there was nothing to abort return 0
-	if (result < 0)
+	if (this->result < 0)
 		return 0;
 
 	// Abort
@@ -146,7 +146,7 @@ int UserInteraction::abort( bool wait, int result ) {
 	// Fire __cbResult to release confirm/alert lock
 	__cbResult( result );
 
-	// Check if we shuold wait for abort_handled
+	// Check if we should wait for abort_handled
 	if (wait) {
 
 		// Reset abortHandled flag
