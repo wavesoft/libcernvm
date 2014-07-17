@@ -35,6 +35,7 @@
 #include <boost/filesystem.hpp> 
 #include <boost/filesystem/path.hpp>
 #include <openssl/evp.h>
+#include <errno.h>
 #include "zlib.h"
 
 #include <CernVM/Utilities.h>
@@ -1546,9 +1547,11 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
 
         // Prepare the request
         std::ostringstream oss;
-        oss << "GET / HTTP/1.0\r\n"
+        oss << "HEAD / HTTP/1.1\r\n"
             << "Host: " << host << "\r\n"
-            << "Connection: close\r\n"
+            << "Accept: */*" << "\r\n"
+            << "Connection: keep-alive\r\n"
+            << "User-Agent: CVMWebAPI/" << CERNVM_WEBAPI_VERSION << " CVMWebProbe/1.0" << "\r\n"
             << "\r\n";
 
         // Send it and check for failures
