@@ -45,26 +45,22 @@ UserInteractionPtr UserInteraction::Default() {
  * Display the specified message and wait for an OK/Cancel response.
  */
 int UserInteraction::confirm ( const std::string& title, const std::string & message, int timeout ) {
-    CRASH_REPORT_BEGIN;
 	if (!cbConfirm) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
 	cbConfirm( title, message, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
-    CRASH_REPORT_END;
 }
 
 /**
  * Display the specified message and wait until the user clicks OK.
  */
 int UserInteraction::alert ( const std::string& title, const std::string& message, int timeout ) {
-    CRASH_REPORT_BEGIN;
 	if (!cbAlert) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
 	cbAlert( title, message, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
-    CRASH_REPORT_END;
 }
 
 /**
@@ -72,26 +68,22 @@ int UserInteraction::alert ( const std::string& title, const std::string& messag
  * wait for user response for accepting or declining it.
  */
 int UserInteraction::confirmLicenseURL	( const std::string& title, const std::string& url, int timeout ) {
-    CRASH_REPORT_BEGIN;
 	if (!cbLicenseURL) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
 	cbLicenseURL( title, url, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
-    CRASH_REPORT_END;
 }
 
 /**
  * Display a licence whose contents is provided as a parameter
  */
 int UserInteraction::confirmLicense	( const std::string& title, const std::string& buffer, int timeout ) {
-    CRASH_REPORT_BEGIN;
 	if (!cbLicense) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
 	cbLicense( title, buffer, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
-    CRASH_REPORT_END;
 }
 
 /**
@@ -137,8 +129,11 @@ int UserInteraction::abort( bool wait, int result ) {
 	CRASH_REPORT_BEGIN;
 
 	// If there was nothing to abort return 0
-	if (result < 0)
-		return 0;
+    {
+        boost::unique_lock<boost::mutex> lock(mutex);
+		if (result >= 0)
+			return 0;
+	}
 
 	// Abort
 	aborted = true;
@@ -194,8 +189,9 @@ void UserInteraction::abortHandled() {
  * Local function to wait for callback
  */
 int UserInteraction::__waitResult ( int timeout ) {
-    CRASH_REPORT_BEGIN;
 
+    // Reset
+	result = -1;
 	// Wait on mutex
 	boost::unique_lock<boost::mutex> lock(mutex);
 	while(result < 0) {
@@ -203,11 +199,8 @@ int UserInteraction::__waitResult ( int timeout ) {
 	}
 
 	// Return and reset 
-	int ans = result;
-	result = -1;
-	return ans;
+	return result;
 
-    CRASH_REPORT_END;
 }
 
 /**
