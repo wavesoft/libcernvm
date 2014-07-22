@@ -222,7 +222,7 @@ public:
         CRASH_REPORT_BEGIN;
 
         // Start with single instance
-        instances = 1;
+        instances = 0;
 
         // Prepare default parameter values
         parameters->setDefault("cpus",                  "1");

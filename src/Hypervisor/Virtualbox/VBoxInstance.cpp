@@ -477,6 +477,13 @@ void VBoxInstance::sessionDelete ( const HVSessionPtr& session ) {
 void VBoxInstance::sessionClose( const HVSessionPtr& session ) {
     CRASH_REPORT_BEGIN;
 
+    // Check if there are many open sessions
+    if (--session->instances > 0)
+        return;
+
+    // Abort any open session FSM
+    session->abort();
+
     // Loook for the session object in the open sessions & remove it
     for (std::list< HVSessionPtr >::iterator jt = openSessions.begin(); jt != openSessions.end(); ++jt) {
         HVSessionPtr openSess = (*jt);

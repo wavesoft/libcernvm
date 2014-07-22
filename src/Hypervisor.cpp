@@ -937,10 +937,6 @@ HVSessionPtr HVInstance::sessionOpen( const ParameterMapPtr& parameters, const F
             // Exists but the password is invalid
             return voidPtr;
         }
-
-        // Increase the instance count
-        sess->instances += 1;
-        
     } else {
 
         // Otherwise, allocate one
@@ -954,6 +950,7 @@ HVSessionPtr HVInstance::sessionOpen( const ParameterMapPtr& parameters, const F
     sess->parameters->set("secret", keyHash); // (Replace with it's crypto-hash version)
 
     // Store it on open sessions
+    sess->instances += 1;
     openSessions.push_back( sess );
     
     // Return the handler
