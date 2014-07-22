@@ -125,6 +125,9 @@
 	 */
 	#define CRASH_REPORT_BEGIN try {
 	#define CRASH_REPORT_END   } \
+	 	catch (boost::thread_interrupted &e) { \
+	 		throw; \
+	 	} \
 	 	catch (const std::exception& ex) { \
 	 		crashSendReport( CVM_FUNC_NAME, ex.what(), crashReportBuildStackTrace() ); \
 	 		throw; \

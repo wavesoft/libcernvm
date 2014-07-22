@@ -1005,7 +1005,7 @@ void VBoxSession::ConfigureVMScratch() {
     if (!machine->contains(SCRATCH_DSK)) {
 
         // Create a hard disk for this VM
-        string vmDisk = getTmpFile("vdi", this->getDataFolder());
+        string vmDisk = getTmpFile(".vdi", this->getDataFolder());
 
         // (4) Create disk
         args.str("");

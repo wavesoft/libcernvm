@@ -221,6 +221,9 @@ public:
     {
         CRASH_REPORT_BEGIN;
 
+        // Start with single instance
+        instances = 1;
+
         // Prepare default parameter values
         parameters->setDefault("cpus",                  "1");
         parameters->setDefault("memory",                "512");
@@ -297,6 +300,11 @@ public:
     ParameterMapPtr         userData;
     ParameterMapPtr         machine;
     ParameterMapPtr         local;
+
+    /**
+     * Instance counters
+     */
+    int                     instances;
 
     ////////////////////////////////////////
     // Session API implementation

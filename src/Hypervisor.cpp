@@ -937,6 +937,10 @@ HVSessionPtr HVInstance::sessionOpen( const ParameterMapPtr& parameters, const F
             // Exists but the password is invalid
             return voidPtr;
         }
+
+        // Increase the instance count
+        sess->instances += 1;
+        
     } else {
 
         // Otherwise, allocate one
