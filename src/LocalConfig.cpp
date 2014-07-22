@@ -216,10 +216,10 @@ bool LocalConfig::saveMap ( std::string name, std::map<std::string, std::string>
             if (value[pos] == '\\') {
                 value.replace(pos, 1, "\\\\");
                 pos += 1;
-            } else if (value[pos] == 'n') {
+            } else if (value[pos] == '\n') {
                 value.replace(pos, 1, "\\n");
                 pos += 1;
-            } else if (value[pos+1] == 'r') {
+            } else if (value[pos] == '\r') {
                 value.replace(pos, 1, "\\r");
                 pos += 1;
             }
