@@ -210,7 +210,8 @@ bool LocalConfig::saveMap ( std::string name, std::map<std::string, std::string>
 
         // Do not allow new-line span: Replace \n to "\n", \r to "\r" and "\" to "\\"
         pos = 0;
-        while (pos < value.length()-1) {
+        while (true) {
+            if (pos >= value.length()) break;
 
             // Replace escape patterns as we find them
             if (value[pos] == '\\') {
@@ -336,7 +337,8 @@ bool LocalConfig::loadMap ( std::string name, std::map<std::string, std::string>
 
                 // Revert new-line span: Replace "\n" to \n, "\r" to \r and "\\"" to "\"
                 pos = 0;
-                while (pos < value.length()-1) {
+                while (true) {
+                    if (pos >= value.length()-1) break;
 
                     // Replace escape patterns as we find them
                     if ((value[pos] == '\\') && (value[pos+1] == '\\')) {
