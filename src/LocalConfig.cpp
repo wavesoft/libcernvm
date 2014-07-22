@@ -221,7 +221,7 @@ bool LocalConfig::saveMap ( std::string name, std::map<std::string, std::string>
         }
         pos = 0;
         while((pos = value.find("\r", pos)) != std::string::npos) {
-            value.replace(pos, 2, "\\r");
+            value.replace(pos, 1, "\\r");
             pos += 2;
         }
 

@@ -326,23 +326,26 @@ void SimpleFSM::FSMJump(int state) {
 	fsmCurrentPath.clear();
 
 	// Pick the current node
-	fsmCurrentNode = fsmNodes.find( state );
+	std::map<int,FSMNode>::iterator it = fsmNodes.find( state );
 
-	if (fsmCurrentNode == fsmNodes.end()) {
+	if (it == fsmNodes.end()) {
 		// Skip missing nodes
 		fsmCurrentNode = fsmRootNode;
-		return false;
 
-	} else if (fsmCurrentNode->handler) {
-		// Handle only non-state nodes
+	} else {
 
-		// We are entering the given state
-		FSMEnteringState( fsmCurrentNode->id, true );
+        // Change current node
+        fsmCurrentNode = &it->second;
 
-		// Call handler (and throw errors)
-		if (!_callHandler(fsmCurrentNode, true)) 
-			return false;
-		return true;
+        // Handle only non-state nodes
+        if (fsmCurrentNode->handler) {
+		    // We are entering the given state
+		    FSMEnteringState( fsmCurrentNode->id, true );
+
+		    // Call handler (and throw errors)
+		    _callHandler(fsmCurrentNode, true);
+
+        }
 
 	}
 

@@ -28,6 +28,14 @@
 
 using namespace std;
 
+// Path separator according to platform
+const char kPathSeparator =
+#ifdef _WIN32
+    '\\';
+#else
+    '/';
+#endif
+
 /////////////////////////////////////
 /////////////////////////////////////
 ////
@@ -124,7 +132,7 @@ bool cleanupFolder( const std::string& baseDir ) {
 
                 // Get the filename
                 if (fn[0] != '.') {
-                    CVMWA_LOG("Debug", "Erasing file " << baseDir+"/"+fn);
+                    CVMWA_LOG("Debug", "Erasing file " << baseDir+kPathSeparator+fn);
                     //remove(fn.c_str());
                 }
 
@@ -132,7 +140,7 @@ bool cleanupFolder( const std::string& baseDir ) {
 
                 // Get the filename
                 if (fn[0] != '.')
-                    cleanupFolder(baseDir+"/"+fn);
+                    cleanupFolder(baseDir+kPathSeparator+fn);
 
             }
         }
@@ -154,7 +162,7 @@ int getPIDFromFile( std::string logPath ) {
     int pid = 0;
 
     // Locate Logfile
-    string logFile = logPath + "/VBox.log";
+    string logFile = logPath + kPathSeparator + "VBox.log";
     CVMWA_LOG("Debug", "Looking for PID in " << logFile );
     if (!file_exists(logFile)) return 0;
 
@@ -204,7 +212,7 @@ int getPIDFromFile( std::string logPath ) {
  */
 bool vboxLogExists( std::string logPath ) {
     CRASH_REPORT_BEGIN;
-    return file_exists( logPath + "/VBox.log" );
+    return file_exists( logPath + kPathSeparator + "VBox.log" );
     CRASH_REPORT_END;
 }
 
@@ -1696,7 +1704,7 @@ int VBoxSession::update ( bool waitTillInactive ) {
     if (lastState == newState) {
         
         // Check if log file is missing
-        std::string logFile = machine->get("Log folder") + "/VBox.log";
+        std::string logFile = machine->get("Log folder") + kPathSeparator + "VBox.log";
         if (file_exists(logFile)) {
 
             // Look for changes in the timestamp
