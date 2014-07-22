@@ -249,7 +249,8 @@ void SimpleFSM::FSMGoto(int state) {
     CRASH_REPORT_BEGIN;
 
 	// Allow only one thread to steer the FSM
-	boost::mutex::scoped_lock lock(fsmGotoMutex);
+    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmGotoMutex");
+	boost::mutex::unique_lock<boost::mutex> lock(fsmGotoMutex);
 
     CVMWA_LOG("Debug", "Going towards " << state);
 
@@ -307,6 +308,7 @@ void SimpleFSM::FSMGoto(int state) {
 	CVMWA_LOG("Debug", "Best path: " << oss.str() );
 #endif
 
+    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmGotoMutex");
     CRASH_REPORT_END;
 }
 
@@ -318,7 +320,8 @@ void SimpleFSM::FSMJump(int state) {
     CRASH_REPORT_BEGIN;
 
 	// Allow only one thread to steer the FSM
-	boost::mutex::scoped_lock lock(fsmGotoMutex);
+    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmGotoMutex");
+	boost::mutex::unique_lock<boost::mutex> lock(fsmGotoMutex);
 
     CVMWA_LOG("Debug", "Jumping to " << state);
 
@@ -349,6 +352,7 @@ void SimpleFSM::FSMJump(int state) {
 
 	}
 
+    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmGotoMutex");
     CRASH_REPORT_END;
 }
 
@@ -399,9 +403,11 @@ void SimpleFSM::FSMThreadLoop() {
 
 				// Critical section
 				{
+				    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmmThreadSafe");
 					boost::unique_lock<boost::mutex> lock(fsmmThreadSafe);
 			        res = FSMContinue(true);
 				}
+			    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmmThreadSafe");
 
 				// Yield our time slice after executing an action
 				fsmThread->yield();
@@ -432,17 +438,22 @@ void SimpleFSM::FSMThreadLoop() {
  */
 void SimpleFSM::FSMThreadStop() {
     CRASH_REPORT_BEGIN;
+    CVMWA_LOG("Debug", "Stopping FSM thread");
 
 	// Ensure we have a running thread
-	if ((fsmThread == NULL) || (!fsmThreadActive)) 
+	if ((fsmThread == NULL) || (!fsmThreadActive)) {
+	    CVMWA_LOG("Debug", "Thread already stopped");
 		return;
+	}
 
 	// Interrupt and reap
 	{
+	    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmmThreadSafe");
 		boost::unique_lock<boost::mutex> lock(fsmmThreadSafe);
 		fsmThread->interrupt();
 		fsmThread->join();
 	}
+    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmmThreadSafe");
 
 	// Cleanup thread
 	fsmThread = NULL;
@@ -459,11 +470,13 @@ void SimpleFSM::_fsmPause() {
 	// If we are already not paused, don't
 	// do anything
 	if (fsmtPaused) {
+	    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmtPauseMutex");
 	    boost::unique_lock<boost::mutex> lock(fsmtPauseMutex);
 	    while(fsmtPaused) {
 	        fsmtPauseChanged.wait(lock);
 	    }
 	}
+    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmtPauseMutex");
 
     // Reset paused state
     fsmtPaused = true;
@@ -478,9 +491,12 @@ void SimpleFSM::_fsmWakeup() {
 	CVMWA_LOG("Debug", "Waking-up paused thread");
 
     {
+	    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmtPauseMutex");
         boost::unique_lock<boost::mutex> lock(fsmtPauseMutex);
         fsmtPaused = false;
     }
+    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmtPauseMutex");
+
     fsmtPauseChanged.notify_all();
     CRASH_REPORT_END;
 }
@@ -561,6 +577,7 @@ void SimpleFSM::FSMFail ( const std::string & message, const int errorCode ) {
  */
 void SimpleFSM::FSMWaitFor ( int state, int timeout ) {
     CRASH_REPORT_BEGIN;
+    CVMWA_LOG("Debug", "Waiting for state " << state );
 
 	// Find the state
 	std::map<int,FSMNode>::iterator pt;
@@ -583,8 +600,12 @@ void SimpleFSM::FSMWaitFor ( int state, int timeout ) {
 
 	// Wait for state
 	
-    boost::unique_lock<boost::mutex> lock(fsmwStateMutex);
-    fsmwStateChanged.wait(lock);
+    {
+	    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmwStateMutex");
+	    boost::unique_lock<boost::mutex> lock(fsmwStateMutex);
+	    fsmwStateChanged.wait(lock);
+    }
+    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmwStateMutex");
 
     CRASH_REPORT_END;
 }
@@ -597,11 +618,13 @@ void SimpleFSM::FSMWaitInactive ( int timeout ) {
 
 	// Wait until we are no longer active
 	{
+	    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmwWaitMutex");
 	    boost::unique_lock<boost::mutex> lock(fsmwWaitMutex);		
 		while (FSMActive()) {
 			fsmwWaitCond.wait(lock);
 		}
 	}
+    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmwWaitMutex");
 
     CRASH_REPORT_END;
 }
