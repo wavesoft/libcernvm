@@ -210,19 +210,22 @@ bool LocalConfig::saveMap ( std::string name, std::map<std::string, std::string>
 
         // Do not allow new-line span: Replace \n to "\n", \r to "\r" and "\" to "\\"
         pos = 0;
-        while((pos = value.find("\\", pos)) != std::string::npos) {
-            value.replace(pos, 1, "\\\\");
-            pos += 2;
-        }
-        pos = 0;
-        while((pos = value.find("\n", pos)) != std::string::npos) {
-            value.replace(pos, 1, "\\n");
-            pos += 2;
-        }
-        pos = 0;
-        while((pos = value.find("\r", pos)) != std::string::npos) {
-            value.replace(pos, 1, "\\r");
-            pos += 2;
+        while (pos < value.length()-1) {
+
+            // Replace escape patterns as we find them
+            if (value[pos] == '\\') {
+                value.replace(pos, 1, "\\\\");
+                pos += 1;
+            } else if (value[pos] == 'n') {
+                value.replace(pos, 1, "\\n");
+                pos += 1;
+            } else if (value[pos+1] == 'r') {
+                value.replace(pos, 1, "\\r");
+                pos += 1;
+            }
+
+            pos += 1;
+
         }
 
         ofs << key << "=" << value << std::endl;
@@ -333,19 +336,19 @@ bool LocalConfig::loadMap ( std::string name, std::map<std::string, std::string>
 
                 // Revert new-line span: Replace "\n" to \n, "\r" to \r and "\\"" to "\"
                 pos = 0;
-                while((pos = value.find("\\\\", pos)) != std::string::npos) {
-                    value.replace(pos, 2, "\\");
+                while (pos < value.length()-1) {
+
+                    // Replace escape patterns as we find them
+                    if ((value[pos] == '\\') && (value[pos+1] == '\\')) {
+                        value.replace(pos, 2, "\\");
+                    } else if ((value[pos] == '\\') && (value[pos+1] == 'n')) {
+                        value.replace(pos, 2, "\n");
+                    } else if ((value[pos] == '\\') && (value[pos+1] == 'r')) {
+                        value.replace(pos, 2, "\r");
+                    }
+
                     pos += 1;
-                }
-                pos = 0;
-                while((pos = value.find("\\n", pos)) != std::string::npos) {
-                    value.replace(pos, 2, "\n");
-                    pos += 1;
-                }
-                pos = 0;
-                while((pos = value.find("\\r", pos)) != std::string::npos) {
-                    value.replace(pos, 2, "\r");
-                    pos += 1;
+
                 }
 
                 // Insert into map
