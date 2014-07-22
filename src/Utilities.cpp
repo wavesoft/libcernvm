@@ -1923,7 +1923,7 @@ unsigned long long getFileTimeMs ( const std::string& file ) {
     unsigned long long llWriteTime;
 
     // Try to open the file
-    HANDLE hFile = CreateFile( file.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL );
+    HANDLE hFile = CreateFile( file.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL );
     if(hFile == INVALID_HANDLE_VALUE) {
         CVMWA_LOG("Error", "Could not open file " << file << " in order to check the modification time!");
         return 0;
