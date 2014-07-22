@@ -250,7 +250,7 @@ void SimpleFSM::FSMGoto(int state) {
 
 	// Allow only one thread to steer the FSM
     CVMWA_LOG("Debug", "MUTEX_LOCK: fsmGotoMutex");
-	boost::mutex::unique_lock<boost::mutex> lock(fsmGotoMutex);
+	boost::unique_lock<boost::mutex> lock(fsmGotoMutex);
 
     CVMWA_LOG("Debug", "Going towards " << state);
 
@@ -321,7 +321,7 @@ void SimpleFSM::FSMJump(int state) {
 
 	// Allow only one thread to steer the FSM
     CVMWA_LOG("Debug", "MUTEX_LOCK: fsmGotoMutex");
-	boost::mutex::unique_lock<boost::mutex> lock(fsmGotoMutex);
+	boost::unique_lock<boost::mutex> lock(fsmGotoMutex);
 
     CVMWA_LOG("Debug", "Jumping to " << state);
 
