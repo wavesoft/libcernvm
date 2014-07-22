@@ -94,6 +94,11 @@ public:
 	void 							FSMGoto				( int state );
 
 	/**
+	 * Jump directly to the given path (and run the handler code)
+	 */
+	void 							FSMJump				( int state );
+
+	/**
 	 * Skew the current path by switching to given state and then continuing
 	 * to the state pointed by goto
 	 */

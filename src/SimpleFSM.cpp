@@ -312,6 +312,44 @@ void SimpleFSM::FSMGoto(int state) {
 
 
 /**
+ * Build the path to go to the given state and start the FSM subsystem
+ */
+void SimpleFSM::FSMJump(int state) {
+    CRASH_REPORT_BEGIN;
+
+	// Allow only one thread to steer the FSM
+	boost::mutex::scoped_lock lock(fsmGotoMutex);
+
+    CVMWA_LOG("Debug", "Jumping to " << state);
+
+	// Reset path
+	fsmCurrentPath.clear();
+
+	// Pick the current node
+	fsmCurrentNode = fsmNodes.find( state );
+
+	if (fsmCurrentNode == fsmNodes.end()) {
+		// Skip missing nodes
+		fsmCurrentNode = fsmRootNode;
+		return false;
+
+	} else if (fsmCurrentNode->handler) {
+		// Handle only non-state nodes
+
+		// We are entering the given state
+		FSMEnteringState( fsmCurrentNode->id, true );
+
+		// Call handler (and throw errors)
+		if (!_callHandler(fsmCurrentNode, true)) 
+			return false;
+		return true;
+
+	}
+
+    CRASH_REPORT_END;
+}
+
+/**
  * Skew the current path by switching to given state and then continuing
  * to the state pointed by goto
  */

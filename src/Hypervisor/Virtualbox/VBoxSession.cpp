@@ -1937,7 +1937,7 @@ void VBoxSession::errorOccured ( const std::string & str, int errNo ) {
         errorCount += 1;
         if (errorCount > SESSION_HEAL_TRIES) {
             CVMWA_LOG("Error", "Too many errors. Won't try to heal them again");
-            FSMGoto(112);
+            FSMJump( 112 );
         } else {
             // Skew through the error state, while trying to head
             // towards the previously defined state.

@@ -683,7 +683,7 @@ std::string getTmpFile( string suffix, string folder ) {
 
         /* Copy to std::string and cleanup */
         string tmpFile( fName );
-        tmpFile += "." + suffix;
+        tmpFile += suffix;
         delete[] fName;
 
         /* Return std::string version of the filename */
