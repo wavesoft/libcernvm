@@ -97,8 +97,8 @@ if(WIN32)
 
     # Expose library names to parent scope
     set (OPENSSL_LIBRARIES  
-        ${OPENSSL_BIN_DIR}/lib/libeay32${OPENSSL_LIB_SUFFIX}
-        ${OPENSSL_BIN_DIR}/lib/ssleay32${OPENSSL_LIB_SUFFIX}
+        ${OPENSSL_BIN_DIR}/build-i386/libeay32${OPENSSL_LIB_SUFFIX}
+        ${OPENSSL_BIN_DIR}/build-i386/ssleay32${OPENSSL_LIB_SUFFIX}
         PARENT_SCOPE)
 
     # Check if we are using the Visual Studio compiler
@@ -241,6 +241,12 @@ ExternalProject_Add_Step(
 )
 
 # Define the include directory
-set (OPENSSL_INCLUDE_DIRS
-    ${OPENSSL_BIN_DIR}/include
-    PARENT_SCOPE)
+if (WIN32)
+    set (OPENSSL_INCLUDE_DIRS
+        ${OPENSSL_BIN_DIR}/build-i386/include
+        PARENT_SCOPE)
+else()
+    set (OPENSSL_INCLUDE_DIRS
+        ${OPENSSL_BIN_DIR}/include
+        PARENT_SCOPE)
+endif()

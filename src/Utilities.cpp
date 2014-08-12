@@ -2031,23 +2031,28 @@ void getLinuxInfo ( LINUX_INFO * info ) {
  */
 bool _isLinkInDir( string fileName, const fs::path& path ) {
     CRASH_REPORT_BEGIN;
+    try {
 
-    // Start iterating /proc/<id>/fd
-    fs::directory_iterator end_iter;
-    for ( fs::directory_iterator dir_itr( path );
-          dir_itr != end_iter;
-          ++dir_itr ) {
-        
-        // Resolve symlink & Check if the filename is used
-        try {
-            fs::path resolved = fs::canonical( dir_itr->path() );
-            if (resolved.string().compare( fileName ) == 0)
-                return true;
-        }
-        catch ( const std::exception & ex ) {
-            // Ignore errors (They are usually access denied)
+        // Start iterating /proc/<id>/fd
+        fs::directory_iterator end_iter;
+        for ( fs::directory_iterator dir_itr( path );
+              dir_itr != end_iter;
+              ++dir_itr ) {
+            
+            // Resolve symlink & Check if the filename is used
+            try {
+                fs::path resolved = fs::canonical( dir_itr->path() );
+                if (resolved.string().compare( fileName ) == 0)
+                    return true;
+            } catch ( const std::exception & ex ) {
+                // Ignore errors (They are usually access denied)
+            }
+
         }
 
+    } catch ( const std::exception & ex ) {
+        // That's usually access denied
+        return false;
     }
 
     // Not found

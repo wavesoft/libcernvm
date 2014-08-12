@@ -125,7 +125,7 @@
 	 */
 	#define CRASH_REPORT_BEGIN try {
 	#define CRASH_REPORT_END   } \
-	 	catch (boost::thread_interrupted &e) { \
+	 	catch (boost::thread_interrupted &) { \
 	 		throw; \
 	 	} \
 	 	catch (const std::exception& ex) { \
