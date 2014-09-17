@@ -243,10 +243,10 @@ ExternalProject_Add_Step(
 # Define the include directory
 if (WIN32)
     set (OPENSSL_INCLUDE_DIRS
-        ${OPENSSL_BIN_DIR}/inc32
+        ${OPENSSL_SRC_DIR}/inc32
         PARENT_SCOPE)
 else()
     set (OPENSSL_INCLUDE_DIRS
-        ${OPENSSL_BIN_DIR}/include
+        ${OPENSSL_SRC_DIR}/include
         PARENT_SCOPE)
 endif()
