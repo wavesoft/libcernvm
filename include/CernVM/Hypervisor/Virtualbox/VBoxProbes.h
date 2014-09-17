@@ -24,12 +24,16 @@
 
 #include <CernVM/Utilities.h>
 #include <CernVM/LocalConfig.h>
+#include <CernVM/Hypervisor.h>
 
 #include <string>
 #include <map>
 
 using namespace std;
 
+/**
+ * Virtualbox log crawler
+ */
 class VBoxLogProbe {
 public:
 
@@ -58,6 +62,12 @@ public:
 	 */
 	bool 			hasState;
 	int 			state;
+
+	/**
+	 * Failures flags
+	 */
+	bool 			hasFailures;
+	int				failures;
 
 	/**
 	 * Flag and information regarding state change

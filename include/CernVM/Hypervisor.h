@@ -26,6 +26,7 @@
 #include <boost/regex.hpp> 
 
 #include <CernVM/Config.h>
+#include <CernVM/Hypervisor.h>
 
 #include <CernVM/ProgressFeedback.h>
 #include <CernVM/DownloadProvider.h>
@@ -52,6 +53,14 @@ enum HVSessionState {
     SS_SAVED,
     SS_PAUSED,
     SS_RUNNING
+};
+
+/**
+ * Hypervisor failures
+ */
+enum HVFailures {
+    HFL_NONE = 0,
+    HFL_NO_VIRTUALIZATION = 1
 };
 
 /* Error messages */

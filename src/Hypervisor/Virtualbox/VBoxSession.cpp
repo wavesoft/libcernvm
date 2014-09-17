@@ -1742,6 +1742,14 @@ int VBoxSession::update ( bool waitTillInactive ) {
 
                 }
 
+                // Check if failures appeared
+                if (logProbe.hasFailures) {
+
+                    // Forward failures
+                    this->fire( "failure", ArgumentList(logProbe.failures) );
+
+                }
+
             }
             
         } else {

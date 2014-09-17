@@ -39,6 +39,10 @@ void VBoxLogProbe::analyze() {
 	hasState = false;
     state = SS_POWEROFF;
 
+    // Reset failures
+    hasFailures = true;
+    failures = 0;
+
 	// Reset resolution
 	hasResolutionChange = false;
     resWidth = 0;
@@ -152,6 +156,21 @@ void VBoxLogProbe::analyze() {
 			qEnd = inBufferLine.find(" ", qStart);
 			if (qEnd == string::npos) continue;
 			resBpp = ston<int>( inBufferLine.substr( qStart+2, qEnd-qStart-4 ) );
+
+        } else if ((iStart = inBufferLine.find("WARNING! ")) != string::npos) {
+
+            // We got failures
+            hasFailures = true;
+
+            // Check what kind of warning this was
+            if (inBufferLine.find("64-bit guest type selected but the host CPU does NOT support 64-bit") != string::npos) {
+                failures |= HFL_NO_VIRTUALIZATION;
+
+            } else if (inBufferLine.find("64-bit guest type selected but the host CPU does NOT support HW virtualization") != string::npos) {
+                failures |= HFL_NO_VIRTUALIZATION;
+
+            }
+
 
         }
 
