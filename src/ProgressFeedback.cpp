@@ -90,6 +90,18 @@ void ProgressTask::doing ( const std::string& message ) {
 }
 
 /**
+ * Mark the task as lengthy
+ */
+void ProgressTask::markLengthy ( const bool isLengthy, const std::string& message ) {
+	CRASH_REPORT_BEGIN;
+
+	// Mark the task as lengthy
+	_notifyLengthyTask( message, isLengthy );
+
+	CRASH_REPORT_END;
+}
+
+/**
  * Let listeners know that we are completed
  */
 void ProgressTask::_notifyCompleted ( const std::string& message ) {
@@ -207,6 +219,23 @@ void ProgressTask::_forwardProgress( const std::string& message ) {
 	// Forward event to the parent elements
 	if (parent)
 		parent->_forwardProgress( message );
+
+    CRASH_REPORT_END;
+}
+
+/**
+ * Forward lengthy task to the up to the root node
+ */
+void ProgressTask::_notifyLengthyTask ( const std::string& message, const bool isLengthy ) {
+    CRASH_REPORT_BEGIN;
+
+	// Fire callbacks
+	fireIsLengthy( message, isLengthy );
+
+	// Propagate event
+	if (parent) {
+		parent->_notifyLengthyTask( message, isLengthy );
+	}
 
     CRASH_REPORT_END;
 }

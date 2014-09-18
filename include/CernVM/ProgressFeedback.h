@@ -75,6 +75,11 @@ public:
 	 */
 	void				doing			( const std::string& message );
 
+	/**
+	 * Mark task as lengthy, in order to keep the user busy
+	 */
+	void				markLengthy		( const bool isLengthy, const std::string& message = "" );
+
     /**
      * Used for throttling
      */
@@ -151,6 +156,11 @@ protected:
      * [Internal] Propagate a progress event to the callbacks and parent
      */
     void                _forwardProgress( const std::string& message );
+
+    /**
+     * [Internal] Progpagate the event that a task has unknown length
+     */
+	void 				_notifyLengthyTask( const std::string& message, const bool isLengthy );
 
 };
 

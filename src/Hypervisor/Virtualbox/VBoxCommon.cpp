@@ -351,6 +351,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
 
             CVMWA_LOG( "Info", "Attaching" << tmpHypervisorInstall );
             if (installerPf) installerPf->doing("Mouting hypervisor DMG disk");
+            if (installerPf) installerPf->markLengthy(true);
             res = sysExec("/usr/bin/hdiutil", "attach " + tmpHypervisorInstall, &lines, &errorMsg, sysExecConfig);
             if (res != 0) {
                 if (tries<retries) {
@@ -364,6 +365,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 ::remove( tmpHypervisorInstall.c_str() );
 
                 // Send progress fedback
+                if (installerPf) installerPf->markLengthy(false);
                 if (pf) pf->fail("Unable to use hdiutil to mount DMG");
 
                 return HVE_EXTERNAL_ERROR;
@@ -395,6 +397,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 ::remove( tmpHypervisorInstall.c_str() );
 
                 // Send progress fedback
+                if (installerPf) installerPf->markLengthy(false);
                 if (pf) pf->fail("Unable to launch hypervisor installer");
 
                 return HVE_EXTERNAL_ERROR;
@@ -408,6 +411,9 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 installerPf->done("Cleaning-up completed");
                 installerPf->complete("Installed hypervisor");
             }
+
+            // We exited the lengthy task
+            if (installerPf) installerPf->markLengthy(false);
 
         #elif defined(_WIN32)
             if (installerPf) installerPf->setMax(2, false);
@@ -430,6 +436,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
             shExecInfo.hInstApp = NULL;
 
             // Validate handle
+            if (installerPf) installerPf->markLengthy(true);
             if ( !ShellExecuteExA( &shExecInfo ) ) {
                 cout << "ERROR: Installation could not start! Error = " << res << endl;
                 if (tries<retries) {
@@ -443,6 +450,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 ::remove( tmpHypervisorInstall.c_str() );
 
                 // Send progress fedback
+                if (installerPf) installerPf->markLengthy(false);
                 if (pf) pf->fail("Unable to launch hypervisor installer");
 
                 return HVE_EXTERNAL_ERROR;
@@ -462,6 +470,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 ::remove( tmpHypervisorInstall.c_str() );
 
                 // Send progress fedback
+                if (installerPf) installerPf->markLengthy(false);
                 if (pf) pf->fail("Unable to launch hypervisor installer");
 
                 return HVE_EXTERNAL_ERROR;
@@ -472,6 +481,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
             if (installerPf) installerPf->done("Installer completed");
 
             // Complete
+            if (installerPf) installerPf->markLengthy(false);
             if (installerPf) installerPf->complete("Installed hypervisor");
 
         #elif defined(__linux__)
@@ -479,6 +489,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
 
             // Check if our environment has what the installer needs
             if (installerPf) installerPf->doing("Probing environment");
+            if (installerPf) installerPf->markLengthy(true);
             if ((installerType != PMAN_NONE) && (installerType != linuxInfo.osPackageManager )) {
                 cout << "ERROR: OS does not have the required package manager (type=" << installerType << ")" << endl;
                 if (tries<retries) {
@@ -492,6 +503,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 ::remove( tmpHypervisorInstall.c_str() );
 
                 // Send progress fedback
+                if (installerPf) installerPf->markLengthy(false);
                 if (pf) pf->fail("Unable to probe the environment");
 
                 return HVE_NOT_FOUND;
@@ -519,6 +531,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                     ::remove( tmpHypervisorInstall.c_str() );
 
                     // Send progress fedback
+                    if (installerPf) installerPf->markLengthy(false);
                     if (pf) pf->fail("Unable to start the hypervisor installer");
 
                     return HVE_EXTERNAL_ERROR;
@@ -542,6 +555,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                     ::remove( tmpHypervisorInstall.c_str() );
 
                     // Send progress fedback
+                    if (installerPf) installerPf->markLengthy(false);
                     if (pf) pf->fail("Unable to check the status of the installation");
                     
                     return HVE_STILL_WORKING;
@@ -562,6 +576,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                     CVMWA_LOG("Error", "ERROR: Could not wait for file handler release: " << res );
 
                     // Send progress fedback
+                    if (installerPf) installerPf->markLengthy(false);
                     if (pf) pf->fail("Unable to check the status of the installation");
 
                     return HVE_STILL_WORKING;
@@ -571,6 +586,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 if (installerPf) installerPf->done("Installation completed");
         
                 // Complete
+                if (installerPf) installerPf->markLengthy(false);
                 if (installerPf) installerPf->complete("Installed hypervisor");
 
             // (2) If we have GKSudo, do directly dpkg/yum install
@@ -600,6 +616,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                     ::remove( tmpHypervisorInstall.c_str() );
 
                     // Send progress fedback
+                    if (installerPf) installerPf->markLengthy(false);
                     if (pf) pf->fail("Unable to start the hypervisor installer");
 
                     return HVE_EXTERNAL_ERROR;
@@ -607,12 +624,14 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 if (installerPf) installerPf->done("Installer completed");
 
                 // Complete
+                if (installerPf) installerPf->markLengthy(false);
                 if (installerPf) installerPf->complete("Installed hypervisor");
         
             /* (3) Otherwise create a bash script and prompt the user */
             } else {
             
                 /* TODO: I can't do much here :( */
+                if (installerPf) installerPf->markLengthy(false);
                 return HVE_NOT_IMPLEMENTED;
             
             }

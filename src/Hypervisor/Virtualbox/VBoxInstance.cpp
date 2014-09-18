@@ -778,13 +778,16 @@ int VBoxInstance::installExtPack( const DownloadProviderPtr & downloadProvider, 
 
     // Install extpack on virtualbox
     if (pf) pf->doing("Installing extension pack");
+    if (pf) pf->markLengthy(true);
     NAMED_MUTEX_LOCK("generic");
     res = this->exec( "extpack install \"" + tmpExtpackFile + "\"", NULL, &err, config.setGUI(true) );
     NAMED_MUTEX_UNLOCK;
     if (res != HVE_OK) {
         if (pf) pf->fail("Extension pack failed to install", HVE_EXTERNAL_ERROR);
+        if (pf) pf->markLengthy(false);
         return HVE_EXTERNAL_ERROR;
     }
+    if (pf) pf->markLengthy(false);
     if (pf) pf->done("Installed extension pack");
 
     // Cleanup

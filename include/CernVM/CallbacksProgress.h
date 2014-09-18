@@ -72,6 +72,20 @@ public:
 	        CRASH_REPORT_END;
 		};
 
+	/**
+	 * Fire 'lengthyTask' event
+	 */
+	void fireIsLengthy( const std::string& msg, const bool isLengthy )
+		{
+			CRASH_REPORT_BEGIN;
+			if (isLengthy) {
+				fire("lengthyTask", ArgumentList(msg)(1) );
+			} else {
+				fire("lengthyTask", ArgumentList(msg)(0) );
+			}
+			CRASH_REPORT_END;
+		}
+
 
 };
 
