@@ -243,7 +243,7 @@ bool ParameterMap::contains ( const std::string& name, const bool useBlank ) {
 /**
  * Update all the parameters from the specified map
  */
-void ParameterMap::fromParameters ( const ParameterMapPtr& ptr, bool clearBefore ) {
+void ParameterMap::fromParameters ( const ParameterMapPtr& ptr, bool clearBefore, const bool replace ) {
     CRASH_REPORT_BEGIN;
 
     // Check if we have to clean the keys first
@@ -255,7 +255,8 @@ void ParameterMap::fromParameters ( const ParameterMapPtr& ptr, bool clearBefore
     // Store values
     for (std::vector< std::string >::iterator it = ptrKeys.begin(); it != ptrKeys.end(); ++it) {
         CVMWA_LOG("INFO", "Importing key " << *it << " = " << ptr->parameters->at(*it));
-        (*this->parameters)[prefix + *it] = (*ptr->parameters)[*it];
+        if (replace || (this->parameters->find(prefix + *it) == this->parameters->end()))
+            (*this->parameters)[prefix + *it] = (*ptr->parameters)[*it];
     }
 
     // If we are not locked, sync changes.
@@ -272,7 +273,7 @@ void ParameterMap::fromParameters ( const ParameterMapPtr& ptr, bool clearBefore
 /**
  * Update all the parameters from the specified map
  */
-void ParameterMap::fromMap ( std::map< std::string, std::string> * map, bool clearBefore ) {
+void ParameterMap::fromMap ( std::map< std::string, std::string> * map, bool clearBefore, const bool replace ) {
     CRASH_REPORT_BEGIN;
 
     // Check if we have to clean the keys first
@@ -281,7 +282,8 @@ void ParameterMap::fromMap ( std::map< std::string, std::string> * map, bool cle
     // Store values
     if (map == NULL) return;
     for (std::map< std::string, std::string>::iterator it = map->begin(); it != map->end(); ++it) {
-        (*parameters)[prefix + (*it).first] = (*it).second;
+        if (replace || (parameters->find(prefix + (*it).first) == parameters->end()))
+            (*parameters)[prefix + (*it).first] = (*it).second;
     }
 
     // If we are not locked, sync changes.
@@ -298,7 +300,7 @@ void ParameterMap::fromMap ( std::map< std::string, std::string> * map, bool cle
 /**
  * Update all the parameters from the specified JSON Value
  */
-void ParameterMap::fromJSON( const Json::Value& json, bool clearBefore ){
+void ParameterMap::fromJSON( const Json::Value& json, bool clearBefore, const bool replace ){
     CRASH_REPORT_BEGIN;
 
     // Check if we have to clean the keys first
@@ -313,10 +315,12 @@ void ParameterMap::fromJSON( const Json::Value& json, bool clearBefore ){
             ParameterMapPtr sg = subgroup(k);
             sg->fromJSON(v);
         } else if (v.isString()) {
-            (*parameters)[k] = v.asString();
+            if (replace || (parameters->find(k) == parameters->end()))
+                (*parameters)[k] = v.asString();
         } else if (v.isInt()) {
             int vv = v.asInt();
-            (*parameters)[k] = ntos<int>( vv );
+            if (replace || (parameters->find(k) == parameters->end()))
+                (*parameters)[k] = ntos<int>( vv );
         }
     }
 

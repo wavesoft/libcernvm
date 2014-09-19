@@ -40,7 +40,7 @@ void VBoxLogProbe::analyze() {
     state = SS_POWEROFF;
 
     // Reset failures
-    hasFailures = true;
+    hasFailures = false;
     failures = 0;
 
 	// Reset resolution

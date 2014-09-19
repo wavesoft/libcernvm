@@ -946,7 +946,7 @@ HVSessionPtr HVInstance::sessionOpen( const ParameterMapPtr& parameters, const F
     }
 
     // Populate parameters
-    sess->parameters->fromParameters( parameters );
+    sess->parameters->fromParameters( parameters, false, false ); // Don't clear, don't overwrite keys
     sess->parameters->set("secret", keyHash); // (Replace with it's crypto-hash version)
 
     // Store it on open sessions

@@ -86,7 +86,7 @@ public:
 	/**
 	 * Destructor
 	 */
-	~SimpleFSM();
+	virtual ~SimpleFSM();
 
 	/**
 	 * Pick the closest path to go from current state to the given state

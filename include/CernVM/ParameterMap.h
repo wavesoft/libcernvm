@@ -177,17 +177,17 @@ public:
     /**
      * Update all the parameters from the specified map
      */
-    void						fromMap			( std::map< std::string, std::string> * map, bool clearBefore = false );
+    void						fromMap			( std::map< std::string, std::string> * map, bool clearBefore = false, const bool replace = true );
 
     /**
      * Update all the parameters from the specified parameter map
      */
-    void						fromParameters	( const ParameterMapPtr& ptr, bool clearBefore = false );
+    void						fromParameters	( const ParameterMapPtr& ptr, bool clearBefore = false, const bool replace = true );
 
     /**
      * Update all the parameters from a JSON map
      */
-    void						fromJSON		( const Json::Value& json, bool clearBefore = false );
+    void						fromJSON		( const Json::Value& json, bool clearBefore = false, const bool replace = true );
 
     /**
      * Store all the parameters to the specified map

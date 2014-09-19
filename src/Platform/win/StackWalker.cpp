@@ -202,7 +202,7 @@ public:
     pUDSN = NULL;
     pSGSP = NULL;
   }
-  ~StackWalkerInternal()
+  virtual ~StackWalkerInternal()
   {
     if (pSC != NULL)
       pSC(m_hProcess);  // SymCleanup

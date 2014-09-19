@@ -1577,6 +1577,7 @@ int VBoxSession::start ( const ParameterMapPtr& userData ) {
 
     // Check which of the given userData parameters
     // can override the core configuration
+    parameters->lock();
     for (std::vector<std::string>::iterator it = overridableVars.begin(); it != overridableVars.end(); ++it) {
         std::string ovK = *it;
         // Copy priviledged parameter from 'userData' to 'parameters'
@@ -1584,6 +1585,7 @@ int VBoxSession::start ( const ParameterMapPtr& userData ) {
             parameters->set(ovK, userData->get(ovK));
         }
     }
+    parameters->unlock();
 
     // Switch to running state
     FSMGoto(7);
