@@ -226,7 +226,7 @@ public:
      * A required parameter is the parameter map of the session.
      */
     HVSession( ParameterMapPtr param, HVInstancePtr hv ) : 
-        Callbacks(), overridableVars(), parameters(param)
+        Callbacks(), parameters(param)
     {
         CRASH_REPORT_BEGIN;
 
