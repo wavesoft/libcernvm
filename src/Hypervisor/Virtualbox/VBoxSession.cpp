@@ -1575,6 +1575,16 @@ int VBoxSession::start ( const ParameterMapPtr& userData ) {
     // Update user data
     this->userData->fromParameters( userData, true );
 
+    // Check which of the given userData parameters
+    // can override the core configuration
+    for (std::vector<std::string>::iterator it = overridableVars.begin(); it != overridableVars.end(); ++it) {
+        std::string ovK = *it;
+        // Copy priviledged parameter from 'userData' to 'parameters'
+        if (userData->contains(ovK)) {
+            parameters->set(ovK, userData->get(ovK));
+        }
+    }
+
     // Switch to running state
     FSMGoto(7);
 
@@ -2469,7 +2479,7 @@ std::map<std::string, std::string> VBoxSession::getMachineInfo ( int retries, in
 
     // Check cached response
     long ms = getMillis();
-    if (ms < lastMachineInfoTimestamp + 500) {
+    if ((ms < lastMachineInfoTimestamp + 500) && !lastMachineInfo.empty()) {
         return lastMachineInfo;
     }
 
