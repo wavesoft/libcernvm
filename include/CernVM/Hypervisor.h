@@ -234,6 +234,7 @@ public:
         instances = 0;
 
         // Prepare default parameter values
+        parameters->setDefault("initialized",           "0");
         parameters->setDefault("cpus",                  "1");
         parameters->setDefault("memory",                "512");
         parameters->setDefault("disk",                  "1024");

@@ -946,8 +946,19 @@ HVSessionPtr HVInstance::sessionOpen( const ParameterMapPtr& parameters, const F
     }
 
     // Populate parameters
-    sess->parameters->fromParameters( parameters, false, false ); // Don't clear, don't overwrite keys
+    sess->parameters->lock();
+    if (sess->parameters->getNum<int>("initialized", 0) == 0) {
+        // When a session object is created, it's not initialized by default (it contains just the default values)
+        // Therefore we want to import ALL the configuration from the openSession parameters.
+        sess->parameters->fromParameters( parameters, false, true ); // Don't clear, but do overwrite local keys
+        sess->parameters->set("initialized", "1");
+    } else {
+        // When a session object is already initialized, prefer the values that are already stored in the session
+        // parameters, rather than then ones from the function arguments.
+        sess->parameters->fromParameters( parameters, false, false ); // Don't clear, don't overwrite keys
+    }
     sess->parameters->set("secret", keyHash); // (Replace with it's crypto-hash version)
+    sess->parameters->unlock();
 
     // Store it on open sessions
     sess->instances += 1;
