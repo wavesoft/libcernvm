@@ -1571,9 +1571,15 @@ int VBoxSession::hibernate ( ) {
  */
 int VBoxSession::start ( const ParameterMapPtr& userData ) {
     CRASH_REPORT_BEGIN;
+    std::vector<std::string> overridableVars;
 
     // Update user data
     this->userData->fromParameters( userData, true );
+
+    // Convert to vector the overridable var names
+    if (parameters->contains("canOverride")) {
+        explode( parameters->get("canOverride"), ',', &overridableVars );
+    }
 
     // Check which of the given userData parameters
     // can override the core configuration

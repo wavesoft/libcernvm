@@ -259,11 +259,6 @@ public:
         machine = parameters->subgroup("machine");
         properties = parameters->subgroup("properties");
         
-        // Convert to vector the overridable var names
-        if (parameters->contains("canOverride")) {
-            explode( parameters->get("canOverride"), ',', &overridableVars );
-        }
-
         // Populate local variables
         this->uuid = parameters->get("uuid");
         this->state = parameters->getNum<int>("state", 0);
@@ -282,8 +277,6 @@ public:
     /* Currently active user-data */
     //std::map<std::string,
     //    std::string> *      userData;
-
-    std::vector<std::string> overridableVars;
     
     //int                     cpus;
     //int                     memory;
