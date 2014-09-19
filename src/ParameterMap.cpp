@@ -253,10 +253,12 @@ void ParameterMap::fromParameters ( const ParameterMapPtr& ptr, bool clearBefore
     std::vector< std::string > ptrKeys = ptr->enumKeys();
 
     // Store values
+    std::string k;
     for (std::vector< std::string >::iterator it = ptrKeys.begin(); it != ptrKeys.end(); ++it) {
         CVMWA_LOG("INFO", "Importing key " << *it << " = " << ptr->parameters->at(*it));
-        if (replace || (this->parameters->find(prefix + *it) == this->parameters->end()))
-            (*this->parameters)[prefix + *it] = (*ptr->parameters)[*it];
+        k = prefix + *it;
+        if (replace || (this->parameters->find(k) == this->parameters->end()))
+            (*this->parameters)[k] = (*ptr->parameters)[*it];
     }
 
     // If we are not locked, sync changes.
@@ -281,9 +283,11 @@ void ParameterMap::fromMap ( std::map< std::string, std::string> * map, bool cle
 
     // Store values
     if (map == NULL) return;
+    std::string k;
     for (std::map< std::string, std::string>::iterator it = map->begin(); it != map->end(); ++it) {
-        if (replace || (parameters->find(prefix + (*it).first) == parameters->end()))
-            (*parameters)[prefix + (*it).first] = (*it).second;
+        k = prefix + (*it).first;
+        if (replace || (parameters->find(k) == parameters->end()))
+            (*parameters)[k] = (*it).second;
     }
 
     // If we are not locked, sync changes.

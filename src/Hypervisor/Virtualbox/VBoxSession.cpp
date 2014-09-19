@@ -133,7 +133,7 @@ bool cleanupFolder( const std::string& baseDir ) {
                 // Get the filename
                 if (fn[0] != '.') {
                     CVMWA_LOG("Debug", "Erasing file " << baseDir+kPathSeparator+fn);
-                    //remove(fn.c_str());
+                    remove(fn.c_str());
                 }
 
             } else if (boost::filesystem::is_directory(dir_iter->status()) ) {
@@ -148,7 +148,7 @@ bool cleanupFolder( const std::string& baseDir ) {
 
     //std::cout << "[rmdir " << baseDir << "]" << std::endl;
     CVMWA_LOG("Debug", "Erasing folder " << baseDir);
-    //rmdir(baseDir.c_str());
+    rmdir(baseDir.c_str());
     return true;
     
     CRASH_REPORT_END;
@@ -2140,6 +2140,7 @@ int VBoxSession::mountDisk ( const std::string & controller,
     CRASH_REPORT_BEGIN;
 
     vector<string> lines;
+    map<string, string> info;
     ostringstream args;
     string kk, kv;
     int ans;
@@ -2164,7 +2165,8 @@ int VBoxSession::mountDisk ( const std::string & controller,
         // Split on '('
         // (Line contents is something like "IDE (1, 0): image.vmdk (UUID: ...)")
         getKV( machine->get(DISK_SLOT), &kk, &kv, '(', 0 );
-        kk = kk.substr(0, kk.length()-1);
+        kk = kk.substr(0, kk.length()-1); // Disk path on kk
+        kv = kv.substr(6, kv.length()-7); // UUID on kv
 
         if (kk.compare( diskFile ) == 0) {
 
@@ -2173,8 +2175,53 @@ int VBoxSession::mountDisk ( const std::string & controller,
 
         } else {
 
+            // If we are using multiAttach, we have to investigate a bit more
+            if (multiAttach) {
+                string parentUUID = "_child_", actualParentUUID = "_parent_";
+
+                // Get more information for this disk
+                args.str("");
+                args << "showhdinfo \"" << kv << "\"";
+                ans = this->wrapExec(args.str(), &lines, NULL, execConfig);
+                if (ans == 0) {
+
+                    // Tokenize information
+                    info = tokenize( &lines, ':' );
+
+                    // Get child's parent UUID
+                    if (info.find("Parent UUID") != info.end())
+                        parentUUID = info["Parent UUID"];
+
+                } else {
+                    CVMWA_LOG("Error", "Unable to get more information regarding disk: " << kk);
+                }
+
+                // Get more information regarding the parent disk
+                args.str("");
+                args << "showhdinfo \"" << diskFile << "\"";
+                ans = this->wrapExec(args.str(), &lines, NULL, execConfig);
+                if (ans == 0) {
+
+                    // Tokenize information
+                    info = tokenize( &lines, ':' );
+
+                    // Get parent disk's UUID
+                    if (info.find("UUID") != info.end())
+                        actualParentUUID = info["UUID"];
+
+                } else {
+                    CVMWA_LOG("Error", "Unable to get more information regarding disk: " << diskFile);
+                }
+
+                // If these two UUID matches, we are done
+                if (parentUUID.compare( actualParentUUID ) == 0) {
+                    return HVE_ALREADY_EXISTS;
+                }
+
+            }
+
             // Otherwise unmount the existing disk
-            ans = unmountDisk( controller, port, device, dtype, false );
+            ans = unmountDisk( controller, port, device, dtype, multiAttach );
             if (ans != HVE_OK) return HVE_DELETE_ERROR;
 
         }
