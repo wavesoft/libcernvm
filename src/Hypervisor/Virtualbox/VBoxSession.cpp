@@ -1601,7 +1601,36 @@ int VBoxSession::start ( const ParameterMapPtr& userData ) {
  */
 int VBoxSession::setExecutionCap ( int cap ) {
     CRASH_REPORT_BEGIN;
-    return HVE_NOT_IMPLEMENTED;
+    ostringstream args;
+    int state = local->getNum<int>("state", 0);
+
+    // Update the execution cap parameter
+    parameters->set("executionCap", ntos<int>(cap));
+
+    // Skip states where we cannot do anything
+    if ((state == SS_MISSING) || (state == SS_PAUSED))
+        return HVE_INVALID_STATE;
+
+    // Prepare for VM modification task according to it's state
+    if (state == SS_RUNNING) {
+        // If VM is running, we are using controlvm
+        args << "controlvm "            << parameters->get("vboxid")
+             << " cpuexecutioncap "     << parameters->get("executionCap", "80");
+    } else {
+        // If VM is stopped, we use modifyvm
+        args << "modifyvm "             << parameters->get("vboxid")
+             << " --cpuexecutioncap "   << parameters->get("executionCap", "80");
+    }
+
+    // Execute and handle errors
+    int ans = this->wrapExec(args.str(), NULL, NULL, execConfig);
+    if (ans != 0) {
+        return HVE_EXTERNAL_ERROR;
+    }
+
+    // Return OK
+    return HVE_OK;
+
     CRASH_REPORT_END;
 }
 
@@ -1908,7 +1937,11 @@ void VBoxSession::FSMEnteringState( const int state, const bool final ) {
  */
 int VBoxSession::wrapExec ( std::string cmd, std::vector<std::string> * stdoutList, std::string * stderrMsg, const SysExecConfig& config ) {
     CRASH_REPORT_BEGIN;
+
+    // Allow only a single thread to invoke a system command
+    boost::unique_lock<boost::mutex> lock(execMutex);
     return this->hypervisor->exec(cmd, stdoutList, stderrMsg, config );
+
     CRASH_REPORT_END;
 }
 

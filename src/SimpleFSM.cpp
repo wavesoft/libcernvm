@@ -302,9 +302,11 @@ void SimpleFSM::FSMGoto(int state) {
 #ifdef LOGGING
 	// Present best path
 	std::ostringstream oss;
-	for (std::list<FSMNode*>::iterator j= fsmCurrentPath.begin(); j!=fsmCurrentPath.end(); ++j) {
-		if (!oss.str().empty()) oss << ", "; oss << (*j)->id;
-	}
+    if (!fsmCurrentPath.empty()) {
+        for (std::list<FSMNode*>::iterator j= fsmCurrentPath.begin(); j!=fsmCurrentPath.end(); ++j) {
+		    if (!oss.str().empty()) oss << ", "; oss << (*j)->id;
+	    }
+    }
 	CVMWA_LOG("Debug", "Best path: " << oss.str() );
 #endif
 

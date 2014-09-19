@@ -32,6 +32,9 @@
 #include <CernVM/CrashReport.h>
 
 #include <boost/regex.hpp>
+#include <boost/thread.hpp>
+#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/mutex.hpp>
 
 /**
  * Mount/Unmount disk constants
@@ -274,6 +277,9 @@ protected:
 
     // Detection of virtualbox log modification time
     unsigned long long      lastLogTime;
+
+    // For having only a single system command running
+    boost::mutex            execMutex;
 
     /*  Default sysExecConfig */
     SysExecConfig           execConfig;
