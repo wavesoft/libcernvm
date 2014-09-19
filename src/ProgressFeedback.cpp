@@ -540,7 +540,7 @@ void VariableTask::update ( size_t value ) {
 		}
 
 		// Advance spinner
-		if (++spinnerIndex > 4)
+		if (++spinnerIndex >= 4)
 			spinnerIndex = 0;
 
 		// calculate suffix
