@@ -754,7 +754,7 @@ int VBoxInstance::installExtPack( const DownloadProviderPtr & downloadProvider, 
     }
 
     // Begin download
-    if (pf) downloadPf = pf->begin<VariableTask>("Downloading hypervisor configuration");
+    if (pf) downloadPf = pf->begin<VariableTask>("Downloading extension pack");
 
     // Download extension pack
     string tmpExtpackFile = getTmpDir() + "/" + getFilename( data[kExtpackUrl] );
