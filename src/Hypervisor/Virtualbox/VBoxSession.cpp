@@ -2139,6 +2139,7 @@ int VBoxSession::mountDisk ( const std::string & controller,
                              bool multiAttach ) {
     CRASH_REPORT_BEGIN;
 
+    vector<string> lines;
     map<string, string> info;
     ostringstream args;
     string kk, kv;
