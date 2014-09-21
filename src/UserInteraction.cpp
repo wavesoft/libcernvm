@@ -125,7 +125,7 @@ void UserInteraction::setLicenseURLHandler ( const callbackLicense & cb ) {
 /**
  * Trigger user interaction abort
  */
-int UserInteraction::abort( bool wait, int result ) {
+int UserInteraction::abort( bool wait, int setResult ) {
 	CRASH_REPORT_BEGIN;
 
 	// If there was nothing to abort return 0
@@ -139,7 +139,7 @@ int UserInteraction::abort( bool wait, int result ) {
 	aborted = true;
 
 	// Fire __cbResult to release confirm/alert lock
-	__cbResult( result );
+	__cbResult( setResult );
 
 	// Check if we should wait for abort_handled
 	if (wait) {

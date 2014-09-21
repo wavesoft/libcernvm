@@ -127,7 +127,7 @@ public:
 	/**
 	 * Abort a pending operation
 	 */
-	int 				abort 					( bool wait = false, int result = UI_CANCEL );
+	int 				abort 					( bool wait = false, int setResult = UI_CANCEL );
 
 	/**
 	 * Confirmation from the entity which is handling the aborted event
