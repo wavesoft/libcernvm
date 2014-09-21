@@ -255,6 +255,9 @@ protected:
     int                     getHostOnlyAdapter  ( std::string * adapterName, const FiniteTaskPtr & fp = FiniteTaskPtr() );
     std::map<std::string, 
         std::string>        getMachineInfo      ( int retries = 2, int timeout = SYSEXEC_TIMEOUT );
+    std::map<std::string, 
+        std::string>        getDiskInfo         ( const std::string& disk );
+
     int                     startVM             ();
 
     ////////////////////////////////////

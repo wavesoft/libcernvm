@@ -2139,7 +2139,6 @@ int VBoxSession::mountDisk ( const std::string & controller,
                              bool multiAttach ) {
     CRASH_REPORT_BEGIN;
 
-    vector<string> lines;
     map<string, string> info;
     ostringstream args;
     string kk, kv;
@@ -2180,38 +2179,14 @@ int VBoxSession::mountDisk ( const std::string & controller,
                 string parentUUID = "_child_", actualParentUUID = "_parent_";
 
                 // Get more information for this disk
-                args.str("");
-                args << "showhdinfo \"" << kv << "\"";
-                ans = this->wrapExec(args.str(), &lines, NULL, execConfig);
-                if (ans == 0) {
-
-                    // Tokenize information
-                    info = tokenize( &lines, ':' );
-
-                    // Get child's parent UUID
-                    if (info.find("Parent UUID") != info.end())
-                        parentUUID = info["Parent UUID"];
-
-                } else {
-                    CVMWA_LOG("Error", "Unable to get more information regarding disk: " << kk);
-                }
+                info = this->getDiskInfo(kv);
+                if (info.find("Parent UUID") != info.end())
+                    parentUUID = info["Parent UUID"];
 
                 // Get more information regarding the parent disk
-                args.str("");
-                args << "showhdinfo \"" << diskFile << "\"";
-                ans = this->wrapExec(args.str(), &lines, NULL, execConfig);
-                if (ans == 0) {
-
-                    // Tokenize information
-                    info = tokenize( &lines, ':' );
-
-                    // Get parent disk's UUID
-                    if (info.find("UUID") != info.end())
-                        actualParentUUID = info["UUID"];
-
-                } else {
-                    CVMWA_LOG("Error", "Unable to get more information regarding disk: " << diskFile);
-                }
+                info = this->getDiskInfo(diskFile);
+                if (info.find("UUID") != info.end())
+                    actualParentUUID = info["UUID"];
 
                 // If these two UUID matches, we are done
                 if (parentUUID.compare( actualParentUUID ) == 0) {
@@ -2555,6 +2530,28 @@ int VBoxSession::getHostOnlyAdapter ( std::string * adapterName, const FiniteTas
     return HVE_OK;
 
     CRASH_REPORT_END;
+}
+
+/**
+ * Return the properties of the Disk.
+ */
+std::map<std::string, std::string> VBoxSession::getDiskInfo( const std::string& disk ) {
+    vector<string> lines;
+    map<string, string> info;
+    ostringstream args;
+    int ans;
+
+    // Get more information for this disk
+    args << "showhdinfo \"" << disk << "\"";
+    ans = this->wrapExec(args.str(), &lines, NULL, execConfig);
+    if (ans == 0) {
+        // Tokenize information
+        return tokenize( &lines, ':' );
+    }
+
+    // Return empty info
+    return info;
+
 }
 
 /**
