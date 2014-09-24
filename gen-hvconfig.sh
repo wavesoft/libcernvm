@@ -19,6 +19,12 @@ VERSION_ALL="
 4.0.26 4.0.24 4.0.22 4.0.20 4.0.18 4.0.16 4.0.14 4.0.12 4.0.10 4.0.8 4.0.6 4.0.4 4.0.2 4.0.0
 "
 
+# Mapping for different linux configurations not found
+# on the checksum list, and specifically for RPM-based OSes
+RPM_MAPPING_VERSIONS="
+el6=scientificcernslc-carbon
+"
+
 # Configuration for VirtualBox
 DOWNLOAD_URL="http://download.virtualbox.org/virtualbox"
 HASH_URL="https://www.virtualbox.org/download/hashes"
@@ -75,6 +81,10 @@ function parse_os_versions {
 				echo "${LINUX_ARCH}-${LINUX_PLATF}-${LINUX_FLAVOR}=${DOWNLOAD_URL}/${VER}/${P_FILE}"
 				echo "${LINUX_ARCH}-${LINUX_PLATF}-${LINUX_FLAVOR}-sha256=${P_CHECKSUM}"
 				echo "${LINUX_ARCH}-${LINUX_PLATF}-${LINUX_FLAVOR}-installer=dpkg"
+				;;
+
+			*.rpm)
+				# RPM-Based linux installer (RHEL)
 				;;
 
 		esac

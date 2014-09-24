@@ -2021,6 +2021,11 @@ void getLinuxInfo ( LINUX_INFO * info ) {
             info->osDistID.begin(), 
             ::tolower);
         
+    } else if (file_exists("/etc/redhat-release")) {
+
+        // Check if we have the redhat-release file in place
+        
+
     }
     CRASH_REPORT_END;
 }

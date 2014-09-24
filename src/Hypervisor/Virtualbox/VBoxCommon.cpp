@@ -287,7 +287,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
     for (int tries=0; tries<retries; tries++) {
 
         // Download installer
-        tmpHypervisorInstall = getTmpFile( kFileExt );
+        tmpHypervisorInstall = getTmpFile( getURLFilename(data[kDownloadUrl]) );
         CVMWA_LOG( "Info", "Downloading " << data[kDownloadUrl] << " to " << tmpHypervisorInstall  );
         res = downloadProvider->downloadFile( data[kDownloadUrl], tmpHypervisorInstall, downloadPf );
         CVMWA_LOG( "Info", "    : Got " << res  );
@@ -408,12 +408,10 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
             if (installerPf) installerPf->doing("Cleaning-up");
             res = sysExec("/usr/bin/hdiutil", "detach " + dskDev, NULL, &errorMsg, sysExecConfig);
             if (installerPf) {
+                installerPf->markLengthy(false);
                 installerPf->done("Cleaning-up completed");
                 installerPf->complete("Installed hypervisor");
             }
-
-            // We exited the lengthy task
-            if (installerPf) installerPf->markLengthy(false);
 
         #elif defined(_WIN32)
             if (installerPf) installerPf->setMax(2, false);
@@ -478,10 +476,10 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
 
             // Wait for termination
             WaitForSingleObject( shExecInfo.hProcess, INFINITE );
+            if (installerPf) installerPf->markLengthy(false);
             if (installerPf) installerPf->done("Installer completed");
 
             // Complete
-            if (installerPf) installerPf->markLengthy(false);
             if (installerPf) installerPf->complete("Installed hypervisor");
 
         #elif defined(__linux__)
@@ -583,25 +581,29 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 }
 
                 // Done
+                if (installerPf) installerPf->markLengthy(false);
                 if (installerPf) installerPf->done("Installation completed");
         
                 // Complete
-                if (installerPf) installerPf->markLengthy(false);
                 if (installerPf) installerPf->complete("Installed hypervisor");
 
-            // (2) If we have GKSudo, do directly dpkg/yum install
+            // (2) If we have GKSudo or PKExec do directly dpkg/yum install
             // ------------------------------------------------------
-            } else if (linuxInfo.hasGKSudo) {
+            } else if (linuxInfo.hasPKExec || linuxInfo.hasGKSudo) {
                 string cmdline = "/bin/sh '" + tmpHypervisorInstall + "'";
                 if ( installerType == PMAN_YUM ) {
-                    cmdline = "/usr/bin/yum localinstall '" + tmpHypervisorInstall + "' -y";
+                    cmdline = "/usr/bin/yum localinstall -y '" + tmpHypervisorInstall + "' -y";
                 } else if ( installerType == PMAN_DPKG ) {
                     cmdline = "/usr/bin/dpkg -i '" + tmpHypervisorInstall + "'";
                 }
 
                 // Use GKSudo to invoke the cmdline
                 if (installerPf) installerPf->doing("Starting installer");
-                cmdline = "/usr/bin/gksudo \"" + cmdline + "\"";
+                if (linuxInfo.hasPKExec) {
+                    cmdline = "/usr/bin/pkexec --user root " + cmdline;
+                } else {
+                    cmdline = "/usr/bin/gksudo \"" + cmdline + "\"";
+                }
                 res = system( cmdline.c_str() );
                 if (res < 0) {
                     cout << "ERROR: Could not start. Return code: " << res << endl;
@@ -626,7 +628,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 // Complete
                 if (installerPf) installerPf->markLengthy(false);
                 if (installerPf) installerPf->complete("Installed hypervisor");
-        
+
             /* (3) Otherwise create a bash script and prompt the user */
             } else {
             
@@ -649,6 +651,8 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 if (installerPf) installerPf->restart("Re-trying hypervisor installation");
                 CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
                 sleepMs(1000);
+                // Cleanup
+                ::remove( tmpHypervisorInstall.c_str() );
                 continue;
             }
 
