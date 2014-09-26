@@ -1004,6 +1004,12 @@ void VBoxSession::ConfigureVMScratch() {
     // Check if we have a scratch disk attached to the machine
     if (!machine->contains(SCRATCH_DSK)) {
 
+        // Skip this if the scratch disk has size=0
+        if (parameters->getNum<int>("disk") == 0) {
+            FSMDone("Scratch storage not required");
+            return;
+        }
+
         // Create a hard disk for this VM
         string vmDisk = getTmpFile(".vdi", this->getDataFolder());
 
@@ -1047,6 +1053,17 @@ void VBoxSession::ConfigureVMScratch() {
 
         FSMDone("Scratch storage prepared");
     } else {
+
+        // Remove scratch disk if we don't require one
+        if (parameters->getNum<int>("disk") == 0) {
+            FSMDoing("Unmounting previous scratch disk storage");
+
+            // Unmount previous disk
+            unmountDisk( SCRATCH_CONTROLLER, SCRATCH_PORT, SCRATCH_DEVICE, T_HDD, true );
+            FSMDone("Scratch disk released");
+            return;
+        }
+
         FSMDone("Scratch disk already exists");
     }
 
@@ -1160,7 +1177,7 @@ void VBoxSession::ConfigureVMAPI() {
         local->set("vmapi_contents", data);
 
         // Create a new floppy disk
-        ans = hypervisor->buildFloppyIO( data, &sFilename, this->getDataFolder() );
+        ans = hypervisor->buildFloppyIO( data, &sFilename, local->get("baseFolder") );
         if (ans != HVE_OK) {
             errorOccured("Unable to create a contextualization floppy disk", HVE_EXTERNAL_ERROR);
             return;
@@ -1200,7 +1217,7 @@ void VBoxSession::ConfigureVMAPI() {
         local->set("vmapi_contents", data);
 
         // Create a new iso disk
-        ans = hypervisor->buildContextISO( data, &sFilename, this->getDataFolder() );
+        ans = hypervisor->buildContextISO( data, &sFilename, local->get("baseFolder") );
         if (ans != HVE_OK) {
             errorOccured("Unable to create a contextualization iso", HVE_EXTERNAL_ERROR);
             return;
