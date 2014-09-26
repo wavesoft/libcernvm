@@ -539,8 +539,14 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 // At some point the process that xdg-open launches is
                 // going to open the file in order to read it's contnets. 
                 // Wait for 10 sec for it to happen
+                bool waitResult; // Wait 1 min until installation begins
                 if (installerPf) installerPf->doing("Waiting for the installation to begin");
-                if (!waitFileOpen( tmpHypervisorInstall, true, 60000 )) { // 1 min until it's captured
+                if ( installerType == PMAN_YUM ) {
+                    waitResult = waitPidFile( "/var/run/yum.pid", true, 60000 );
+                } else if ( installerType == PMAN_DPKG ) {
+                    waitResult = waitFileOpen( tmpHypervisorInstall, true, 60000 );
+                }
+                if (!waitResult) { 
                     cout << "ERROR: Could not wait for file handler capture: " << res << endl;
                     if (tries<retries) {
                         if (installerPf) installerPf->doing("Waiting again for the installation to begin");
@@ -562,7 +568,12 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
 
                 // Wait for it to be released
                 if (installerPf) installerPf->doing("Waiting for the installation to complete");
-                if (!waitFileOpen( tmpHypervisorInstall, false, 900000 )) { // 15 mins until it's released
+                if ( installerType == PMAN_YUM ) { // 15 mins until it's released
+                    waitResult = waitPidFile( "/var/run/yum.pid", false, 900000 );
+                } else if ( installerType == PMAN_DPKG ) {
+                    waitResult = waitFileOpen( tmpHypervisorInstall, false, 900000 );
+                }
+                if (!waitResult) {
                     if (tries<retries) {
                         if (installerPf) installerPf->doing("Waiting again for the installation to complete");
                         CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
