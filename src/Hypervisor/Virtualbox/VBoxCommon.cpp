@@ -538,58 +538,84 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
             
                 // At some point the process that xdg-open launches is
                 // going to open the file in order to read it's contnets. 
-                // Wait for 10 sec for it to happen
-                bool waitResult; // Wait 1 min until installation begins
-                if (installerPf) installerPf->doing("Waiting for the installation to begin");
-                if ( installerType == PMAN_YUM ) {
-                    waitResult = waitPidFile( "/var/run/yum.pid", true, 60000 );
-                } else if ( installerType == PMAN_DPKG ) {
-                    waitResult = waitFileOpen( tmpHypervisorInstall, true, 60000 );
-                }
-                if (!waitResult) { 
-                    cout << "ERROR: Could not wait for file handler capture: " << res << endl;
-                    if (tries<retries) {
-                        if (installerPf) installerPf->doing("Waiting again for the installation to begin");
-                        CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
-                        sleepMs(1000);
-                        continue;
+                //
+                // In addition some installation process will launch yum/dpkg
+                // or a similar package installer to perform the installation.
+                // Some times it might start it a couple of times.
+
+                bool continueFlag = false;
+                while (true) {
+
+                    // Yum flag file
+                    const char * YUM_PID_FILE = "/var/run/yum.pid";
+
+                    bool waitResult; // Wait 1 min until installation begins
+                    if (installerPf) installerPf->doing("Waiting for the installation to begin");
+                    if ( installerType == PMAN_YUM ) {
+                        waitResult = waitPidFile( YUM_PID_FILE, true, 60000 );
+                    } else if ( installerType == PMAN_DPKG ) {
+                        waitResult = waitFileOpen( tmpHypervisorInstall, true, 60000 );
+                    }
+                    if (!waitResult) { 
+                        cout << "ERROR: Could not wait for file handler capture: " << res << endl;
+                        if (tries<retries) {
+                            if (installerPf) installerPf->doing("Waiting again for the installation to begin");
+                            CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
+                            sleepMs(1000);
+                            continueFlag = true;
+                            break;
+                        }
+
+                        // Cleanup
+                        ::remove( tmpHypervisorInstall.c_str() );
+
+                        // Send progress fedback
+                        if (installerPf) installerPf->markLengthy(false);
+                        if (pf) pf->fail("Unable to check the status of the installation");
+                        
+                        return HVE_STILL_WORKING;
+                    }
+                    if (installerPf) installerPf->done("Installation started");
+
+                    // Wait for it to be released
+                    if (installerPf) installerPf->doing("Waiting for the installation to complete");
+                    if ( installerType == PMAN_YUM ) { // 15 mins until it's released
+                        waitResult = waitPidFile( YUM_PID_FILE, false, 900000 );
+                    } else if ( installerType == PMAN_DPKG ) {
+                        waitResult = waitFileOpen( tmpHypervisorInstall, false, 900000 );
+                    }
+                    if (!waitResult) {
+                        if (tries<retries) {
+                            if (installerPf) installerPf->doing("Waiting again for the installation to complete");
+                            CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
+                            sleepMs(1000);
+                            continueFlag = true;
+                            break;
+                        }
+
+                        // We can't remove the file, it's in use :(
+                        CVMWA_LOG("Error", "ERROR: Could not wait for file handler release: " << res );
+
+                        // Send progress fedback
+                        if (installerPf) installerPf->markLengthy(false);
+                        if (pf) pf->fail("Unable to check the status of the installation");
+
+                        return HVE_STILL_WORKING;
                     }
 
-                    // Cleanup
-                    ::remove( tmpHypervisorInstall.c_str() );
-
-                    // Send progress fedback
-                    if (installerPf) installerPf->markLengthy(false);
-                    if (pf) pf->fail("Unable to check the status of the installation");
-                    
-                    return HVE_STILL_WORKING;
-                }
-                if (installerPf) installerPf->done("Installation started");
-
-                // Wait for it to be released
-                if (installerPf) installerPf->doing("Waiting for the installation to complete");
-                if ( installerType == PMAN_YUM ) { // 15 mins until it's released
-                    waitResult = waitPidFile( "/var/run/yum.pid", false, 900000 );
-                } else if ( installerType == PMAN_DPKG ) {
-                    waitResult = waitFileOpen( tmpHypervisorInstall, false, 900000 );
-                }
-                if (!waitResult) {
-                    if (tries<retries) {
-                        if (installerPf) installerPf->doing("Waiting again for the installation to complete");
-                        CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
-                        sleepMs(1000);
-                        continue;
+                    // Wait 5 seconds for a possible re-aquisition.
+                    // If nothing re-aquired, exit
+                    if ( installerType == PMAN_YUM ) {
+                        waitResult = waitPidFile( YUM_PID_FILE, true, 5000 );
+                    } else if ( installerType == PMAN_DPKG ) {
+                        waitResult = waitFileOpen( tmpHypervisorInstall, true, 5000 );
                     }
+                    if (!waitResult) break;
 
-                    // We can't remove the file, it's in use :(
-                    CVMWA_LOG("Error", "ERROR: Could not wait for file handler release: " << res );
-
-                    // Send progress fedback
-                    if (installerPf) installerPf->markLengthy(false);
-                    if (pf) pf->fail("Unable to check the status of the installation");
-
-                    return HVE_STILL_WORKING;
                 }
+
+                // Apply continue flag
+                if (continueFlag) continue;
 
                 // Done
                 if (installerPf) installerPf->markLengthy(false);
