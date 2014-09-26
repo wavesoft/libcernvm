@@ -1893,6 +1893,15 @@ bool isPIDAlive( int pid ) {
     #endif
     #ifdef __linux__
         int ret = kill( pid, 0 );
+        if (ret < 0) {
+            // Check if there is any permission error, and if true, try
+            // to use the /proc filesystem
+            if (errno == EPERM) {
+                std::ostringstream oss;
+                oss << "/proc/" << pid;
+                return fs::is_directory( oss.str() );
+            }
+        }
         return (ret == 0);
     #endif
     #ifdef _WIN32
@@ -2151,7 +2160,7 @@ bool waitPidFile( string filename, bool forAcuisition, int waitMillis ) {
 
         if (forAcuisition) {
             // Wait until the file exists and it's valid
-            if (!file_exists(fileName)) continue;
+            if (!file_exists(filename)) continue;
 
             // Try to open the pid flag
             std::ifstream ifs ( filename.c_str() , std::ifstream::in);
@@ -2172,7 +2181,7 @@ bool waitPidFile( string filename, bool forAcuisition, int waitMillis ) {
 
         } else {
             // Wait until the file does not exist OR is invalid
-            if (!file_exists(fileName)) return true;
+            if (!file_exists(filename)) return true;
 
             // Try to open the pid flag
             std::ifstream ifs ( filename.c_str() , std::ifstream::in);

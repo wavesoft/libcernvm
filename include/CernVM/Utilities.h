@@ -439,6 +439,11 @@ bool isFileOpen( std::string fileName );
  */
 bool waitFileOpen( std::string filename, bool forOpen, int waitMillis );
 
+/**
+ * Wait for PID lock file to be released or acquired
+ */
+bool waitPidFile( std::string filename, bool forAcuisition, int waitMillis );
+
 #endif
 
 /**
