@@ -1645,7 +1645,27 @@ int VBoxSession::setExecutionCap ( int cap ) {
  */
 int VBoxSession::setProperty ( std::string name, std::string key ) {
     CRASH_REPORT_BEGIN;
+    std::vector<std::string> overridableVars;
+
+    // Update property
     properties->set(name, key);
+
+    // Convert to vector the overridable var names
+    if (parameters->contains("canOverride")) {
+        explode( parameters->get("canOverride"), ',', &overridableVars );
+    }
+
+    // Check which of the given userData parameters
+    // can override the core configuration
+    for (std::vector<std::string>::iterator it = overridableVars.begin(); it != overridableVars.end(); ++it) {
+        std::string ovK = *it;
+        // Copy priviledged parameter from 'userData' to 'parameters'
+        if (ovK.compare(name) == 0) {
+            parameters->set(name, key);
+            break;
+        }
+    }
+
     return HVE_OK;
     CRASH_REPORT_END;
 }
