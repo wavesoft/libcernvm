@@ -1160,7 +1160,7 @@ void VBoxSession::ConfigureVMAPI() {
         local->set("vmapi_contents", data);
 
         // Create a new floppy disk
-        ans = hypervisor->buildFloppyIO( data, &sFilename );
+        ans = hypervisor->buildFloppyIO( data, &sFilename, this->getDataFolder() );
         if (ans != HVE_OK) {
             errorOccured("Unable to create a contextualization floppy disk", HVE_EXTERNAL_ERROR);
             return;
@@ -1200,7 +1200,7 @@ void VBoxSession::ConfigureVMAPI() {
         local->set("vmapi_contents", data);
 
         // Create a new iso disk
-        ans = hypervisor->buildContextISO( data, &sFilename );
+        ans = hypervisor->buildContextISO( data, &sFilename, this->getDataFolder() );
         if (ans != HVE_OK) {
             errorOccured("Unable to create a contextualization iso", HVE_EXTERNAL_ERROR);
             return;

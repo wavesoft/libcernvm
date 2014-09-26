@@ -371,10 +371,10 @@ int HVInstance::getUsage( HVINFO_RES * resCount ) {
 /**
  * Use LibcontextISO to create a cd-rom for this VM
  */
-int HVInstance::buildContextISO ( std::string userData, std::string * filename ) {
+int HVInstance::buildContextISO ( std::string userData, std::string * filename, std::string folder ) {
     CRASH_REPORT_BEGIN;
     ofstream isoFile;
-    string iso = getTmpFile(".iso");
+    string iso = getTmpFile(".iso", folder);
     
     string ctxFileContents = base64_encode( userData );
     ctxFileContents = "EC2_USER_DATA=\"" +ctxFileContents + "\"\nONE_CONTEXT_PATH=\"/var/lib/amiconfig\"\n";
@@ -396,10 +396,10 @@ int HVInstance::buildContextISO ( std::string userData, std::string * filename )
 /**
  * Use FloppyIO to create a configuration disk for this VM
  */
-int HVInstance::buildFloppyIO ( std::string userData, std::string * filename ) {
+int HVInstance::buildFloppyIO ( std::string userData, std::string * filename, std::string folder ) {
     CRASH_REPORT_BEGIN;
     ofstream isoFile;
-    string floppy = getTmpFile(".img");
+    string floppy = getTmpFile(".img", folder);
     
     /* Write data (don't wait for sync) */
     FloppyIO * fio = new FloppyIO( floppy.c_str() );

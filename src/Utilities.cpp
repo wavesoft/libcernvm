@@ -2024,7 +2024,7 @@ void getLinuxInfo ( LINUX_INFO * info ) {
     } else if (file_exists("/etc/redhat-release")) {
 
         // Check if we have the redhat-release file in place
-        
+
 
     }
     CRASH_REPORT_END;
@@ -2134,6 +2134,74 @@ bool waitFileOpen( string filename, bool forOpen, int waitMillis ) {
     return false;
 
     CRASH_REPORT_END;
+}
+
+
+/**
+ * Wait until a run.pid file is valid
+ */
+bool waitPidFile( string filename, bool forAcuisition, int waitMillis ) {
+    CRASH_REPORT_BEGIN;
+    std::string line;
+    int pid;
+
+    // Wait for waitMillis
+    unsigned long sTime = getMillis() + waitMillis;
+    while (getMillis() < sTime ) {
+
+        if (forAcuisition) {
+            // Wait until the file exists and it's valid
+            if (!file_exists(fileName)) continue;
+
+            // Try to open the pid flag
+            std::ifstream ifs ( filename.c_str() , std::ifstream::in);
+            if (ifs.fail()) continue;
+            
+            // Read PID
+            if (std::getline(ifs, line)) {
+                // Check if the PID in file is alive
+                pid = ston<int>(line);
+                if (isPIDAlive(pid)) {
+                    ifs.close();
+                    return true;
+                }
+            }
+            
+            // Close file
+            ifs.close();
+
+        } else {
+            // Wait until the file does not exist OR is invalid
+            if (!file_exists(fileName)) return true;
+
+            // Try to open the pid flag
+            std::ifstream ifs ( filename.c_str() , std::ifstream::in);
+            if (ifs.fail()) continue;
+            
+            // Read PID
+            if (std::getline(ifs, line)) {
+                // Check if the PID in file is not alive
+                pid = ston<int>(line);
+                if (!isPIDAlive(pid)) {
+                    ifs.close();
+                    return true;
+                }
+            }
+            
+            // Close file
+            ifs.close();
+
+        }
+
+        // Wait a bit
+        boost::this_thread::sleep( boost::posix_time::millisec( 500 ) );
+
+    }
+
+    // Timeout occured
+    return false;
+
+    CRASH_REPORT_END;    
 }
 
 #endif
