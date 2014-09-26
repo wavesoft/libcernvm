@@ -3,7 +3,8 @@
  
  - Added support for 'canOverride' variables when setting properties to hypervisor.
  - Moving the temporary floppy & contextISO files inside the WebAPI data folder.
- - Optimizing the installation process: Added support for pkexec fallback emchanism on redhat systems
+ - Optimizing the isPIDAlive function on linux.
+ - Optimizing the installation process: Added support for pkexec fallback emchanism on redhat systems, added yum lockfile check.
 
 === version-2.0.7
  
