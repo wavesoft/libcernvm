@@ -662,8 +662,6 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 if (installerPf) installerPf->restart("Re-trying hypervisor installation");
                 CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
                 sleepMs(1000);
-                // Cleanup
-                ::remove( tmpHypervisorInstall.c_str() );
                 continue;
             }
 
