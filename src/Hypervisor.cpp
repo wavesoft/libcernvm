@@ -371,7 +371,7 @@ int HVInstance::getUsage( HVINFO_RES * resCount ) {
 /**
  * Use LibcontextISO to create a cd-rom for this VM
  */
-int HVInstance::buildContextISO ( std::string userData, std::string * filename, std::string folder ) {
+int HVInstance::buildContextISO ( std::string userData, std::string * filename, const std::string folder ) {
     CRASH_REPORT_BEGIN;
     ofstream isoFile;
     string iso = getTmpFile(".iso", folder);
@@ -396,7 +396,7 @@ int HVInstance::buildContextISO ( std::string userData, std::string * filename, 
 /**
  * Use FloppyIO to create a configuration disk for this VM
  */
-int HVInstance::buildFloppyIO ( std::string userData, std::string * filename, std::string folder ) {
+int HVInstance::buildFloppyIO ( std::string userData, std::string * filename, const std::string folder ) {
     CRASH_REPORT_BEGIN;
     ofstream isoFile;
     string floppy = getTmpFile(".img", folder);

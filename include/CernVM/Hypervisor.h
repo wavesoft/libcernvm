@@ -589,13 +589,13 @@ public:
      * Build a Contextualization CD-ROM with the specified user-data and
      * store it to the file pointer specified.
      */
-    int                     buildContextISO     ( std::string userData, std::string * filename );
+    int                     buildContextISO     ( std::string userData, std::string * filename, const std::string parentFolder = "" );
 
     /**
      * Build a floppy disk using the specified user-data and store the resulting
      * filename to the filename pointer.
      */
-    int                     buildFloppyIO       ( std::string userData, std::string * filename );
+    int                     buildFloppyIO       ( std::string userData, std::string * filename, const std::string parentFolder = "" );
     
 
     //////////////////////////////////////////////
