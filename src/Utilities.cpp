@@ -130,6 +130,20 @@ const SysExecConfig config;
 const SysExecConfig& SysExecConfig::Default() { return config; }
 
 /**
+ * Equality operator
+ */
+SysExecConfig& SysExecConfig::operator=(const SysExecConfig& rhs) {
+
+    // Ovewrite the parameters specified
+    retries = rhs.retries;
+    timeout = rhs.timeout;
+    gui = rhs.gui;
+    errStrings = rhs.errStrings;
+
+    return *this;
+}
+
+/**
  * Register an error string for handling and return a copy of this object
  */
 SysExecConfig& SysExecConfig::handleErrString( const std::string& message, int errorCode ) {
@@ -177,9 +191,13 @@ void flushNamedMutexes() {
  */
 std::string newGUID( ) {
     CRASH_REPORT_BEGIN;
-    boost::uuids::uuid uuid = boost::uuids::random_generator()();
-    std::stringstream out; out << uuid;
-    return out.str();
+    try {
+        boost::uuids::uuid uuid = boost::uuids::random_generator()();
+        std::stringstream out; out << uuid;
+        return out.str();
+    } catch (std::runtime_error& err) {
+        return "";
+    }
     CRASH_REPORT_END;
 }
 
@@ -1584,7 +1602,16 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
         // Check if it's still connected
         int errorCode = 0;
         socklen_t szErrorCode = sizeof(errorCode);
-        getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*) &errorCode, &szErrorCode );
+        if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*) &errorCode, &szErrorCode ) != 0) {
+            #ifdef _WIN32
+                shutdown(sock, SD_BOTH ); 
+                closesocket(sock);
+            #else
+                ::shutdown(sock, SHUT_RDWR);
+                ::close(sock);
+            #endif
+            return false;
+        }
         if (errorCode != 0 ){
             #ifdef _WIN32
                 shutdown(sock, SD_BOTH ); 
@@ -1968,6 +1995,7 @@ unsigned long long getFileTimeMs ( const std::string& file ) {
 
     // Stat file
     struct stat attrib;
+    memset( &attrib, sizeof(struct _stat), 0 );
     stat( file.c_str(), &attrib);
 
     // Calculate and return milliseconds
@@ -1977,6 +2005,7 @@ unsigned long long getFileTimeMs ( const std::string& file ) {
 
     // Stat file
     struct stat attrib;
+    memset( &attrib, sizeof(struct _stat), 0 );
     stat( file.c_str(), &attrib);
 
     // Calculate and return milliseconds

@@ -168,6 +168,11 @@ public:
         : retries(src.retries), timeout(src.timeout), gui(src.gui), errStrings(src.errStrings) { };
 
     /**
+     * Assign operator
+     */
+    SysExecConfig& operator=(const SysExecConfig& rhs);
+
+    /**
      * Funtion to register an error handler
      *
      * This function registers a string pattern that if matched, will return the given error code

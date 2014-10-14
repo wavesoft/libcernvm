@@ -399,9 +399,11 @@ time_t LocalConfig::getLastModified ( std::string configFile ) {
     // Get file modification time
     #ifdef _WIN32
     struct _stat attrib;
+    memset( &attrib, sizeof(struct _stat), 0 );
     _stat( file.c_str(), &attrib);
     #else
     struct stat attrib;
+    memset( &attrib, sizeof(struct _stat), 0 );
     stat( file.c_str(), &attrib);
     #endif
     

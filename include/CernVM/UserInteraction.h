@@ -75,7 +75,7 @@ public:
 	/**
 	 * Constructor for user interaction class
 	 */
-	UserInteraction() : cbConfirm(), cbAlert(), cbLicense(), mutex(), cond(), aborted(false), result(0) { };
+	UserInteraction() : cbConfirm(), cbAlert(), cbLicense(), mutex(), cond(), aborted(false), abortHandledFlag(false), result(0) { };
 
 	/**
 	 * Display the specified message and wait for an OK/Cancel response.

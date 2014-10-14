@@ -135,8 +135,8 @@ long int ThinIPCMessage::readInt() {
     if (__ioPos+4 > size) return 0;
 
     // Read int
-    memset( &v, 0, 4 );
-    memcpy( &v, &this->data[__ioPos], 4 );
+    memset( &v, 0, sizeof(long int) );
+    memcpy( &v, &this->data[__ioPos], sizeof(long int) );
     __ioPos += 4;
 
     return v;
