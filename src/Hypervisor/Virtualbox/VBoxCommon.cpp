@@ -549,7 +549,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                     // Yum flag file
                     const char * YUM_PID_FILE = "/var/run/yum.pid";
 
-                    bool waitResult; // Wait 1 min until installation begins
+                    bool waitResult = false; // Wait 1 min until installation begins
                     if (installerPf) installerPf->doing("Waiting for the installation to begin");
                     if ( installerType == PMAN_YUM ) {
                         waitResult = waitPidFile( YUM_PID_FILE, true, 60000 );

@@ -80,7 +80,7 @@ public:
 			  	  fsmwState(NULL), fsmwStateWaiting(false), fsmwStateMutex(), fsmwStateChanged(),
 				  fsmInsideHandler(false), fsmProgress(), fsmGotoMutex(), fsmTargetState(0), 
 				  fsmwWaitCond(), fsmwWaitMutex(), fsmRootNode(NULL), fsmCurrentNode(),
-				  fsmTmpRouteLinks(), fsmNodes(), fsmCurrentPath()
+				  fsmTmpRouteLinks(), fsmNodes(), fsmCurrentPath(), fsmThreadActive(false)
 				  { };
 
 	/**

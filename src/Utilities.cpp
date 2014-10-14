@@ -1445,9 +1445,15 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
     timeout.tv_sec = timeoutSec;
     timeout.tv_usec = 0;
     if (setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
-                sizeof(timeout)) < 0) return false;
+                sizeof(timeout)) < 0) {
+        close(sock);
+        return false;
+    }
     if (setsockopt (sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,
-                sizeof(timeout)) < 0) return false;
+                sizeof(timeout)) < 0) {
+        close(sock);
+        return false;
+    }
 
     // don't leave the socket in a TIME_WAIT state if we close the connection
     struct linger fix_ling;

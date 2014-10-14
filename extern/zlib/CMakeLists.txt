@@ -254,7 +254,7 @@ if(UNIX)
 endif()
 
 ##MODIFIED: On linux we should add a flag to define the architecture we are building for
-if (UNIX)
+if (UNIX AND NOT COVERITY_RUN)
     if ("${TARGET_ARCH}" STREQUAL "x86_64")
         add_compile_flags( zlibstatic -m64 )
     else()
