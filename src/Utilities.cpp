@@ -1446,12 +1446,20 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
     timeout.tv_usec = 0;
     if (setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
                 sizeof(timeout)) < 0) {
-        closesocket(sock);
+        #ifdef _WIN32
+            closesocket(sock);
+        #else
+            ::close(sock);
+        #endif
         return false;
     }
     if (setsockopt (sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,
                 sizeof(timeout)) < 0) {
-        closesocket(sock);
+        #ifdef _WIN32
+            closesocket(sock);
+        #else
+            ::close(sock);
+        #endif
         return false;
     }
 
