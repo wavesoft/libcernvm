@@ -9,7 +9,7 @@
 # ======================================================
 
 # Which version to install if no hypervisor is found
-VERSION_ACTIVE="4.3.16"
+VERSION_ACTIVE="4.3.12"
 
 # Make sure you keep the following list of versions up-to-date
 VERSION_ALL="
@@ -23,6 +23,10 @@ VERSION_ALL="
 # on the checksum list, and specifically for RPM-based OSes
 RPM_MAPPING_VERSIONS="
 el6=scientificcernslc-carbon
+"
+
+DEB_MAPPING_VERSIONS="
+wheezy=debian-jessie
 "
 
 # Configuration for VirtualBox
@@ -73,18 +77,51 @@ function parse_os_versions {
 
 			*.deb)
 				# DEB-Based linux installer (Debian/Ubuntu)
-				local LINUX_ARCH="linux64"
-				[[ "$P_FILE" =~ "i386" ]] && LINUX_ARCH="linux32"
+				local LINUX_ARCH="linux32"
+				if [[ "$P_FILE" =~ "amd64" ]] || [[ "$P_FILE" =~ "x86_64" ]]; then
+					LINUX_ARCH="linux64"
+				fi
 				local LINUX_PLATF=$(echo "$P_FILE" | awk -F'~' '{print $2}' | tr '[:upper:]' '[:lower:]')
 				local LINUX_FLAVOR=$(echo "$P_FILE" | awk -F'~' '{print $3}' | awk -F'_' '{print $1}' | tr '[:upper:]' '[:lower:]')
 
 				echo "${LINUX_ARCH}-${LINUX_PLATF}-${LINUX_FLAVOR}=${DOWNLOAD_URL}/${VER}/${P_FILE}"
 				echo "${LINUX_ARCH}-${LINUX_PLATF}-${LINUX_FLAVOR}-sha256=${P_CHECKSUM}"
 				echo "${LINUX_ARCH}-${LINUX_PLATF}-${LINUX_FLAVOR}-installer=dpkg"
+
+				# Process hand-mapped versions
+				IFS=$'\n'
+				for map_line in $DEB_MAPPING_VERSIONS; do
+					FIND=$(echo "$map_line" | awk -F'=' '{print $1}')
+					REPLACE=$(echo "$map_line" | awk -F'=' '{print $2}')
+					if [[ "$P_FILE" =~ $FIND ]]; then
+						echo "${LINUX_ARCH}-${REPLACE}=${DOWNLOAD_URL}/${VER}/${P_FILE}"
+						echo "${LINUX_ARCH}-${REPLACE}-sha256=${P_CHECKSUM}"
+						echo "${LINUX_ARCH}-${REPLACE}-installer=${P_FILE}"
+					fi
+				done
+				unset IFS
+
 				;;
 
 			*.rpm)
 				# RPM-Based linux installer (RHEL)
+				local LINUX_ARCH="linux32"
+				if [[ "$P_FILE" =~ "amd64" ]] || [[ "$P_FILE" =~ "x86_64" ]]; then
+					LINUX_ARCH="linux64"
+				fi
+
+				# Process hand-mapped versions
+				IFS=$'\n'
+				for map_line in $RPM_MAPPING_VERSIONS; do
+					FIND=$(echo "$map_line" | awk -F'=' '{print $1}')
+					REPLACE=$(echo "$map_line" | awk -F'=' '{print $2}')
+					if [[ "$P_FILE" =~ $FIND ]]; then
+						echo "${LINUX_ARCH}-${REPLACE}=${DOWNLOAD_URL}/${VER}/${P_FILE}"
+						echo "${LINUX_ARCH}-${REPLACE}-sha256=${P_CHECKSUM}"
+						echo "${LINUX_ARCH}-${REPLACE}-installer=${P_FILE}"
+					fi
+				done
+				unset IFS
 				;;
 
 		esac
