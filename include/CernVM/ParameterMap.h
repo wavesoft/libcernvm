@@ -23,14 +23,16 @@
 #define PARAMETERMAP_H
 
 #include <CernVM/Config.h>
-
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/make_shared.hpp>
-#include <json/json.h>
-
 #include <string>
 #include <map>
 #include <vector>
+
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/thread/mutex.hpp>
+
+#include <json/json.h>
+
 
 /**
  * Shared pointer for the map instance
