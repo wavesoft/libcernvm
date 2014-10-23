@@ -191,7 +191,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
     // Prepare variables
     vector<string> lines;
     splitLines( requestBuf, &lines );
-    map<string, string> data = tokenize( &lines, '=' );
+    map<const string, const string> data = tokenize( &lines, '=' );
     
     // Pick the URLs to download from
     #ifdef _WIN32

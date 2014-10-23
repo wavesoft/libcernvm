@@ -126,37 +126,42 @@ void crashReportStoreLog( ostringstream & oss ) {
  */
 std::string crashReportBuildStackTrace() {
 	boost::unique_lock<boost::mutex> lock(scrollbackAccessMutex);
-
-	// Allocate space
-	string cBuffer = "";
+    try {
+	    // Allocate space
+	    string cBuffer = "";
 
 #if defined(_MSC_VER)
-	// Use StalkWalker on windows
-    LPCSTR symbolsFile = NULL;
-    if (!crashReportDebugSymbolsFile.empty()) symbolsFile = crashReportDebugSymbolsFile.c_str();
-    CVMWebStackWalker mWalker( symbolsFile );
-	mWalker.ShowCallstack();
-	cBuffer = mWalker.stackTrace;
+	    // Use StalkWalker on windows
+        LPCSTR symbolsFile = NULL;
+        if (!crashReportDebugSymbolsFile.empty()) symbolsFile = crashReportDebugSymbolsFile.c_str();
+        CVMWebStackWalker mWalker( symbolsFile );
+	    mWalker.ShowCallstack();
+	    cBuffer = mWalker.stackTrace;
 
 #elif defined(__GNUC__)
-	void *array[100];
-	size_t size;
+	    void *array[100];
+	    size_t size;
 
-	// get void*'s for all entries on the stack
-	size = backtrace(array, 100);
+	    // get void*'s for all entries on the stack
+	    size = backtrace(array, 100);
 
-	// Render to strings
-	char** lines = backtrace_symbols(array, size);
-	for (size_t i=0; i<size; i++) {
-		cBuffer += lines[i];
-        cBuffer += "\n";
-	}
-	free(lines);
+	    // Render to strings
+	    char** lines = backtrace_symbols(array, size);
+	    for (size_t i=0; i<size; i++) {
+		    cBuffer += lines[i];
+            cBuffer += "\n";
+	    }
+	    free(lines);
 
 #endif
 
-	// Return response
-	return cBuffer;
+	    // Return response
+	    return cBuffer;
+
+    } catch (exception&) {
+
+        return "(An exception occured while preparing stack trace!)";
+    }
 
 }
  

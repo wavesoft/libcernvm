@@ -83,8 +83,13 @@ LocalConfig::LocalConfig ( std::string path, std::string name ) : ParameterMap()
     this->configDir = path;
     this->configName = name;
 
-    // Load parameters in the parameters map
-    this->loadMap( name, parameters.get() );
+    {
+        // Mutex for making this thread-safe
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+
+        // Load parameters in the parameters map
+        this->loadMap( name, parameters.get() );
+    }
 
     // Update time it was loaded and modified
     timeLoaded = getTimeInMs();
@@ -186,7 +191,7 @@ bool LocalConfig::saveBuffer ( std::string name, std::string * buffer ) {
 /**
  * Save string map to the given config file
  */
-bool LocalConfig::saveMap ( std::string name, std::map<std::string, std::string> * map ) {
+bool LocalConfig::saveMap ( std::string name, std::map< const std::string, const std::string> * map ) {
     CRASH_REPORT_BEGIN;
     
     // Only a single isntance can access the file
@@ -204,7 +209,7 @@ bool LocalConfig::saveMap ( std::string name, std::map<std::string, std::string>
     
     // Dump the contents
     std::string::size_type pos = 0;
-    for (std::map<std::string, std::string>::iterator it=map->begin(); it!=map->end(); ++it) {
+    for (std::map<const std::string, const std::string>::iterator it=map->begin(); it!=map->end(); ++it) {
         std::string key = (*it).first;
         std::string value = (*it).second;
 
@@ -308,7 +313,7 @@ bool LocalConfig::loadBuffer ( std::string name, std::string * buffer ) {
 /**
  * Load string map from the given config file
  */
-bool LocalConfig::loadMap ( std::string name, std::map<std::string, std::string> * map ) {
+bool LocalConfig::loadMap ( std::string name, std::map< const std::string, const std::string> * map ) {
     CRASH_REPORT_BEGIN;
     
     // Only a single isntance can access the file
@@ -526,9 +531,16 @@ void LocalConfig::commitChanges ( ) {
  */
 bool LocalConfig::save ( ) {
     CRASH_REPORT_BEGIN;
+    bool ans = false;
 
-    // Save map to file
-    bool ans = this->saveMap( configName, parameters.get() );
+    {
+        // Mutex for making this thread-safe
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+        // Save map to file
+        bool ans = this->saveMap( configName, parameters.get() );
+    }
+
+    // Check answer
     if (ans) {
 
         // Update the time it was loaded (since the moment
@@ -551,9 +563,16 @@ bool LocalConfig::save ( ) {
  */
 bool LocalConfig::load ( ) {
     CRASH_REPORT_BEGIN;
+    bool ans = false;
 
-    // Load map from file
-    bool ans = this->loadMap( configName, parameters.get() );
+    {
+        // Mutex for making this thread-safe
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+        // Load map from file
+        bool ans = this->loadMap( configName, parameters.get() );
+    }
+
+    // Check answer
     if (ans) {
 
         // Update the time it was loaded
@@ -616,38 +635,45 @@ bool LocalConfig::sync ( ) {
     //         DO : Do DIFF, preferring 'ours'
 
     // Load file map in a new dictionary
-    std::map<std::string, std::string> map;
+    std::map<const std::string, const std::string> map;
     if (!this->loadMap( configName, &map ))
         return false;
 
     // Erase keys from file from which the erase() function was called
     for (std::list<std::string>::iterator it = keysDeleted.begin(); it != keysDeleted.end(); ++it) {
-        std::map<std::string, std::string>::iterator jt = map.find(*it);
+        std::map<const std::string, const std::string>::iterator jt = map.find(*it);
         if (jt != map.end()) map.erase(jt);
     }
 
     // Reset 'keysDeleted'
     keysDeleted.clear();
 
-    // Update the parameters that still exist in the config file and add new ones if they are missing.
-    for (std::map<std::string, std::string>::iterator it = parameters->begin(); it != parameters->end(); ++it) {
-        std::string key = (*it).first;
-        std::string value = (*it).second;
+    {
+        // Mutex for making this thread-safe
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
 
-        // Update field
-        map[key] = value;
-        
-    }
+        // Update the parameters that still exist in the config file and add new ones if they are missing.
+        for (std::map<const std::string, const std::string>::iterator it = parameters->begin(); it != parameters->end(); ++it) {
+            std::string key = (*it).first;
+            std::string value = (*it).second;
 
-    // Import new keys found in the config file
-    for (std::map<std::string, std::string>::iterator it = map.begin(); it != map.end(); ++it) {
-        std::string key = (*it).first;
-        std::string value = (*it).second;
+            // Update field
+            std::map<const std::string, const std::string>::iterator jt = map.find(key);
+            if (jt != map.end()) map.erase(jt);
+            map.insert(std::make_pair(key, value));
+            
+        }
 
-        // Update missing
-        if (parameters->find(key) == parameters->end())
-            (*parameters)[key] = value;
+        // Import new keys found in the config file
+        for (std::map<const std::string, const std::string>::iterator it = map.begin(); it != map.end(); ++it) {
+            std::string key = (*it).first;
+            std::string value = (*it).second;
 
+            // Update missing
+            if (parameters->find(key) == parameters->end())
+                putOnMap(parameters, key, value);
+
+        }
     }
 
     // Save file contents

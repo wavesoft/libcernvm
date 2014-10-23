@@ -85,10 +85,10 @@ public:
     // Friend functions
     /////////////////////////
     int                     prepareSession      ( VBoxSession * session );
-    std::map<std::string, 
-        std::string>        getMachineInfo      ( std::string uuid, int timeout = SYSEXEC_TIMEOUT );
+    std::map<const std::string, const std::string>        
+                            getMachineInfo      ( std::string uuid, int timeout = SYSEXEC_TIMEOUT );
     std::string             getProperty         ( std::string uuid, std::string name );
-    std::vector< std::map< std::string, std::string > > 
+    std::vector< std::map< const std::string, const std::string > > 
                             getDiskList         ( );
     std::map<std::string, std::string> 
                             getAllProperties    ( std::string uuid );

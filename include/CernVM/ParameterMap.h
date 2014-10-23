@@ -39,7 +39,7 @@
  */
 class ParameterMap;
 typedef boost::shared_ptr< ParameterMap >       						ParameterMapPtr;
-typedef boost::shared_ptr< std::map< std::string, std::string > >       ParameterDataMapPtr;
+typedef boost::shared_ptr< std::map< const std::string, const std::string > >       ParameterDataMapPtr;
 
 /**
  * This is a generic parameter mapping class.
@@ -59,10 +59,10 @@ public:
 	/**
 	 * Create a new blank parameter map
 	 */
-	ParameterMap( ) : parameters(), prefix(""), locked(false), parent(),  changed(false), propertiexMutex() {
+	ParameterMap( ) : parameters(), prefix(""), locked(false), parent(),  changed(false), propertiesMutex() {
 
 		// Allocate a new shared pointer
-		parameters = boost::make_shared< std::map< std::string, std::string > >( );
+		parameters = boost::make_shared< std::map< const std::string, const std::string > >( );
 
 	};
 
@@ -81,6 +81,15 @@ public:
 		// Use the pointer from the parent class
 		parameters = parentptr->parameters;
 
+	};
+
+	/**
+	 * ParameterMap virtual destructor
+	 */
+	virtual ~ParameterMap() {
+		// Clear parameter map
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+		parameters->clear();
 	};
 
 	/**
@@ -179,7 +188,7 @@ public:
     /**
      * Update all the parameters from the specified map
      */
-    void						fromMap			( std::map< std::string, std::string> * map, bool clearBefore = false, const bool replace = true );
+    void						fromMap			( std::map< const std::string, const std::string> * map, bool clearBefore = false, const bool replace = true );
 
     /**
      * Update all the parameters from the specified parameter map
@@ -194,14 +203,14 @@ public:
     /**
      * Store all the parameters to the specified map
      */
-    void						toMap			( std::map< std::string, std::string> * map, bool clearBefore = false );
+    void						toMap			( std::map< const std::string, const std::string> * map, bool clearBefore = false );
 
 
    	/**
    	 * Overload bracket operator
    	 */
-    std::string operator 		[]				(const std::string& i) const { return parameters->at(i); }
-    std::string & operator 		[]				(const std::string& i) {return parameters->at(i);}
+    const std::string operator 		[]			(const std::string& i) const { return parameters->at(i); }
+    const std::string & operator 	[]			(const std::string& i) {return parameters->at(i);}
 
 	/**
 	 * The parameter map contents
@@ -240,7 +249,12 @@ protected:
     /**
      * Mutex for accessing properties
      */
-    boost::mutex                propertiexMutex;
+    boost::mutex                propertiesMutex;
+
+    /**
+     * Helper function to perform []= on const map
+     */
+    void						putOnMap( ParameterDataMapPtr map, const std::string& key, const std::string& value);
 
 };
 

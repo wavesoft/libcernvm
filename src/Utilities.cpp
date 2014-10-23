@@ -579,9 +579,10 @@ int splitArguments( std::string source, char ** charBuffer, int bufferSize, int 
 /**
  * Tokenize a key-value like output from VBoxManage into an easy-to-use hashmap
  */
-map<string, string> tokenize( vector<string> * lines, char delim ) {
+map<const string, const string> tokenize( vector<string> * lines, char delim ) {
     CRASH_REPORT_BEGIN;
-    map<string, string> ans;
+    map<const string, const string> ans;
+    map<const string, const string>::iterator j;
     string line, key, value;
     if (lines->empty()) return ans;
     for (vector<string>::iterator i = lines->begin(); i != lines->end(); i++) {
@@ -589,7 +590,8 @@ map<string, string> tokenize( vector<string> * lines, char delim ) {
         if (line.find(delim) != string::npos) {
             getKV(line, &key, &value, delim, 0);
             if (ans.find(key) == ans.end()) {
-                ans[key] = value;
+                j = ans.find(key); if (j!=ans.end()) ans.erase(j);
+                ans.insert(std::make_pair(key, value));
             }
         }
     }
@@ -600,16 +602,18 @@ map<string, string> tokenize( vector<string> * lines, char delim ) {
 /**
  * Tokenize a list of repeating key-value groups
  */
-vector< map<string, string> > tokenizeList( vector<string> * lines, char delim ) {
+vector< map<const string, const string> > tokenizeList( vector<string> * lines, char delim ) {
     CRASH_REPORT_BEGIN;
-    vector< map<string, string> > ans;
-    map<string, string> row;
+    vector< map<const string, const string> > ans;
+    map<const string, const string> row;
+    map<const string, const string>::iterator j;
     string line, key, value;
     for (vector<string>::iterator i = lines->begin(); i != lines->end(); i++) {
         line = *i;
         if (line.find(delim) != string::npos) {
             getKV(line, &key, &value, delim, 0);
-            row[key] = value;
+            j=row.find(key); if (j!=row.end()) row.erase(j);
+            row.insert(make_pair(key, value));
         } else if (line.length() == 0) { // Empty line -> List delimiter
             ans.push_back(row);
             row.clear();
@@ -1689,10 +1693,10 @@ char * getTimestamp () {
 /**
  * Dump a map structure
  */
-void mapDump(const map<string, string>& m) {
+void mapDump(const map<const string, const string>& m) {
     CRASH_REPORT_BEGIN;
     cout << "--[ Dumping map at " << (void*) &m << "] ----" << endl;
-    for (std::map<string, string>::const_iterator it=m.begin(); it!=m.end(); ++it) {
+    for (std::map<const string, const string>::const_iterator it=m.begin(); it!=m.end(); ++it) {
         string k = (*it).first;
         string v = (*it).second;
         cout << k << " => " << v << "\n";

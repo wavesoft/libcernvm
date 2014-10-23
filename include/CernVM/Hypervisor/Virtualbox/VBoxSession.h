@@ -254,10 +254,10 @@ protected:
     int                     getMachineUUID      ( std::string mname, std::string * ans_uuid,  int flags );
     std::string             getDataFolder       ();
     int                     getHostOnlyAdapter  ( std::string * adapterName, const FiniteTaskPtr & fp = FiniteTaskPtr() );
-    std::map<std::string, 
-        std::string>        getMachineInfo      ( const std::string& machineName = "", int retries = 2, int timeout = SYSEXEC_TIMEOUT );
-    std::map<std::string, 
-        std::string>        getDiskInfo         ( const std::string& disk );
+    std::map<const std::string, const std::string>
+                            getMachineInfo      ( const std::string& machineName = "", int retries = 2, int timeout = SYSEXEC_TIMEOUT );
+    std::map<const std::string, const std::string>        
+                            getDiskInfo         ( const std::string& disk );
 
     int                     startVM             ();
 
@@ -275,8 +275,8 @@ protected:
     unsigned long           errorTimestamp;
 
     // getMachineInfo helpers
-    std::map<std::string,
-        std::string>        lastMachineInfo;
+    std::map<const std::string, const std::string>        
+                            lastMachineInfo;
     long                    lastMachineInfoTimestamp;
 
     // Detection of virtualbox log modification time

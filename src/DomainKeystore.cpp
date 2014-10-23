@@ -373,7 +373,7 @@ int DomainKeystore::signatureValidate( std::string& domain, std::string& salt, P
     /* Populate checksum buffer */
     stringstream checksumBuf;
     string dataSignature = "";
-    for (map< string,string >::iterator it=data->parameters->begin(); it!=data->parameters->end(); ++it) {
+    for (map< const string, const string >::iterator it=data->parameters->begin(); it!=data->parameters->end(); ++it) {
         string key = (*it).first;
         string value = (*it).second;
         toLowerCase( key );

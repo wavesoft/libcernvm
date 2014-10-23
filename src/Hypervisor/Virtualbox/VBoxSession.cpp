@@ -62,7 +62,7 @@ std::string macroReplace( ParameterMapPtr mapData, std::string iString ) {
     CRASH_REPORT_BEGIN;
 
     // Extract map data to given map
-    std::map< std::string, std::string > uData;
+    std::map< const std::string, const std::string > uData;
     if (mapData) mapData->toMap( &uData );
 
     // Replace Tokens
@@ -257,7 +257,7 @@ void VBoxSession::UpdateSession() {
     }
 
     // Query VM status and fetch local state variable
-    map<string, string> info = getMachineInfo();
+    map<const string, const string> info = getMachineInfo();
     int localInitialized = local->getNum<int>("initialized",0);
 
     // Store machine info
@@ -353,7 +353,7 @@ void VBoxSession::CreateVM() {
     FSMDoing("Creating Virtual Machine");
     ostringstream args;
     vector<string> lines;
-    map<string, string> toks;
+    map<const string, const string> toks;
     string vboxid;
     int ans;
 
@@ -390,7 +390,7 @@ void VBoxSession::CreateVM() {
     if (ans == 500) {
 
         // Try to fetch VM info by name
-        map<string, string> info = getMachineInfo( "\"" + parameters->get("name") + "\"" );
+        map<const string, const string> info = getMachineInfo( "\"" + parameters->get("name") + "\"" );
         if (info.find(":ERROR:") != info.end()) {
             errorOccured("VM already exists, but could not obtain VirtualBox reflection information.", HVE_CREATE_ERROR);
             return;
@@ -1178,11 +1178,11 @@ void VBoxSession::CheckIntegrity() {
     FSMDoing("Checking VM integrity");
 
     // Query VM status and fetch local state variable
-    map<string, string> info = getMachineInfo();
+    map<const string, const string> info = getMachineInfo();
 
     // Check if machine configuration is excactly the same as stored
     bool valid = true;
-    for (map<string, string>::iterator it = info.begin(); it != info.end(); ++it) {
+    for (map<const string, const string>::iterator it = info.begin(); it != info.end(); ++it) {
         string key = (*it).first;
         string v1 = (*it).second;
         string v2 = machine->get(key, "");
@@ -1448,7 +1448,7 @@ void VBoxSession::StartVM() {
     }
 
     // Load machine info
-    map<string, string> info = getMachineInfo();
+    map<const string, const string> info = getMachineInfo();
     if (info.find(":ERROR:") == info.end()) {
         machine->fromMap( &info, true );
     }
@@ -2281,7 +2281,7 @@ int VBoxSession::mountDisk ( const std::string & controller,
     if (isAborting) return HVE_INVALID_STATE;
 
     vector<string> lines;
-    map<string, string> info;
+    map<const string, const string> info;
     ostringstream args;
     string kk, kv;
     int ans;
@@ -2353,9 +2353,9 @@ int VBoxSession::mountDisk ( const std::string & controller,
     // If we are doing multi-attach, try to use UUID-based mounting
     if (multiAttach) {
         // Get a list of the disks in order to properly compute multi-attach 
-        vector< map< string, string > > disks = boost::static_pointer_cast<VBoxInstance>(hypervisor)->getDiskList();
-        for (vector< map<string, string> >::iterator i = disks.begin(); i != disks.end(); i++) {
-            map<string, string> disk = *i;
+        vector< map< const string, const string > > disks = boost::static_pointer_cast<VBoxInstance>(hypervisor)->getDiskList();
+        for (vector< map<const string, const string> >::iterator i = disks.begin(); i != disks.end(); i++) {
+            map<const string, const string> disk = *i;
             // Look of the master disk of what we are using
             if ( (disk.find("Type") != disk.end()) && (disk.find("Parent UUID") != disk.end()) && (disk.find("Location") != disk.end()) && (disk.find("UUID") != disk.end()) ) {
                 // Check if all the component maches
@@ -2474,8 +2474,8 @@ int VBoxSession::getHostOnlyAdapter ( std::string * adapterName, const FiniteTas
     if (isAborting) return HVE_INVALID_STATE;
 
     vector<string> lines;
-    vector< map<string, string> > ifs;
-    vector< map<string, string> > dhcps;
+    vector< map<const string, const string> > ifs;
+    vector< map<const string, const string> > dhcps;
     string ifName = "", vboxName, ipServer, ipMin, ipMax;
     
     // Progress update
@@ -2551,8 +2551,8 @@ int VBoxSession::getHostOnlyAdapter ( std::string * adapterName, const FiniteTas
             foundMask       = "";
 
     // Process interfaces
-    for (vector< map<string, string> >::iterator i = ifs.begin(); i != ifs.end(); i++) {
-        map<string, string> iface = *i;
+    for (vector< map<const string, const string> >::iterator i = ifs.begin(); i != ifs.end(); i++) {
+        map<const string, const string> iface = *i;
 
         CVMWA_LOG("log", "Checking interface");
         mapDump(iface);
@@ -2569,8 +2569,8 @@ int VBoxSession::getHostOnlyAdapter ( std::string * adapterName, const FiniteTas
         
         // Check if we have DHCP enabled on this interface
         bool hasDHCP = false;
-        for (vector< map<string, string> >::iterator i = dhcps.begin(); i != dhcps.end(); i++) {
-            map<string, string> dhcp = *i;
+        for (vector< map<const string, const string> >::iterator i = dhcps.begin(); i != dhcps.end(); i++) {
+            map<const string, const string> dhcp = *i;
             if (dhcp.find("NetworkName") == dhcp.end()) continue;
             if (dhcp.find("Enabled") == dhcp.end()) continue;
 
@@ -2680,9 +2680,9 @@ int VBoxSession::getHostOnlyAdapter ( std::string * adapterName, const FiniteTas
 /**
  * Return the properties of the Disk.
  */
-std::map<std::string, std::string> VBoxSession::getDiskInfo( const std::string& disk ) {
+std::map<const std::string, const std::string> VBoxSession::getDiskInfo( const std::string& disk ) {
     vector<string> lines;
-    map<string, string> info;
+    map<const string, const string> info;
     ostringstream args;
     int ans;
 
@@ -2704,9 +2704,9 @@ std::map<std::string, std::string> VBoxSession::getDiskInfo( const std::string& 
 /**
  * Return the properties of the VM.
  */
-std::map<std::string, std::string> VBoxSession::getMachineInfo ( const std::string& machineName, int retries, int timeout ) {
+std::map<const std::string, const std::string> VBoxSession::getMachineInfo ( const std::string& machineName, int retries, int timeout ) {
     CRASH_REPORT_BEGIN;
-    map<string, string> dat;
+    map<const string, const string> dat;
     vector<string> lines;
     string vbox_id = this->parameters->get("vboxid");
     if (!machineName.empty()) vbox_id = machineName;
@@ -2727,7 +2727,7 @@ std::map<std::string, std::string> VBoxSession::getMachineInfo ( const std::stri
     /* Perform property update */
     int ans = this->wrapExec("showvminfo "+this->parameters->get("vboxid"), &lines, NULL, config);
     if (ans != 0) {
-        dat[":ERROR:"] = ntos<int>( ans );
+        dat.insert(std::make_pair(":ERROR:", ntos<int>( ans )));
         return dat;
     }
     

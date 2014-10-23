@@ -53,6 +53,11 @@ public:
     LocalConfig ( std::string configDir, std::string configName );
 
     /**
+     * Virtual destructor
+     */
+    virtual ~LocalConfig() { };
+
+    /**
      * Return a LocalConfig Shared Pointer for the global config
      */
     static      LocalConfigPtr  global();
@@ -85,7 +90,7 @@ public:
     /**
      * Populate the given dictionary from a config file with the given name
      */
-    bool                        loadMap         ( std::string file, std::map<std::string, std::string> * map );
+    bool                        loadMap         ( std::string file, std::map<const std::string, const std::string> * map );
 
     /**
      * Save the lines from the given buffer to a config file with the given name
@@ -100,7 +105,7 @@ public:
     /**
      * Store the contents of the specified dictionary to a config file with the given name
      */
-    bool                        saveMap         ( std::string file, std::map<std::string, std::string> * map );
+    bool                        saveMap         ( std::string file, std::map<const std::string, const std::string> * map );
 
     /**
      * Enumerate the names of the config files in the specified directory that matches the specified prefix.

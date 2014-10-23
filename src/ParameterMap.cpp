@@ -25,6 +25,15 @@
 const std::string SAFE_KEY_CHARS("0123456789_-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
 /**
+ * Helper to replace key on the const map
+ */
+void ParameterMap::putOnMap( ParameterDataMapPtr map, const std::string& key, const std::string& value) {
+    std::map< const std::string, const std::string >::iterator it = map->find(key);
+    if (it != map->end()) map->erase(it);
+    map->insert(std::make_pair(key, value));
+}
+
+/**
  * Allocate a new shared pointer
  */
 ParameterMapPtr ParameterMap::instance ( ) {
@@ -50,7 +59,7 @@ std::string ParameterMap::get( const std::string& kname, std::string defaultValu
     name = prefix + name;
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
         if (parameters->find(name) == parameters->end())
             return defaultValue;
         return (*parameters)[name];
@@ -61,14 +70,14 @@ std::string ParameterMap::get( const std::string& kname, std::string defaultValu
 /**
  * Set a string parameter
  */
-ParameterMap& ParameterMap::set ( const std::string& kname, std::string value ) {
+ParameterMap& ParameterMap::set ( const std::string& kname, const std::string value ) {
     CRASH_REPORT_BEGIN;
     std::string name = prefix + kname;
     
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
-        (*parameters)[name] = value;
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+        putOnMap(parameters, name, value);
     }
 
     if (!locked) {
@@ -87,8 +96,8 @@ ParameterMap& ParameterMap::erase ( const std::string& name ) {
     CRASH_REPORT_BEGIN;
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
-        std::map<std::string, std::string>::iterator e = parameters->find(prefix+name);
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+        std::map<const std::string, const std::string>::iterator e = parameters->find(prefix+name);
         if (e != parameters->end())
             parameters->erase(e);
     }
@@ -108,8 +117,8 @@ void ParameterMap::setDefault ( const std::string& kname, std::string value ) {
     // and don't trigger commitChanges.
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
-        parameters->insert(std::pair< std::string, std::string >( name, value ));
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+        parameters->insert(std::pair< const std::string, const std::string >( name, value ));
     }
 
     CRASH_REPORT_END;
@@ -123,7 +132,7 @@ template<typename T> T ParameterMap::getNum ( const std::string& kname, T defaul
     std::string name = prefix + kname;
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
         if (parameters->find(name) == parameters->end())
             return defaultValue;
         return ston<T>((*parameters)[name]);
@@ -153,7 +162,7 @@ ParameterMap& ParameterMap::clear( ) {
     // Delete keys
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
         for (std::vector<std::string>::iterator it = myKeys.begin(); it != myKeys.end(); ++it) {
             parameters->erase( prefix + *it );
         }
@@ -170,7 +179,7 @@ ParameterMap& ParameterMap::clearAll( ) {
     CRASH_REPORT_BEGIN;
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
         parameters->clear();
     }
     return *this;
@@ -238,13 +247,13 @@ std::vector< std::string > ParameterMap::enumKeys ( ) {
     // Loop over the entries in the record
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
-        for ( std::map<std::string, std::string>::iterator it = parameters->begin(); it != parameters->end(); ++it ) {
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+        for ( std::map<const std::string, const std::string>::iterator it = parameters->begin(); it != parameters->end(); ++it ) {
             std::string key = (*it).first;
 
             // Check for matching prefix and lack of group separator in the rest of the key
             if ( (key.substr(0, prefix.length()).compare(prefix) == 0) && // Prefix Matches
-                 (key.substr(prefix.length(), key.length() - prefix.length() ).find(PMAP_GROUP_SEPARATOR) == std::string::npos) // No group separator found
+                    (key.substr(prefix.length(), key.length() - prefix.length() ).find(PMAP_GROUP_SEPARATOR) == std::string::npos) // No group separator found
                 ) {
 
                 // Store key name without prefix
@@ -266,7 +275,7 @@ std::vector< std::string > ParameterMap::enumKeys ( ) {
 bool ParameterMap::contains ( const std::string& name, const bool useBlank ) {
     CRASH_REPORT_BEGIN;
     // Mutex for thread-safety
-    boost::unique_lock<boost::mutex> lock(propertiexMutex);
+    boost::unique_lock<boost::mutex> lock(propertiesMutex);
 
     bool ans = (parameters->find(prefix + name) != parameters->end());
     if ( ans && useBlank ) {
@@ -292,7 +301,7 @@ void ParameterMap::fromParameters ( const ParameterMapPtr& ptr, bool clearBefore
     // Store values
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
 
         // Update parameters
         std::string k;
@@ -300,7 +309,7 @@ void ParameterMap::fromParameters ( const ParameterMapPtr& ptr, bool clearBefore
             CVMWA_LOG("INFO", "Importing key " << *it << " = " << ptr->parameters->at(*it));
             k = prefix + *it;
             if (replace || (this->parameters->find(k) == this->parameters->end()))
-                (*this->parameters)[k] = (*ptr->parameters)[*it];
+                putOnMap(this->parameters, k, (*ptr->parameters)[*it]);
         }
     }
 
@@ -318,7 +327,7 @@ void ParameterMap::fromParameters ( const ParameterMapPtr& ptr, bool clearBefore
 /**
  * Update all the parameters from the specified map
  */
-void ParameterMap::fromMap ( std::map< std::string, std::string> * map, bool clearBefore, const bool replace ) {
+void ParameterMap::fromMap ( std::map< const std::string, const std::string> * map, bool clearBefore, const bool replace ) {
     CRASH_REPORT_BEGIN;
 
     // Check if we have to clean the keys first
@@ -328,14 +337,14 @@ void ParameterMap::fromMap ( std::map< std::string, std::string> * map, bool cle
     if (map == NULL) return;
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
 
         // Update parameters
         std::string k;
-        for (std::map< std::string, std::string>::iterator it = map->begin(); it != map->end(); ++it) {
+        for (std::map< const std::string, const std::string>::iterator it = map->begin(); it != map->end(); ++it) {
             k = prefix + (*it).first;
             if (replace || (parameters->find(k) == parameters->end()))
-                (*parameters)[k] = (*it).second;
+            putOnMap(this->parameters, k, (*it).second);
         }
     }
 
@@ -362,7 +371,7 @@ void ParameterMap::fromJSON( const Json::Value& json, bool clearBefore, const bo
     // Store values
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
 
         // Update parameters
         const Json::Value::Members membNames = json.getMemberNames();
@@ -374,11 +383,11 @@ void ParameterMap::fromJSON( const Json::Value& json, bool clearBefore, const bo
                 sg->fromJSON(v);
             } else if (v.isString()) {
                 if (replace || (parameters->find(k) == parameters->end()))
-                    (*parameters)[k] = v.asString();
+                    putOnMap(this->parameters, k, v.asString());
             } else if (v.isInt()) {
                 int vv = v.asInt();
                 if (replace || (parameters->find(k) == parameters->end()))
-                    (*parameters)[k] = ntos<int>( vv );
+                    putOnMap(this->parameters, k, ntos<int>( vv ));
             }
         }
     }
@@ -397,13 +406,13 @@ void ParameterMap::fromJSON( const Json::Value& json, bool clearBefore, const bo
 /**
  * Store all the parameters to the specified map
  */
-void ParameterMap::toMap ( std::map< std::string, std::string> * map, bool clearBefore ) {
+void ParameterMap::toMap ( std::map< const std::string, const std::string> * map, bool clearBefore ) {
     CRASH_REPORT_BEGIN;
 
     // Clear map
     if (clearBefore) {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
         // Clear
         map->clear();
     }
@@ -414,11 +423,11 @@ void ParameterMap::toMap ( std::map< std::string, std::string> * map, bool clear
     // Store my keys to map
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(propertiexMutex);
+        boost::unique_lock<boost::mutex> lock(propertiesMutex);
 
         // Read parameters
         for (std::vector<std::string>::iterator it = myKeys.begin(); it != myKeys.end(); ++it) {
-            (*map)[*it] = (*parameters)[ prefix + *it];
+            putOnMap(this->parameters, *it, (*parameters)[ prefix + *it]);
         }
     }
 

@@ -98,7 +98,7 @@ private:
     /**
      * Domain-keydata mapping
      */
-    std::map< std::string, std::string > domainKeys;
+    std::map< const std::string, const std::string > domainKeys;
     
     /**
      * Signature calculation properties

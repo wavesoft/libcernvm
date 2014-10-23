@@ -40,10 +40,10 @@ using namespace std;
 /** 
  * Return virtual machine information
  */
-map<string, string> VBoxInstance::getMachineInfo( std::string uuid, int timeout ) {
+map<const string, const string> VBoxInstance::getMachineInfo( std::string uuid, int timeout ) {
     CRASH_REPORT_BEGIN;
     vector<string> lines;
-    map<string, string> dat;
+    map<const string, const string> dat;
     string err;
     
     // Local exec config
@@ -56,7 +56,7 @@ map<string, string> VBoxInstance::getMachineInfo( std::string uuid, int timeout 
     ans = this->exec("showvminfo "+uuid, &lines, &err, config );
     NAMED_MUTEX_UNLOCK;
     if (ans != 0) {
-        dat[":ERROR:"] = ntos<int>( ans );
+        dat.insert(make_pair(":ERROR:", ntos<int>( ans )));
         return dat;
     }
     
@@ -318,10 +318,10 @@ int VBoxInstance::getCapabilities ( HVINFO_CAPS * caps ) {
 /**
  * Get a list of mediums managed by VirtualBox
  */
-std::vector< std::map< std::string, std::string > > VBoxInstance::getDiskList() {
+std::vector< std::map< const std::string, const std::string > > VBoxInstance::getDiskList() {
     CRASH_REPORT_BEGIN;
     vector<string> lines;
-    std::vector< std::map< std::string, std::string > > resMap;
+    std::vector< std::map< const std::string, const std::string > > resMap;
     string err;
 
     // List the running VMs in the system
@@ -505,7 +505,7 @@ int VBoxInstance::loadSessions( const FiniteTaskPtr & pf ) {
     CRASH_REPORT_BEGIN;
     HVSessionPtr inst;
     vector<string> lines;
-    map<string, string> vms, diskinfo, vboxVms;
+    map<const string, const string> vms, diskinfo, vboxVms;
     string secret, kk, kv;
     string err;
 
@@ -558,7 +558,7 @@ int VBoxInstance::loadSessions( const FiniteTaskPtr & pf ) {
     // [2] Collect the running VM info
     // ================================
     vms = tokenize( &lines, '{' );
-    for (std::map<string, string>::iterator it=vms.begin(); it!=vms.end(); ++it) {
+    for (std::map<const string, const string>::iterator jt, it=vms.begin(); it!=vms.end(); ++it) {
         string name = (*it).first;
         string uuid = (*it).second;
         name = name.substr(1, name.length()-3);
@@ -571,7 +571,9 @@ int VBoxInstance::loadSessions( const FiniteTaskPtr & pf ) {
         }
 
         // Store on map
-        vboxVms[uuid] = name;
+        jt = vboxVms.find(uuid);
+        if (jt!=vboxVms.end()) vboxVms.erase(jt);
+        vboxVms.insert(make_pair(uuid, name));
     }
 
     // Forward progress
@@ -728,7 +730,7 @@ int VBoxInstance::installExtPack( const DownloadProviderPtr & downloadProvider, 
     // Extract information
     vector<string> lines;
     splitLines( requestBuf, &lines );
-    map<string, string> data = tokenize( &lines, '=' );
+    map<const string, const string> data = tokenize( &lines, '=' );
 
     // Build version string (it will be something like "vbox-2.4.12")
     ostringstream oss;

@@ -395,7 +395,7 @@ void                                                flushNamedMutexes ();
 /**
  * Visualize the dump of a string:string hash map
  */
-void                                                mapDump         ( const std::map< std::string, std::string>& m );
+void                                                mapDump         ( const std::map< const std::string, const std::string>& m );
 
 /**
  * Visualize the dump of a string:vector
@@ -454,10 +454,10 @@ bool waitPidFile( std::string filename, bool forAcuisition, int waitMillis );
 /**
  * OLD TOKENIZATION FUNCTIONS THAT SHOULD BE REMOVED
  */
-std::vector< std::map<std::string, std::string> >   tokenizeList    ( std::vector<std::string> * lines, char delim );
-std::map<std::string, std::string>                  tokenize        ( std::vector<std::string> * lines, char delim );
-void                                                splitLines      ( std::string rawString, std::vector<std::string> * out );
-int                                                 getKV           ( std::string line, std::string * key, std::string * value, unsigned char delim, int offset );
+std::vector< std::map<const std::string, const std::string> > tokenizeList    ( std::vector<std::string> * lines, char delim );
+std::map<const std::string, const std::string>                tokenize        ( std::vector<std::string> * lines, char delim );
+void                                                          splitLines      ( std::string rawString, std::vector<std::string> * out );
+int                                                           getKV           ( std::string line, std::string * key, std::string * value, unsigned char delim, int offset );
 
 /* ======================================================== */
 /*                INLINE FUNCTIONS & MACROS                 */
