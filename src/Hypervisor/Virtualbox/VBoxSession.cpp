@@ -231,6 +231,7 @@ bool vboxLogExists( std::string logPath ) {
  */
 void VBoxSession::Initialize() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Initializing session");
 
 
@@ -245,6 +246,7 @@ void VBoxSession::Initialize() {
  */
 void VBoxSession::UpdateSession() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Loading session information");
 
     // If VBoxID is missing, directly go to 'destroyed'
@@ -319,6 +321,7 @@ void VBoxSession::UpdateSession() {
  */
 void VBoxSession::HandleError() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Handling error");
 
     FSMDone("Error handled");
@@ -332,6 +335,7 @@ void VBoxSession::HandleError() {
  */
 void VBoxSession::CureError() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Curing Error");
 
     FSMDone("Error cured");
@@ -345,10 +349,12 @@ void VBoxSession::CureError() {
  */
 void VBoxSession::CreateVM() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Creating Virtual Machine");
     ostringstream args;
     vector<string> lines;
     map<string, string> toks;
+    string vboxid;
     int ans;
 
     // Extract flags
@@ -374,82 +380,127 @@ void VBoxSession::CreateVM() {
     SysExecConfig createExecConfig(execConfig);
     createExecConfig.handleErrString("already exists", 500);
     ans = this->wrapExec(args.str(), &lines, NULL, createExecConfig);
-    if (ans != 0) {
 
-        // Handle known error cases
-        if (ans == 500) {
-            errorOccured("A VM with the same name already exists (should not reach this point!)", HVE_CREATE_ERROR);
-            return;
-        } else {
-            errorOccured("Unable to create a new virtual machine", HVE_CREATE_ERROR);
+    // Prepare a set of actions to perform
+    bool add_IDE = true,
+         add_SATA = true,
+         add_FLOPPY = true;
+
+    // If VM already exists, update sysconfig
+    if (ans == 500) {
+
+        // Try to fetch VM info by name
+        map<string, string> info = getMachineInfo( "\"" + parameters->get("name") + "\"" );
+        if (info.find(":ERROR:") != info.end()) {
+            errorOccured("VM already exists, but could not obtain VirtualBox reflection information.", HVE_CREATE_ERROR);
             return;
         }
 
-    }
-    
-    // Parse output
-    toks = tokenize( &lines, ':' );
-    if (toks.find("UUID") == toks.end()) {
-        errorOccured("Unable to detect the VirtualBox ID of the newly allocated VM", HVE_CREATE_ERROR);
+        // Store machine info
+        machine->fromMap( &info, true );
+
+        // Update UUID from the VBoxManager response
+        if (!machine->contains("UUID")) {
+            errorOccured("VM already exists, but could not lookup it's ID.", HVE_CREATE_ERROR);
+            return;
+        }
+
+        // Set VBoxID
+        vboxid = machine->get("UUID");
+        parameters->set("vboxid", vboxid);
+
+    } else if (ans != 0) {
+        errorOccured("Unable to create a new virtual machine", HVE_CREATE_ERROR);
         return;
+
+    } else {
+
+        // Parse output
+        toks = tokenize( &lines, ':' );
+        if (toks.find("UUID") == toks.end()) {
+            errorOccured("Unable to detect the VirtualBox ID of the newly allocated VM", HVE_CREATE_ERROR);
+            return;
+        }
+
+        // Store VBox UUID
+        vboxid = toks["UUID"];
+        parameters->set("vboxid", vboxid);
+
     }
 
-    // Store VBox UUID
-    std::string uuid = toks["UUID"];
-    parameters->set("vboxid", uuid);
-
+    // Look if we have controllers and disable the creation
+    // flag for each one of these.
+    ostringstream oss;
+    for (int i=0; i<4; i++) {
+        oss.str(""); oss << "Storage Controller Name (" << i << ")";
+        if (machine->contains(oss.str())) {
+            string controllerName = machine->get(oss.str());
+            if (controllerName.compare("IDE") == 0) {
+                add_IDE = false;
+            } else if (controllerName.compare("SATA") == 0) {
+                add_SATA = false;
+            } else if (controllerName.compare("Floppy") == 0) {
+                add_FLOPPY = false;
+            }
+        }
+    }
 
     // Attach an IDE controller
-    args.str("");
-    args << "storagectl "
-        << uuid
-        << " --name "       << "IDE"
-        << " --add "        << "ide";
+    if (add_IDE) {
+        args.str("");
+        args << "storagectl "
+            << vboxid
+            << " --name "       << "IDE"
+            << " --add "        << "ide";
     
-    ans = this->wrapExec(args.str(), NULL, NULL, execConfig);
-    if (ans != 0) {
-        // Destroy VM
-        destroyVM();
-        // Trigger Error
-        errorOccured("Unable to attach a new IDE controller", HVE_CREATE_ERROR);
-        return;
+        ans = this->wrapExec(args.str(), NULL, NULL, execConfig);
+        if (ans != 0) {
+            // Destroy VM
+            destroyVM();
+            // Trigger Error
+            errorOccured("Unable to attach a new IDE controller", HVE_CREATE_ERROR);
+            return;
+        }
     }
 
     // Attach a SATA controller
-    args.str("");
-    args << "storagectl "
-        << uuid
-        << " --name "       << "SATA"
-        << " --add "        << "sata";
+    if (add_SATA) {
+        args.str("");
+        args << "storagectl "
+            << vboxid
+            << " --name "       << "SATA"
+            << " --add "        << "sata";
     
-    ans = this->wrapExec(args.str(), NULL, NULL, execConfig);
-    if (ans != 0) {
-        // Destroy VM
-        destroyVM();
-        // Trigger Error
-        errorOccured("Unable to attach a new SATA controller", HVE_CREATE_ERROR);
-        return;
+        ans = this->wrapExec(args.str(), NULL, NULL, execConfig);
+        if (ans != 0) {
+            // Destroy VM
+            destroyVM();
+            // Trigger Error
+            errorOccured("Unable to attach a new SATA controller", HVE_CREATE_ERROR);
+            return;
+        }
     }
 
     // Attach a floppy controller
-    args.str("");
-    args << "storagectl "
-        << uuid
-        << " --name "       << FLOPPYIO_CONTROLLER
-        << " --add "        << "floppy";
+    if (add_FLOPPY) {
+        args.str("");
+        args << "storagectl "
+            << vboxid
+            << " --name "       << FLOPPYIO_CONTROLLER
+            << " --add "        << "floppy";
     
-    ans = this->wrapExec(args.str(), NULL, NULL, execConfig);
-    if (ans != 0) {
-        // Destroy VM
-        destroyVM();
-        // Trigger Error
-        errorOccured("Unable to attach a new SATA controller", HVE_CREATE_ERROR);
-        return;
+        ans = this->wrapExec(args.str(), NULL, NULL, execConfig);
+        if (ans != 0) {
+            // Destroy VM
+            destroyVM();
+            // Trigger Error
+            errorOccured("Unable to attach a new SATA controller", HVE_CREATE_ERROR);
+            return;
+        }
     }
 
     // The current (known) VM state is 'created'
     local->set("state", "0");
-
 
     FSMDone("Session initialized");
     CRASH_REPORT_END;
@@ -462,6 +513,7 @@ void VBoxSession::CreateVM() {
  */
 void VBoxSession::ConfigureVM() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Configuring Virtual Machine");
     ostringstream args;
     vector<string> lines;
@@ -667,6 +719,7 @@ void VBoxSession::ConfigureVM() {
  */
 void VBoxSession::ConfigNetwork() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
 
     // Extract flags
     int flags = parameters->getNum<int>("flags", 0);
@@ -753,6 +806,7 @@ void VBoxSession::ConfigNetwork() {
  */
 void VBoxSession::DownloadMedia() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FiniteTaskPtr pf = FSMBegin<FiniteTask>("Downloading required media");
     if (pf) pf->setMax(2);
 
@@ -873,6 +927,7 @@ void VBoxSession::DownloadMedia() {
  */
 void VBoxSession::ConfigureVMBoot() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Preparing boot medium");
     int ans;
 
@@ -966,6 +1021,7 @@ void VBoxSession::ConfigureVMBoot() {
  */
 void VBoxSession::ReleaseVMBoot() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Releasing boot medium");
 
     // Extract flags
@@ -997,6 +1053,7 @@ void VBoxSession::ReleaseVMBoot() {
  */
 void VBoxSession::ConfigureVMScratch() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Preparing scatch storage");
     ostringstream args;
     int ans;
@@ -1077,6 +1134,7 @@ void VBoxSession::ConfigureVMScratch() {
  */
 void VBoxSession::ReleaseVMScratch() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Releasing scratch storage");
 
     // Unmount boot disk (and delete)
@@ -1093,6 +1151,7 @@ void VBoxSession::ReleaseVMScratch() {
  */
 void VBoxSession::CheckVMAPI() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Checking VM API medium");
 
     // Get VMAPI Contents and re-generate the VMAPI Data
@@ -1115,6 +1174,7 @@ void VBoxSession::CheckVMAPI() {
  */
 void VBoxSession::CheckIntegrity() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Checking VM integrity");
 
     // Query VM status and fetch local state variable
@@ -1153,6 +1213,7 @@ void VBoxSession::CheckIntegrity() {
  */
 void VBoxSession::ConfigureVMAPI() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Preparing VM API medium");
 
     // Extract flags
@@ -1251,6 +1312,7 @@ void VBoxSession::ConfigureVMAPI() {
  */
 void VBoxSession::ReleaseVMAPI() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Releasing VM API medium");
 
     // Extract flags
@@ -1283,6 +1345,7 @@ void VBoxSession::ReleaseVMAPI() {
  */
 void VBoxSession::PrepareVMBoot() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Preparing for VM Boot");
 
     FSMDone("VM prepared for boot");
@@ -1296,6 +1359,7 @@ void VBoxSession::PrepareVMBoot() {
  */
 void VBoxSession::DestroyVM() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Destryoing VM");
     int ans;
 
@@ -1317,6 +1381,7 @@ void VBoxSession::DestroyVM() {
  */
 void VBoxSession::PoweroffVM() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Powering VM off");
 
     // Poweroff VM
@@ -1337,6 +1402,7 @@ void VBoxSession::PoweroffVM() {
  */
 void VBoxSession::DiscardVMState() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Discarding saved VM state");
 
     // Discard vm state
@@ -1357,6 +1423,7 @@ void VBoxSession::DiscardVMState() {
  */
 void VBoxSession::StartVM() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Starting VM");
 
     // Extract flags
@@ -1401,6 +1468,7 @@ void VBoxSession::StartVM() {
  */
 void VBoxSession::SaveVMState() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Saving VM state");
 
     // Save VM state
@@ -1421,6 +1489,7 @@ void VBoxSession::SaveVMState() {
  */
 void VBoxSession::PauseVM() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Pausing the VM");
 
     // Pause VM
@@ -1441,6 +1510,7 @@ void VBoxSession::PauseVM() {
  */
 void VBoxSession::ResumeVM() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMDoing("Resuming VM");
 
     // Resume VM
@@ -1461,6 +1531,8 @@ void VBoxSession::ResumeVM() {
  */
 void VBoxSession::FatalErrorSink() {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
+
     FSMDoing("Session unable to continue. Cleaning-up");
 
     // Destroy everything
@@ -1483,6 +1555,7 @@ void VBoxSession::FatalErrorSink() {
  */
 int VBoxSession::open ( ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
     
     // Start the FSM thread
     FSMThreadStart();
@@ -1501,6 +1574,7 @@ int VBoxSession::open ( ) {
  */
 int VBoxSession::pause ( ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
 
     // Switch to paused state
     FSMGoto(6);
@@ -1519,6 +1593,7 @@ int VBoxSession::pause ( ) {
  */
 int VBoxSession::close ( bool unmonitored ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
 
     // Switch to destroyed state
     FSMGoto(3);
@@ -1534,6 +1609,7 @@ int VBoxSession::close ( bool unmonitored ) {
  */
 int VBoxSession::resume ( ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
     
     // Switch to running state
     FSMGoto(7);
@@ -1558,6 +1634,7 @@ int VBoxSession::reset ( ) {
  */
 int VBoxSession::stop ( ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
     
     // Switch to powerOff state
     FSMGoto(4);
@@ -1573,6 +1650,7 @@ int VBoxSession::stop ( ) {
  */
 int VBoxSession::hibernate ( ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
     
     // Switch to paused state
     FSMGoto(5);
@@ -1588,6 +1666,8 @@ int VBoxSession::hibernate ( ) {
  */
 int VBoxSession::start ( const ParameterMapPtr& userData ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
+
     std::vector<std::string> overridableVars;
 
     // Update user data
@@ -1624,6 +1704,8 @@ int VBoxSession::start ( const ParameterMapPtr& userData ) {
  */
 int VBoxSession::setExecutionCap ( int cap ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
+
     ostringstream args;
     int state = local->getNum<int>("state", 0);
 
@@ -1662,6 +1744,7 @@ int VBoxSession::setExecutionCap ( int cap ) {
  */
 int VBoxSession::setProperty ( std::string name, std::string key ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
     std::vector<std::string> overridableVars;
 
     // Update property
@@ -1692,6 +1775,7 @@ int VBoxSession::setProperty ( std::string name, std::string key ) {
  */
 std::string VBoxSession::getProperty ( std::string name ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return "";
     return properties->get(name);
     CRASH_REPORT_END;
 }
@@ -1702,6 +1786,7 @@ std::string VBoxSession::getProperty ( std::string name ) {
  */
 std::string VBoxSession::getRDPAddress ( ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return "";
     std::ostringstream oss;
     oss << "127.0.0.1:" << local->get("rdpPort");
     return oss.str();
@@ -1713,6 +1798,7 @@ std::string VBoxSession::getRDPAddress ( ) {
  */
 std::string VBoxSession::getExtraInfo ( int extraInfo ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return "";
 
     if (extraInfo == EXIF_VIDEO_MODE) {
         CVMWA_LOG("Debug", "Getting video mode")
@@ -1743,6 +1829,7 @@ std::string VBoxSession::getExtraInfo ( int extraInfo ) {
  */
 std::string VBoxSession::getAPIHost ( ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return "";
     return local->get("apiHost");
     CRASH_REPORT_END;
 }
@@ -1752,6 +1839,7 @@ std::string VBoxSession::getAPIHost ( ) {
  */
 int VBoxSession::getAPIPort ( ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return 0;
     return local->getNum<int>("apiPort");
     CRASH_REPORT_END;
 }
@@ -1762,6 +1850,7 @@ int VBoxSession::getAPIPort ( ) {
  */
 int VBoxSession::update ( bool waitTillInactive ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
 
     // Wait until the FSM is not doing anything
     if (!waitTillInactive) {
@@ -1770,6 +1859,7 @@ int VBoxSession::update ( bool waitTillInactive ) {
             return HVE_SCHEDULED;
     }
     FSMWaitInactive();
+    if (isAborting) return HVE_INVALID_STATE;
 
     // Get current state
     int lastState = local->getNum<int>("state", 0);
@@ -1843,6 +1933,7 @@ int VBoxSession::update ( bool waitTillInactive ) {
     }
 
     // Handle state switches
+    if (isAborting) return HVE_INVALID_STATE;
     if (newState != lastState) {
         CVMWA_LOG("Debug", "Update state switch from " << lastState << " to " << newState);
 
@@ -1876,6 +1967,9 @@ int VBoxSession::update ( bool waitTillInactive ) {
 void VBoxSession::abort ( ) {
     CRASH_REPORT_BEGIN;
 
+    // We are aborting
+    isAborting = true;
+
     // Stop the FSM thread
     // (This will send an interrupt signal,
     // causing all intermediate code to except)
@@ -1889,6 +1983,7 @@ void VBoxSession::abort ( ) {
  */
 void VBoxSession::wait ( ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
     FSMWaitInactive();
     CRASH_REPORT_END;
 }
@@ -1907,6 +2002,7 @@ void VBoxSession::wait ( ) {
  */
 void VBoxSession::hvNotifyDestroyed () {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
 
     // Stop the FSM thread
     FSMThreadStop();
@@ -1921,6 +2017,7 @@ void VBoxSession::hvNotifyDestroyed () {
  */
 void VBoxSession::hvStop () {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
 
     // Stop the FSM thread
     FSMThreadStop();
@@ -1941,6 +2038,7 @@ void VBoxSession::hvStop () {
  */
 void VBoxSession::FSMEnteringState( const int state, const bool final ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
 
     // On checkpoint states, update the VM state
     // in the local config file.
@@ -1980,6 +2078,7 @@ void VBoxSession::FSMEnteringState( const int state, const bool final ) {
  */
 int VBoxSession::wrapExec ( std::string cmd, std::vector<std::string> * stdoutList, std::string * stderrMsg, const SysExecConfig& config ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
 
     // Allow only a single thread to invoke a system command
     boost::unique_lock<boost::mutex> lock(execMutex);
@@ -1993,6 +2092,7 @@ int VBoxSession::wrapExec ( std::string cmd, std::vector<std::string> * stdoutLi
  */
 int VBoxSession::destroyVM () {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
 
     // Destroy session
     ostringstream args;
@@ -2027,6 +2127,7 @@ int VBoxSession::destroyVM () {
  */
 void VBoxSession::errorOccured ( const std::string & str, int errNo ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return;
 
     // Update error info
     errorCode = errNo;
@@ -2065,6 +2166,7 @@ void VBoxSession::errorOccured ( const std::string & str, int errNo ) {
  */
 std::string VBoxSession::getUserData ( ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return "";
     std::string patchedUserData = parameters->get("userData", "");
 
     // Update local userData
@@ -2086,6 +2188,7 @@ int VBoxSession::unmountDisk ( const std::string & controller,
                                const VBoxDiskType & dtype, 
                                const bool deleteFile ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
     ostringstream args;
     string kk, kv;
     int ans;
@@ -2175,6 +2278,7 @@ int VBoxSession::mountDisk ( const std::string & controller,
                              const std::string & diskFile, 
                              bool multiAttach ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
 
     vector<string> lines;
     map<string, string> info;
@@ -2290,7 +2394,8 @@ int VBoxSession::mountDisk ( const std::string & controller,
         args << " --mtype " << "multiattach";
 
     // Execute
-    ans = this->wrapExec(args.str(), &lines, NULL, execConfig);
+    std::string errStr;
+    ans = this->wrapExec(args.str(), &lines, &errStr, execConfig);
 
     // If we are using multi-attach, try to mount by UUID if mounting
     // by filename has failed
@@ -2337,6 +2442,7 @@ int VBoxSession::mountDisk ( const std::string & controller,
  */
 std::string VBoxSession::getDataFolder ( ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return "";
 
     // If we already have a path, return it
     if (!this->dataPath.empty())
@@ -2365,6 +2471,7 @@ std::string VBoxSession::getDataFolder ( ) {
  */
 int VBoxSession::getHostOnlyAdapter ( std::string * adapterName, const FiniteTaskPtr & fp ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
 
     vector<string> lines;
     vector< map<string, string> > ifs;
@@ -2579,6 +2686,8 @@ std::map<std::string, std::string> VBoxSession::getDiskInfo( const std::string& 
     ostringstream args;
     int ans;
 
+    if (isAborting) return info;
+
     // Get more information for this disk
     args << "showhdinfo \"" << disk << "\"";
     ans = this->wrapExec(args.str(), &lines, NULL, execConfig);
@@ -2595,10 +2704,14 @@ std::map<std::string, std::string> VBoxSession::getDiskInfo( const std::string& 
 /**
  * Return the properties of the VM.
  */
-std::map<std::string, std::string> VBoxSession::getMachineInfo ( int retries, int timeout ) {
+std::map<std::string, std::string> VBoxSession::getMachineInfo ( const std::string& machineName, int retries, int timeout ) {
     CRASH_REPORT_BEGIN;
     map<string, string> dat;
     vector<string> lines;
+    string vbox_id = this->parameters->get("vboxid");
+    if (!machineName.empty()) vbox_id = machineName;
+
+    if (isAborting) return dat;
 
     // Check cached response
     long ms = getMillis();
@@ -2638,6 +2751,7 @@ int VBoxSession::startVM ( ) {
  */
 int VBoxSession::controlVM ( std::string how, int timeout ) {
     CRASH_REPORT_BEGIN;
+    if (isAborting) return HVE_INVALID_STATE;
 
     // Local SysExecConfig
     SysExecConfig config(execConfig);

@@ -398,10 +398,12 @@ void SimpleFSM::FSMThreadLoop() {
 
 		// Infinite thread loop
 		while (true) {
+            if (fsmThread->interruption_requested()) return;
 			bool res = true;
 
 			// Keep running until we run out of steps
 			while (res) {
+                if (fsmThread->interruption_requested()) return;
 
 				// Critical section
 				{
@@ -412,6 +414,7 @@ void SimpleFSM::FSMThreadLoop() {
 			    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmmThreadSafe");
 
 				// Yield our time slice after executing an action
+                if (fsmThread->interruption_requested()) return;
 				fsmThread->yield();
 
 			};
@@ -475,6 +478,7 @@ void SimpleFSM::FSMThreadStop() {
  */
 void SimpleFSM::_fsmPause() {
 	CVMWA_LOG("Debug", "Entering paused state");
+    if (fsmThread->interruption_requested()) return;
 
 	// If we are already not paused, don't
 	// do anything
@@ -482,7 +486,15 @@ void SimpleFSM::_fsmPause() {
 	    boost::unique_lock<boost::mutex> lock(fsmtPauseMutex);
 	    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmtPauseMutex");
 	    while(fsmtPaused) {
-	        fsmtPauseChanged.wait(lock);
+            if (fsmThread->interruption_requested()) {
+                fsmtPaused = false;
+                break;
+            };
+            try {
+	            fsmtPauseChanged.wait(lock);
+            } catch (boost::thread_interrupted &e) {
+                break;
+            }
 	    }
 	}
     CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmtPauseMutex");
@@ -497,7 +509,8 @@ void SimpleFSM::_fsmPause() {
  */
 void SimpleFSM::_fsmWakeup() {
     CRASH_REPORT_BEGIN;
-	CVMWA_LOG("Debug", "Waking-up paused thread");
+    if (fsmThread->interruption_requested()) return;
+    CVMWA_LOG("Debug", "Waking-up paused thread");
 
     {
         boost::unique_lock<boost::mutex> lock(fsmtPauseMutex);

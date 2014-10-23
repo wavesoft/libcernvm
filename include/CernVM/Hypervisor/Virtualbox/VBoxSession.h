@@ -125,6 +125,7 @@ public:
         errorCode = 0;
         errorMessage = "";
         lastMachineInfoTimestamp = 0;
+        isAborting = false;
 
         CRASH_REPORT_END;
     }
@@ -254,7 +255,7 @@ protected:
     std::string             getDataFolder       ();
     int                     getHostOnlyAdapter  ( std::string * adapterName, const FiniteTaskPtr & fp = FiniteTaskPtr() );
     std::map<std::string, 
-        std::string>        getMachineInfo      ( int retries = 2, int timeout = SYSEXEC_TIMEOUT );
+        std::string>        getMachineInfo      ( const std::string& machineName = "", int retries = 2, int timeout = SYSEXEC_TIMEOUT );
     std::map<std::string, 
         std::string>        getDiskInfo         ( const std::string& disk );
 
@@ -265,7 +266,7 @@ protected:
     ////////////////////////////////////
     
     std::string             dataPath;
-    bool                    updateLock;
+    bool                    isAborting;
 
     // Error handling and healing variables
     int                     errorCode;

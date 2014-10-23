@@ -57,7 +57,7 @@ public:
 	/**
 	 * Create a new blank parameter map
 	 */
-	ParameterMap( ) : parameters(), prefix(""), locked(false), parent(),  changed(false) {
+	ParameterMap( ) : parameters(), prefix(""), locked(false), parent(),  changed(false), propertiexMutex() {
 
 		// Allocate a new shared pointer
 		parameters = boost::make_shared< std::map< std::string, std::string > >( );
@@ -234,6 +234,11 @@ protected:
 	 * Locally overridable function to commit changes to the dictionary
 	 */
 	virtual void 				commitChanges	( );
+
+    /**
+     * Mutex for accessing properties
+     */
+    boost::mutex                propertiexMutex;
 
 };
 
