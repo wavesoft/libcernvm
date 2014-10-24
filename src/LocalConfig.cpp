@@ -408,7 +408,7 @@ time_t LocalConfig::getLastModified ( std::string configFile ) {
     _stat( file.c_str(), &attrib);
     #else
     struct stat attrib;
-    memset( &attrib, sizeof(struct _stat), 0 );
+    memset( &attrib, sizeof(struct stat), 0 );
     stat( file.c_str(), &attrib);
     #endif
     

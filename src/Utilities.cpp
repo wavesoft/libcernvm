@@ -1999,7 +1999,7 @@ unsigned long long getFileTimeMs ( const std::string& file ) {
 
     // Stat file
     struct stat attrib;
-    memset( &attrib, sizeof(struct _stat), 0 );
+    memset( &attrib, sizeof(struct stat), 0 );
     stat( file.c_str(), &attrib);
 
     // Calculate and return milliseconds
