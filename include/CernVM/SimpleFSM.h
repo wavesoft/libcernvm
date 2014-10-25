@@ -80,7 +80,8 @@ public:
 			  	  fsmwState(NULL), fsmwStateWaiting(false), fsmwStateMutex(), fsmwStateChanged(),
 				  fsmInsideHandler(false), fsmProgress(), fsmGotoMutex(), fsmTargetState(0), 
 				  fsmwWaitCond(), fsmwWaitMutex(), fsmRootNode(NULL), fsmCurrentNode(),
-				  fsmTmpRouteLinks(), fsmNodes(), fsmCurrentPath(), fsmThreadActive(false)
+				  fsmTmpRouteLinks(), fsmNodes(), fsmCurrentPath(), fsmThreadActive(false),
+				  fsmtInterruptRequested(false)
 				  { };
 
 	/**
@@ -204,6 +205,7 @@ private:
 
 	// Thread synchronization variables
 	bool 							fsmtPaused;
+	bool 							fsmtInterruptRequested;
 	boost::mutex 					fsmtPauseMutex;
 	boost::condition_variable 		fsmtPauseChanged;
 

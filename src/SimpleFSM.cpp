@@ -398,12 +398,12 @@ void SimpleFSM::FSMThreadLoop() {
 
 		// Infinite thread loop
 		while (true) {
-            if (fsmThread->interruption_requested()) return;
+            if (fsmtInterruptRequested) return;
 			bool res = true;
 
 			// Keep running until we run out of steps
 			while (res) {
-                if (fsmThread->interruption_requested()) return;
+                if (fsmtInterruptRequested) return;
 
 				// Critical section
 				{
@@ -414,7 +414,7 @@ void SimpleFSM::FSMThreadLoop() {
 			    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmmThreadSafe");
 
 				// Yield our time slice after executing an action
-                if (fsmThread->interruption_requested()) return;
+                if (fsmtInterruptRequested) return;
 				fsmThread->yield();
 
 			};
@@ -451,12 +451,13 @@ void SimpleFSM::FSMThreadStop() {
 		return;
 	}
 
+	// Interrupt thread
+	fsmtInterruptRequested = true;
+	fsmThread->interrupt();
+
 	// Notify all condition variables
 	fsmwWaitCond.notify_all();
 	fsmtPauseChanged.notify_all();
-
-	// Interrupt thread 
-	fsmThread->interrupt();
     
     // Unlock all mutexes
     fsmmThreadSafe.try_lock(); fsmmThreadSafe.unlock();
@@ -478,7 +479,7 @@ void SimpleFSM::FSMThreadStop() {
  */
 void SimpleFSM::_fsmPause() {
 	CVMWA_LOG("Debug", "Entering paused state");
-    if (fsmThread->interruption_requested()) return;
+    if (fsmtInterruptRequested) return;
 
 	// If we are already not paused, don't
 	// do anything
@@ -486,7 +487,7 @@ void SimpleFSM::_fsmPause() {
 	    boost::unique_lock<boost::mutex> lock(fsmtPauseMutex);
 	    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmtPauseMutex");
 	    while(fsmtPaused) {
-            if (fsmThread->interruption_requested()) {
+            if (fsmtInterruptRequested) {
                 fsmtPaused = false;
                 break;
             };
@@ -509,7 +510,7 @@ void SimpleFSM::_fsmPause() {
  */
 void SimpleFSM::_fsmWakeup() {
     CRASH_REPORT_BEGIN;
-    if (fsmThread->interruption_requested()) return;
+    if (fsmtInterruptRequested) return;
     CVMWA_LOG("Debug", "Waking-up paused thread");
 
     {
