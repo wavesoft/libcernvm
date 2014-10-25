@@ -5,6 +5,7 @@
  - Moving the temporary floppy & contextISO files inside the WebAPI data folder.
  - Optimizing the isPIDAlive function on linux.
  - Optimizing the installation process: Added support for pkexec fallback emchanism on redhat systems, added yum lockfile check.
+ - Optimizing thread-safety for the entire project
 
 === version-2.0.7
  

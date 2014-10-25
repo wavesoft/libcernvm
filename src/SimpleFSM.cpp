@@ -669,6 +669,9 @@ boost::thread * SimpleFSM::FSMThreadStart() {
 	// If we are already running, return the thread
 	if (fsmThread != NULL)
 		return fsmThread;
+
+	// Reset properties
+	fsmtInterruptRequested = false;
 	
 	// Set the current state to paused, effectively
 	// stopping the FSM execution if no wakeup signals are piled

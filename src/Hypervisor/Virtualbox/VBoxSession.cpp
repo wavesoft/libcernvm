@@ -1555,7 +1555,9 @@ void VBoxSession::FatalErrorSink() {
  */
 int VBoxSession::open ( ) {
     CRASH_REPORT_BEGIN;
-    if (isAborting) return HVE_INVALID_STATE;
+
+    // Reset properties
+    isAborting = false;    
     
     // Start the FSM thread
     FSMThreadStart();
