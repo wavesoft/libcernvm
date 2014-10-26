@@ -27,6 +27,8 @@ el6=scientificcernslc-carbon
 
 DEB_MAPPING_VERSIONS="
 wheezy=debian-jessie
+raring=ubuntu-saucy
+raring=ubuntu-trusty
 "
 
 # Configuration for VirtualBox
