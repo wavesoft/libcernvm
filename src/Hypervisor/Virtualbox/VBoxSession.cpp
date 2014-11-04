@@ -252,7 +252,7 @@ void VBoxSession::UpdateSession() {
     // If VBoxID is missing, directly go to 'destroyed'
     if (!parameters->contains("vboxid")) {
         FSMSkew(3);
-        FSMDone("Session has no virtualbox reflection");
+        FSMDone("Session ready");
         return;
     }
 

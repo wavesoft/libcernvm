@@ -18,7 +18,8 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include "CernVM/DomainKeystore.h"
+#include <CernVM/DomainKeystore.h>
+#include <CernVM/Utilities.h>
 using namespace std;
 
 /**
@@ -225,7 +226,7 @@ int DomainKeystore::updateAuthorizedKeystore( DownloadProviderPtr downloadProvid
     // Check if it has been some time since we last checked the keystore
     std::string localKeystore = config->getPath("domainkeys.conf");
     std::string localKeystoreSig = config->getPath("domainkeys.dat");
-    if ( file_exists(localKeystore) && file_exists(localKeystoreSig) ) {
+    if ( !::is_empty(localKeystore) && !::is_empty(localKeystoreSig) ) {
         
         // Check for external modifications
         time_t storeTime = config->getLastModified("domainkeys.conf");

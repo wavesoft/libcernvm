@@ -249,6 +249,11 @@ int                                                 sha256_file     ( std::strin
 int                                                 sha256_buffer   ( std::string path, std::string * checksum );
 
 /**
+ * Check if the given file is empty
+ */
+bool                                                is_empty        ( const std::string& path, std::streampos minSize = 0 );
+
+/**
  * Platform-independant function to execute the given command-line and return the
  * STDOUT lines to the string vector in *stdoutList.
  *

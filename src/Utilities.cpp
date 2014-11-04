@@ -273,6 +273,25 @@ std::string prepareAppDataPath() {
 }
 
 /**
+ * Check if file is empty
+ */
+bool is_empty( const std::string& path, std::streampos minSize ) {
+
+    // If file does not exist, it's empty
+    if (!file_exists(path))
+        return true;
+
+    // Open file and get stream size
+    ifstream ifs( path.c_str(), ios::binary | ios::ate );
+    streampos sPos = ifs.tellg();
+    ifs.close();
+
+    // Check if it's empty
+    return (sPos <= minSize);
+
+};
+
+/**
  * Remove a trailing folder from the given path
  */
 std::string stripComponent( std::string path ) {
