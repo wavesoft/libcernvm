@@ -59,10 +59,11 @@ public:
 	/**
 	 * Create a new blank parameter map
 	 */
-	ParameterMap( ) : parameters(), prefix(""), locked(false), parent(),  changed(false), propertiesMutex() {
+	ParameterMap( ) : parameters(), prefix(""), locked(false), parent(),  changed(false) {
 
 		// Allocate a new shared pointer
 		parameters = boost::make_shared< std::map< const std::string, const std::string > >( );
+		parametersMutex = new boost::mutex();
 
 	};
 
@@ -80,6 +81,7 @@ public:
 
 		// Use the pointer from the parent class
 		parameters = parentptr->parameters;
+		parametersMutex = parentptr->parametersMutex;
 
 	};
 
@@ -87,9 +89,12 @@ public:
 	 * ParameterMap virtual destructor
 	 */
 	virtual ~ParameterMap() {
-		// Clear parameter map
-        boost::unique_lock<boost::mutex> lock(propertiesMutex);
-		parameters->clear();
+
+		// Destroy the root mutex
+		if (!parent) {
+			delete parametersMutex;
+		}
+		
 	};
 
 	/**
@@ -249,7 +254,7 @@ protected:
     /**
      * Mutex for accessing properties
      */
-    boost::mutex                propertiesMutex;
+    boost::mutex *              parametersMutex;
 
     /**
      * Helper function to perform []= on const map

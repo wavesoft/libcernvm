@@ -85,7 +85,7 @@ LocalConfig::LocalConfig ( std::string path, std::string name ) : ParameterMap()
 
     {
         // Mutex for making this thread-safe
-        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+        boost::unique_lock<boost::mutex> lock(*parametersMutex);
 
         // Load parameters in the parameters map
         this->loadMap( name, parameters.get() );
@@ -535,7 +535,7 @@ bool LocalConfig::save ( ) {
 
     {
         // Mutex for making this thread-safe
-        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+        boost::unique_lock<boost::mutex> lock(*parametersMutex);
         // Save map to file
         bool ans = this->saveMap( configName, parameters.get() );
     }
@@ -567,7 +567,7 @@ bool LocalConfig::load ( ) {
 
     {
         // Mutex for making this thread-safe
-        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+        boost::unique_lock<boost::mutex> lock(*parametersMutex);
         // Load map from file
         bool ans = this->loadMap( configName, parameters.get() );
     }
@@ -650,7 +650,7 @@ bool LocalConfig::sync ( ) {
 
     {
         // Mutex for making this thread-safe
-        boost::unique_lock<boost::mutex> lock(propertiesMutex);
+        boost::unique_lock<boost::mutex> lock(*parametersMutex);
 
         // Update the parameters that still exist in the config file and add new ones if they are missing.
         for (std::map<const std::string, const std::string>::iterator it = parameters->begin(); it != parameters->end(); ++it) {
