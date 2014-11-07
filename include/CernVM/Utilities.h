@@ -343,6 +343,11 @@ int                                                 splitArguments  ( std::strin
 bool                                                isPortOpen      ( const char * host, int port, unsigned char handshake = HSK_NONE, int timeoutSec = 1 );
 
 /**
+ * Minimalistic HTTP GET helper (used for inter-process WebRPC interaction)
+ */
+bool                                                minHttpGet      ( const char * host, int port, const char * path, int timeoutSec = 1 );
+
+/**
  * Display a hexdump of the given buffer
  */
 void                                                hexDump         (const char *desc, void *addr, int len);

@@ -1691,6 +1691,183 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
 }
 
 /**
+ * Perform a minimalistic HTTP GET request
+ */
+bool minHttpGet( const char * host, int port, const char * path, int timeoutSec ) {
+    CRASH_REPORT_BEGIN;
+    SOCKET sock;
+    char readBuf[1024];
+    int nDataArrived = 0;
+
+    struct sockaddr_in client;    
+    memset(&client, 0, sizeof(struct sockaddr_in));
+    client.sin_family = AF_INET;
+    client.sin_port = htons( port );
+    client.sin_addr.s_addr = inet_addr( host );
+
+    // Open a connection
+    sock = (SOCKET) socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        return false;
+    }
+
+    // Set timeouts
+    struct timeval timeout;      
+    timeout.tv_sec = timeoutSec;
+    timeout.tv_usec = 0;
+    if (setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+                sizeof(timeout)) < 0) {
+        #ifdef _WIN32
+            closesocket(sock);
+        #else
+            ::close(sock);
+        #endif
+        return false;
+    }
+    if (setsockopt (sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,
+                sizeof(timeout)) < 0) {
+        #ifdef _WIN32
+            closesocket(sock);
+        #else
+            ::close(sock);
+        #endif
+        return false;
+    }
+
+    // don't leave the socket in a TIME_WAIT state if we close the connection
+    struct linger fix_ling;
+    fix_ling.l_onoff = 1;
+    fix_ling.l_linger = 0;
+    int result = setsockopt(sock, SOL_SOCKET, SO_LINGER, (char*)&fix_ling, sizeof(fix_ling));
+    if (result < 0) {
+        #ifdef _WIN32
+            shutdown(sock, SD_BOTH ); 
+            closesocket(sock);
+        #else
+            ::shutdown(sock, SHUT_RDWR);
+            ::close(sock);
+        #endif
+        return false;
+    }
+
+    // fix the socket options
+    int sockopt = 1;
+    result = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&sockopt, sizeof(sockopt));
+    if (result < 0) {
+        #ifdef _WIN32
+            shutdown(sock, SD_BOTH ); 
+            closesocket(sock);
+        #else
+            ::shutdown(sock, SHUT_RDWR);
+            ::close(sock);
+        #endif
+        return false;
+    }
+
+    // Try to connect
+    result = connect(sock, (struct sockaddr *) &client,sizeof(client));
+
+    // Check for open failures
+    if (result < 0) {
+        #ifdef _WIN32
+            shutdown(sock, SD_BOTH ); 
+            closesocket(sock);
+        #else
+            ::shutdown(sock, SHUT_RDWR);
+            ::close(sock);
+        #endif
+        return false;
+    }
+
+    // Prepare the request
+    std::ostringstream oss;
+    oss << "HEAD /" << path << " HTTP/1.1\r\n"
+        << "Host: " << host << "\r\n"
+        << "Accept: */*" << "\r\n"
+        << "Connection: keep-alive\r\n"
+        << "User-Agent: CVMWebAPI/" << CERNVM_WEBAPI_VERSION << " CVMWebProbe/1.0" << "\r\n"
+        << "\r\n";
+
+    // Send it and check for failures
+    int n = send(sock, oss.str().c_str() , oss.str().length(), 0);
+    if (n < 0) {
+        #ifdef _WIN32
+            shutdown(sock, SD_BOTH ); 
+            closesocket(sock);
+        #else
+            ::shutdown(sock, SHUT_RDWR);
+            ::close(sock);
+        #endif
+        return false;
+    }
+
+    // Check if it's still connected
+    int errorCode = 0;
+    socklen_t szErrorCode = sizeof(errorCode);
+    if (getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*) &errorCode, &szErrorCode ) != 0) {
+        #ifdef _WIN32
+            shutdown(sock, SD_BOTH ); 
+            closesocket(sock);
+        #else
+            ::shutdown(sock, SHUT_RDWR);
+            ::close(sock);
+        #endif
+        return false;
+    }
+    if (errorCode != 0 ){
+        #ifdef _WIN32
+            shutdown(sock, SD_BOTH ); 
+            closesocket(sock);
+        #else
+            ::shutdown(sock, SHUT_RDWR);
+            ::close(sock);
+        #endif
+        return false;
+    }
+
+    // Drain buffer
+    while ( (n = recv(sock, (char*)&readBuf, 1024, 0)) > 0 ) {
+        nDataArrived += n;
+    }
+
+    // Check for errors
+    if (n < 0) {
+        #ifdef _WIN32
+            shutdown(sock, SD_BOTH ); 
+            closesocket(sock);
+        #else
+            ::shutdown(sock, SHUT_RDWR);
+            ::close(sock);
+        #endif
+        return false;
+    }
+
+    // Check if we got a blank response
+    if (nDataArrived == 0) {
+        #ifdef _WIN32
+            shutdown(sock, SD_BOTH ); 
+            closesocket(sock);
+        #else
+            ::shutdown(sock, SHUT_RDWR);
+            ::close(sock);
+        #endif
+        return false;
+    }
+
+    // It works
+    #ifdef _WIN32
+        shutdown(sock, SD_BOTH ); 
+        closesocket(sock);
+    #else
+        ::shutdown(sock, SHUT_RDWR);
+        ::close(sock);
+    #endif
+
+    return true;
+    CRASH_REPORT_END;
+}
+
+/**
  * Get current date/time as a string
  */
 char * getTimestamp () {
