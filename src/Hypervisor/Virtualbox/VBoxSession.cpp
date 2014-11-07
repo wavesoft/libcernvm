@@ -1865,73 +1865,60 @@ int VBoxSession::update ( bool waitTillInactive ) {
 
     // Get current state
     int lastState = local->getNum<int>("state", 0);
+    int newState = lastState;
+    
+    // Check if log file is missing
+    std::string logFile = machine->get("Log folder") + kPathSeparator + "VBox.log";
+    if (file_exists(logFile)) {
 
-    // Re-read the config file from disk
-    parameters->sync();
+        // Look for changes in the timestamp
+        unsigned long long newFileTime = getFileTimeMs(logFile);
+        if (lastLogTime != newFileTime) {
+            lastLogTime = newFileTime;
+    
+            // Create a log probe in order to extract as many information
+            // as possible from a single pass.
+            VBoxLogProbe logProbe( machine->get("Log folder") );
+            logProbe.analyze();
 
-    // Get the new state
-    int newState = local->getNum<int>("state", 0);
+            // Check if we had a state change
+            if (logProbe.hasState)
+                newState = logProbe.state;
 
-    //
-    // If after the sync we are still in the same state, this means that
-    // other instances of the library have not changed state. Try to read
-    // state from VirtualBox log file (faster than using VBoxManage).
-    //
-    if (lastState == newState) {
-        
-        // Check if log file is missing
-        std::string logFile = machine->get("Log folder") + kPathSeparator + "VBox.log";
-        if (file_exists(logFile)) {
+            // Check if we had a resolution change
+            if (logProbe.hasResolutionChange) {
+                ostringstream oss;
+                oss << logProbe.resWidth << "x" 
+                    << logProbe.resHeight << "x" 
+                    << logProbe.resBpp;
 
-            // Look for changes in the timestamp
-            unsigned long long newFileTime = getFileTimeMs(logFile);
-            if (lastLogTime != newFileTime) {
-                lastLogTime = newFileTime;
-        
-                // Create a log probe in order to extract as many information
-                // as possible from a single pass.
-                VBoxLogProbe logProbe( machine->get("Log folder") );
-                logProbe.analyze();
+                // Check if video mode has changed
+                std::string vC = machine->get("Video mode", ""),
+                            vM = oss.str();
 
-                // Check if we had a state change
-                if (logProbe.hasState)
-                    newState = logProbe.state;
-
-                // Check if we had a resolution change
-                if (logProbe.hasResolutionChange) {
-                    ostringstream oss;
-                    oss << logProbe.resWidth << "x" 
-                        << logProbe.resHeight << "x" 
-                        << logProbe.resBpp;
-
-                    // Check if video mode has changed
-                    std::string vC = machine->get("Video mode", ""),
-                                vM = oss.str();
-
-                    // Check if video mode has changed
-                    if (vC != vM) {
-                        // Update video mde
-                        machine->set("Video mode", vM);
-                        // Notify listeners that resolution has changed
-                        this->fire( "resolutionChanged", ArgumentList(logProbe.resWidth)(logProbe.resHeight)(logProbe.resBpp) );
-                    }
-
-                }
-
-                // Check if failures appeared
-                if (logProbe.hasFailures) {
-
-                    // Forward failures
-                    this->fire( "failure", ArgumentList(logProbe.failures) );
-
+                // Check if video mode has changed
+                if (vC != vM) {
+                    // Update video mde
+                    machine->set("Video mode", vM);
+                    // Notify listeners that resolution has changed
+                    this->fire( "resolutionChanged", ArgumentList(logProbe.resWidth)(logProbe.resHeight)(logProbe.resBpp) );
                 }
 
             }
-            
-        } else {
-            // If the file has gone away, we are missing
-            newState = SS_MISSING;
+
+            // Check if failures appeared
+            if (logProbe.hasFailures) {
+
+                // Forward failures
+                this->fire( "failure", ArgumentList(logProbe.failures) );
+
+            }
+
         }
+        
+    } else {
+        // If the file has gone away, we are missing
+        newState = SS_MISSING;
     }
 
     // Handle state switches

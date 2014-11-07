@@ -239,10 +239,9 @@ ParameterMapPtr ParameterMap::subgroup( const std::string& kname ) {
 /**
  * Enumerate the variable names that match our current prefix
  */
-std::vector< std::string > ParameterMap::enumKeys ( ) {
+std::vector<std::string > ParameterMap::enumKeys ( ) {
     CRASH_REPORT_BEGIN;
-
-    std::vector< std::string > keys;
+    std::vector<std::string > keys;
 
     // Loop over the entries in the record
     {
@@ -417,15 +416,9 @@ void ParameterMap::toMap ( std::map< const std::string, const std::string> * map
     // Get the keys for this group
     std::vector<std::string> myKeys = enumKeys();
 
-    // Store my keys to map
-    {
-        // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
-
-        // Read parameters
-        for (std::vector<std::string>::iterator it = myKeys.begin(); it != myKeys.end(); ++it) {
-            putOnMap(this->parameters, *it, (*parameters)[ prefix + *it]);
-        }
+    // Read parameters
+    for (std::vector<std::string>::iterator it = myKeys.begin(); it != myKeys.end(); ++it) {
+        map->insert(std::pair< const std::string, const std::string >( (const std::string)*it, (*parameters)[ prefix + *it] ));
     }
 
     CRASH_REPORT_END;

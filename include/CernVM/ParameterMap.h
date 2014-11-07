@@ -183,7 +183,7 @@ public:
     /**
      * Enumerate the variable names that match our current prefix
      */
-    std::vector< std::string >	enumKeys    	( );
+    std::vector< std::string > 	enumKeys		( );
 
     /**
      * Return true if the specified parameter exists
