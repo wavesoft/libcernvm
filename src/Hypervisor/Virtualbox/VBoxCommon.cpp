@@ -22,6 +22,7 @@
 #include <CernVM/Hypervisor/Virtualbox/VBoxInstance.h>
 
 #include "CernVM/Config.h"
+#include <cerrno>
 
 using namespace std;
 
@@ -36,6 +37,57 @@ HVInstancePtr __vboxInstance( string hvRoot, string hvBin, string hvAdditionsIso
     hv = boost::make_shared<VBoxInstance>( hvRoot, hvBin, hvAdditionsIso );
 
     return hv;
+    CRASH_REPORT_END;
+}
+
+/**
+ * Check if virtualbox binary exists
+ */
+bool vboxExists() {
+    CRASH_REPORT_BEGIN;
+    vector<string> paths;
+    string bin, p;
+    
+    // In which directories to look for the binary
+    #ifdef _WIN32
+    paths.push_back( "C:/Program Files/Oracle/VirtualBox" );
+    paths.push_back( "C:/Program Files (x86)/Oracle/VirtualBox" );
+    #endif
+    #if defined(__APPLE__) && defined(__MACH__)
+    paths.push_back( "/Applications/VirtualBox.app/Contents/MacOS" );
+    #endif
+    #ifdef __linux__
+    paths.push_back( "/usr" );
+    paths.push_back( "/usr/local" );
+    paths.push_back( "/opt/VirtualBox" );
+    #endif
+    
+    // Detect hypervisor
+    for (vector<string>::iterator i = paths.begin(); i != paths.end(); i++) {
+        p = *i;
+        
+        // Check for virtualbox
+        #ifdef _WIN32
+        bin = p + "/VBoxManage.exe";
+        if (file_exists(bin))
+            return true;
+        #endif
+
+        #if defined(__APPLE__) && defined(__MACH__)
+        bin = p + "/VBoxManage";
+        if (file_exists(bin))
+            return true;
+        #endif
+
+        #ifdef __linux__
+        bin = p + "/bin/VBoxManage";
+        if (file_exists(bin))
+            return true;
+        #endif
+    }
+
+    // Return hypervisor instance or nothing
+    return false;
     CRASH_REPORT_END;
 }
 
@@ -536,34 +588,16 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 }
                 if (installerPf) installerPf->done("Installer started");
             
-                // At some point the process that xdg-open launches is
-                // going to open the file in order to read it's contnets. 
-                //
-                // In addition some installation process will launch yum/dpkg
-                // or a similar package installer to perform the installation.
-                // Some times it might start it a couple of times.
-
-                bool continueFlag = false;
-                while (true) {
-
-                    // Yum flag file
-                    const char * YUM_PID_FILE = "/var/run/yum.pid";
-
-                    bool waitResult = false; // Wait 1 min until installation begins
-                    if (installerPf) installerPf->doing("Waiting for the installation to begin");
-                    if ( installerType == PMAN_YUM ) {
-                        waitResult = waitPidFile( YUM_PID_FILE, true, 60000 );
-                    } else if ( installerType == PMAN_DPKG ) {
-                        waitResult = waitFileOpen( tmpHypervisorInstall, true, 60000 );
-                    }
-                    if (!waitResult) { 
-                        cout << "ERROR: Could not wait for file handler capture: " << res << endl;
+                // Wait for 5 minutes for the binary to appear
+                int counter;
+                while (!vboxExists()) {
+                    if (++counter > 300) {
                         if (tries<retries) {
-                            if (installerPf) installerPf->doing("Waiting again for the installation to begin");
+                            if (installerPf) installerPf->doing("Re-starting hypervisor installer");
                             CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
+                            if (installerPf) installerPf->doing("Re-starting hypervisor installer");
                             sleepMs(1000);
-                            continueFlag = true;
-                            break;
+                            goto try_continue;
                         }
 
                         // Cleanup
@@ -571,51 +605,13 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
 
                         // Send progress fedback
                         if (installerPf) installerPf->markLengthy(false);
-                        if (pf) pf->fail("Unable to check the status of the installation");
-                        
-                        return HVE_STILL_WORKING;
+                        if (pf) pf->fail("Timeout occured while waiting for Virtualbox to appear");
+
+                        return HVE_EXTERNAL_ERROR;
                     }
-                    if (installerPf) installerPf->done("Installation started");
-
-                    // Wait for it to be released
-                    if (installerPf) installerPf->doing("Waiting for the installation to complete");
-                    if ( installerType == PMAN_YUM ) { // 15 mins until it's released
-                        waitResult = waitPidFile( YUM_PID_FILE, false, 900000 );
-                    } else if ( installerType == PMAN_DPKG ) {
-                        waitResult = waitFileOpen( tmpHypervisorInstall, false, 900000 );
-                    }
-                    if (!waitResult) {
-                        if (tries<retries) {
-                            if (installerPf) installerPf->doing("Waiting again for the installation to complete");
-                            CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
-                            sleepMs(1000);
-                            continueFlag = true;
-                            break;
-                        }
-
-                        // We can't remove the file, it's in use :(
-                        CVMWA_LOG("Error", "ERROR: Could not wait for file handler release: " << res );
-
-                        // Send progress fedback
-                        if (installerPf) installerPf->markLengthy(false);
-                        if (pf) pf->fail("Unable to check the status of the installation");
-
-                        return HVE_STILL_WORKING;
-                    }
-
-                    // Wait 5 seconds for a possible re-aquisition.
-                    // If nothing re-aquired, exit
-                    if ( installerType == PMAN_YUM ) {
-                        waitResult = waitPidFile( YUM_PID_FILE, true, 5000 );
-                    } else if ( installerType == PMAN_DPKG ) {
-                        waitResult = waitFileOpen( tmpHypervisorInstall, true, 5000 );
-                    }
-                    if (!waitResult) break;
-
+                    // Check with 1 sec intervals
+                    sleepMs(1000);
                 }
-
-                // Apply continue flag
-                if (continueFlag) continue;
 
                 // Done
                 if (installerPf) installerPf->markLengthy(false);
@@ -697,12 +693,17 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
             return HVE_NOT_VALIDATED;
         } else {
 
-            /* Everything worked like a charm */
-            ::remove( tmpHypervisorInstall.c_str() );
+            // Installation was successful. Try to 30 seconds to remove the temporary file
+            if (pf) pf->doing("Cleaning-up residual files");
+            while (::remove( tmpHypervisorInstall.c_str() ) != 0) {
+                sleepMs(1000);
+            }
+
             break;
 
         }
         
+try_continue:
     }
 
     /**
