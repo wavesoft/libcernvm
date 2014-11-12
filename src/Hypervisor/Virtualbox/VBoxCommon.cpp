@@ -703,7 +703,10 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
 
         }
         
+        // Anchor for continuing the outer loop
 try_continue:
+        void;
+
     }
 
     /**
