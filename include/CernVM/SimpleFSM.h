@@ -92,7 +92,7 @@ public:
 	/**
 	 * Pick the closest path to go from current state to the given state
 	 */
-	void 							FSMGoto				( int state );
+	void 							FSMGoto				( int state, int stripPathComponents = 1 );
 
 	/**
 	 * Jump directly to the given path (and run the handler code)

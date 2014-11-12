@@ -226,7 +226,7 @@ public:
      * A required parameter is the parameter map of the session.
      */
     HVSession( ParameterMapPtr param, HVInstancePtr hv ) : 
-        Callbacks(), parameters(param), pid(0), editable(false), internalID(0)
+        Callbacks(), parameters(param), pid(0), internalID(0)
     {
         CRASH_REPORT_BEGIN;
 
@@ -274,28 +274,12 @@ public:
     std::string             uuid;
     HVInstancePtr           hypervisor;
 
-    /* Currently active user-data */
-    //std::map<std::string,
-    //    std::string> *      userData;
-    
-    //int                     cpus;
-    //int                     memory;
-    //int                     disk;
-    //int                     executionCap;
     int                     state;
-    //int                     apiPort;
     std::string             version;
     std::string             diskChecksum;
     
-    //int                     flags;
     int                     pid;
-    bool                    editable;
     
-    //bool                    daemonControlled;
-    //int                     daemonMinCap;
-    //int                     daemonMaxCap;
-    //int                     daemonFlags;
-
     int                     internalID;
 
     ParameterMapPtr         parameters;

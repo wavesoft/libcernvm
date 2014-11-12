@@ -163,6 +163,9 @@ int __curl_xferinfo(CURLProvider * self, curl_off_t dltotal, curl_off_t dlnow, c
 int CURLProvider::downloadFile( const std::string& url, const std::string& destination, const VariableTaskPtr& pf ) {
     CRASH_REPORT_BEGIN;
 
+    // We are in operation
+    operationInstances++;
+
     // Setup CURL url
     CVMWA_LOG("Debug", "Downloading file from '" << url << "'");
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -190,6 +193,7 @@ int CURLProvider::downloadFile( const std::string& url, const std::string& desti
     fStream.open( destination.c_str(), std::ofstream::binary );
     if (fStream.fail()) {
         CVMWA_LOG("Error", "OFStream error" );
+        operationInstances--;
         return HVE_IO_ERROR;
     }
     
@@ -197,6 +201,7 @@ int CURLProvider::downloadFile( const std::string& url, const std::string& desti
     CURLcode res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
         CVMWA_LOG("Error", "cURL Error #" << res );
+        operationInstances--;
         return HVE_IO_ERROR;
     } else {
         CVMWA_LOG("Info", "cURL Download completed" );
@@ -207,6 +212,7 @@ int CURLProvider::downloadFile( const std::string& url, const std::string& desti
     
     // Close stream
     fStream.close();
+    operationInstances--;
     return HVE_OK;
     
     CRASH_REPORT_END;
@@ -218,6 +224,9 @@ int CURLProvider::downloadFile( const std::string& url, const std::string& desti
 int CURLProvider::downloadText( const std::string& url, std::string * destination, const VariableTaskPtr& pf ) {
     CRASH_REPORT_BEGIN;
     
+    // We are in operation
+    operationInstances++;
+
     // Setup CURL url
     CVMWA_LOG("Debug", "Downloading string from '" << url << "'");
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -245,6 +254,7 @@ int CURLProvider::downloadText( const std::string& url, std::string * destinatio
     if (res != CURLE_OK) {
         CVMWA_LOG("Error", "cURL Error #" << res );
         sStream.str("");
+        operationInstances--;
         return HVE_IO_ERROR;
     }
     
@@ -256,6 +266,7 @@ int CURLProvider::downloadText( const std::string& url, std::string * destinatio
     if (pf) pf->complete("Download completed");
 
     CVMWA_LOG("Info", "cURL Download completed" );
+    operationInstances--;
     return HVE_OK;
     
     CRASH_REPORT_END;
@@ -266,8 +277,10 @@ int CURLProvider::downloadText( const std::string& url, std::string * destinatio
  */
 int CURLProvider::abort() {
     CRASH_REPORT_BEGIN;
-    abortFlag = true;
-    abortPersistsFlag = false;
+    // Abort if there is anything pending
+    if (operationInstances>0)
+        abortFlag = true;
+        abortPersistsFlag = false;
     return HVE_OK;
     CRASH_REPORT_END;
 }

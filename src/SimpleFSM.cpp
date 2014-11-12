@@ -244,8 +244,10 @@ void findShortestPath( std::vector< FSMNode * > path, FSMNode * node, int state,
 
 /**
  * Build the path to go to the given state and start the FSM subsystem
+ * @param int state - The target state
+ * @param int stripPathComponents - The path components to strip from the beginning of the traced path
  */
-void SimpleFSM::FSMGoto(int state) {
+void SimpleFSM::FSMGoto(int state, int stripPathComponents) {
     CRASH_REPORT_BEGIN;
 
 	// Allow only one thread to steer the FSM
@@ -269,7 +271,7 @@ void SimpleFSM::FSMGoto(int state) {
 	if (resPath != NULL) {
 
 		// Update target path and release resPath memory
-		fsmCurrentPath.assign( resPath->begin()+1, resPath->end() );
+		fsmCurrentPath.assign( resPath->begin()+stripPathComponents, resPath->end() );
 		delete resPath;
 
 		// Switch active target
@@ -380,7 +382,7 @@ void SimpleFSM::FSMSkew(int state) {
 	// Continue towards the active target only if the path is not empty. 
 	// Otherwise it's enough just to change the current node
 	if ( !fsmCurrentPath.empty() ) {
-		FSMGoto( fsmTargetState );
+		FSMGoto( fsmTargetState, 0 );
 	}
 
     CRASH_REPORT_END;

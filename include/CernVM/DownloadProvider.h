@@ -105,6 +105,7 @@ public:
         // Reset vars
         this->abortFlag = false;
         this->abortPersistsFlag = false;
+        this->operationInstances = 0;
         this->maxStreamSize = 0;
 
         CRASH_REPORT_END;
@@ -128,6 +129,7 @@ public:
     long                        maxStreamSize;
     bool                        abortFlag;
     bool                        abortPersistsFlag;
+    int                         operationInstances;
     std::ofstream               fStream;
     std::ostringstream          sStream;
     
