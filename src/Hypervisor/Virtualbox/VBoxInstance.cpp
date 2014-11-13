@@ -40,7 +40,7 @@ using namespace std;
 /**
  * Check integrity of the hypervisor
  */
-bool HVInstance::validateIntegrity() { 
+bool VBoxInstance::validateIntegrity() { 
     CRASH_REPORT_BEGIN;
 
     // Check if the hypervisor reflection has gone away
