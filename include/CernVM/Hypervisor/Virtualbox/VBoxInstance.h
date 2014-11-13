@@ -59,8 +59,10 @@ public:
         this->exec("--version", &out, &err, execConfig);
 
         // If we got some output, extract version numbers
-        if (out.size() > 0)
+        if (out.size() > 0) {
             version.set( out[0] );
+            reflectionValid = true;
+        }
 
         CRASH_REPORT_END;
     };
@@ -74,16 +76,18 @@ public:
     virtual void            sessionDelete       ( const HVSessionPtr& session );
     virtual void            sessionClose        ( const HVSessionPtr& session );
 
-    virtual int             getType             ( ) { return HV_VIRTUALBOX; };
+    virtual int             getType             ( ) { return reflectionValid ? HV_VIRTUALBOX : HV_NONE; };
     virtual int             loadSessions        ( const FiniteTaskPtr & pf = FiniteTaskPtr() );
     virtual bool            waitTillReady       ( const FiniteTaskPtr & pf = FiniteTaskPtr(), const UserInteractionPtr & ui = UserInteractionPtr() );
     virtual HVSessionPtr    allocateSession     ( );
     virtual int             getCapabilities     ( HVINFO_CAPS * caps );
     virtual void            abort               ( );
+    virtual bool            validateIntegrity   ( );
 
     /////////////////////////
     // Friend functions
     /////////////////////////
+
     int                     prepareSession      ( VBoxSession * session );
     std::map<const std::string, const std::string>        
                             getMachineInfo      ( std::string uuid, int timeout = SYSEXEC_TIMEOUT );
@@ -113,6 +117,9 @@ private:
 
     // Default sysExecConfig
     SysExecConfig           execConfig;
+
+    // The virtualbox reflection is still valid
+    bool                    reflectionValid;
 
 };
 

@@ -37,6 +37,37 @@ using namespace std;
             Virtualbox Implementation
 \** =========================================== **/
 
+/**
+ * Check integrity of the hypervisor
+ */
+bool HVInstance::validateIntegrity() { 
+    CRASH_REPORT_BEGIN;
+
+    // Check if the hypervisor reflection has gone away
+    if (!vboxExists()) {
+
+        // Mark us as invalid and return false
+        reflectionValid = false;
+        return false;
+
+    } else {
+
+        // Detect and update VirtualBox Version
+        std::vector< std::string > out;
+        std::string err;
+        this->exec("--version", &out, &err, execConfig);
+
+        // If we got some output, extract version numbers
+        if (out.size() > 0)
+            version.set( out[0] );
+
+        // Return
+        return true;
+    }
+
+    CRASH_REPORT_END;
+}
+
 /** 
  * Return virtual machine information
  */

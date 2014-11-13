@@ -116,6 +116,8 @@ HVInstancePtr 	vboxDetect();
 /* Global function to try to install a VirtualBox Hypervisor */
 int 			vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInteractionPtr & ui = UserInteractionPtr(), const FiniteTaskPtr & pf = FiniteTaskPtr(), int retries = 3 );
 
+/* Check if virtualbox binary exists (lightweight version of vboxDetect) */
+bool 			vboxExists();
 
 
 #endif /* end of include guard: VBOXCOMMON_H */

@@ -490,6 +490,12 @@ public:
      */
     virtual int             sessionValidate     ( const ParameterMapPtr& parameters );
 
+    /**
+     * Check if for any reason the environment has changed and the hypervisor
+     * instance is not valid any more.
+     */
+    virtual bool            validateIntegrity   ( ) = 0;
+
     ////////////////////////////////////////
     // Overridable functions
     ////////////////////////////////////////
