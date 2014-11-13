@@ -1,4 +1,10 @@
 
+=== version-2.0.9
+
+ - Making the process a system daemon
+ - Fixing FSM bugs
+ - Fixing concurrency bugs
+
 === version-2.0.8
  
  - Added support for 'canOverride' variables when setting properties to hypervisor.

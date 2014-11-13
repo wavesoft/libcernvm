@@ -589,11 +589,10 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
                 if (installerPf) installerPf->done("Installer started");
             
                 // Wait for 5 minutes for the binary to appear
-                int counter;
+                int counter = 0;
                 while (!vboxExists()) {
                     if (++counter > 300) {
                         if (tries<retries) {
-                            if (installerPf) installerPf->doing("Re-starting hypervisor installer");
                             CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
                             if (installerPf) installerPf->doing("Re-starting hypervisor installer");
                             sleepMs(1000);
