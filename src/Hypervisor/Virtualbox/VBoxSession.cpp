@@ -1535,8 +1535,8 @@ void VBoxSession::FatalErrorSink() {
 
     FSMDoing("Session unable to continue. Cleaning-up");
 
-    // Destroy everything
-    destroyVM();
+    // Destroy everything, without re-triggering FSM
+    destroyVM( false );
 
     FSMDone("Session cleaned-up");
     CRASH_REPORT_END;
@@ -2079,7 +2079,7 @@ int VBoxSession::wrapExec ( std::string cmd, std::vector<std::string> * stdoutLi
 /**
  * Destroy and unregister VM
  */
-int VBoxSession::destroyVM () {
+int VBoxSession::destroyVM ( const bool forwardErrors ) {
     CRASH_REPORT_BEGIN;
     if (isAborting) return HVE_INVALID_STATE;
 
@@ -2096,7 +2096,8 @@ int VBoxSession::destroyVM () {
     // Execute and handle errors
     ans = this->wrapExec(args.str(), NULL, NULL, execConfig);
     if (ans != 0) {
-        errorOccured("Unable to destroy the Virtual Machine", HVE_EXTERNAL_ERROR);
+        if (forwardErrors)
+            errorOccured("Unable to destroy the Virtual Machine", HVE_EXTERNAL_ERROR);
         return HVE_EXTERNAL_ERROR;
     }
 
@@ -2106,6 +2107,7 @@ int VBoxSession::destroyVM () {
     // Reset properties
     local->set("initialized","0");
     local->erase("vboxid");
+    machine->clear();
 
     return HVE_OK;
     CRASH_REPORT_END;

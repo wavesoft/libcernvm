@@ -223,6 +223,9 @@ private:
 	// Mutex for FSMGoto
 	boost::mutex  					fsmGotoMutex;
 
+	// Mutex for accessing fsmPath
+	boost::mutex  					fsmPathMutex;
+
 	// Progress
 	std::string 					fsmProgressResetMsg;
 

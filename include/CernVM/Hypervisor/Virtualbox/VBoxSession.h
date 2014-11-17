@@ -227,7 +227,7 @@ protected:
     /**
      * Destroy and unregister VM
      */
-    int                     destroyVM           ( );
+    int                     destroyVM           ( const bool forwardErrors = true );
 
     /**
      * (Re-)Mount a disk on the specified controller

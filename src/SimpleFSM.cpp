@@ -164,16 +164,27 @@ bool SimpleFSM::FSMContinue( bool inThread ) {
 	if (fsmCurrentPath.empty() && (fsmCurrentNode != NULL)) return false;
 	fsmInsideHandler = true;
 
-	// Get next action in the path
-	FSMNode * next = fsmCurrentPath.front();
-    fsmCurrentPath.pop_front();
+	FSMNode * next;
+	{ /* mutex(fsmCurrentPath)) */
+		boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+		// Get next action in the path
+		next = fsmCurrentPath.front();
+	    fsmCurrentPath.pop_front();
+
+	}
 
 	// Skip state nodes
-	while ((!next->handler) && !fsmCurrentPath.empty()) {
-		FSMEnteringState( next->id, false );
-		next = fsmCurrentPath.front();
-        fsmCurrentPath.pop_front();
-	}
+    { /* mutex(fsmCurrentPath)) */
+        boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+        while ((!next->handler) && !fsmCurrentPath.empty()) {
+            lock.unlock();
+            FSMEnteringState( next->id, false );
+            lock.lock();
+            if (fsmCurrentPath.empty()) break;
+            next = fsmCurrentPath.front();
+            fsmCurrentPath.pop_front();
+        }
+    }
 
 	// Change current node
 	fsmCurrentNode = next;
@@ -257,7 +268,10 @@ void SimpleFSM::FSMGoto(int state, int stripPathComponents) {
     CVMWA_LOG("Debug", "Going towards " << state);
 
 	// Reset path
-	fsmCurrentPath.clear();
+	{ /* mutex(fsmCurrentPath)) */
+		boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+		fsmCurrentPath.clear();
+	}
 
 	// Prepare clip length
 	size_t clipLength = fsmNodes.size();
@@ -271,7 +285,10 @@ void SimpleFSM::FSMGoto(int state, int stripPathComponents) {
 	if (resPath != NULL) {
 
 		// Update target path and release resPath memory
-		fsmCurrentPath.assign( resPath->begin()+stripPathComponents, resPath->end() );
+		{
+			boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+			fsmCurrentPath.assign( resPath->begin()+stripPathComponents, resPath->end() );
+		}
 		delete resPath;
 
 		// Switch active target
@@ -281,12 +298,16 @@ void SimpleFSM::FSMGoto(int state, int stripPathComponents) {
 
 	// If we have progress feedback, update the max
 	if (fsmProgress) {
+        int pathCount = 0;
 
 		// Count the actual tasks in the path (skipping state nodes)
-		int pathCount = 0;
-		for (std::list<FSMNode*>::iterator j= fsmCurrentPath.begin(); j!=fsmCurrentPath.end(); ++j) {
-			FSMNode* node = *j;
-			if (node->handler) pathCount++;
+		{ /* mutex(fsmCurrentPath)) */
+			boost::unique_lock<boost::mutex> lock(fsmPathMutex);			
+			pathCount = 0;
+			for (std::list<FSMNode*>::iterator j= fsmCurrentPath.begin(); j!=fsmCurrentPath.end(); ++j) {
+				FSMNode* node = *j;
+				if (node->handler) pathCount++;
+			}
 		}
 
 		// Restart progress
@@ -304,11 +325,14 @@ void SimpleFSM::FSMGoto(int state, int stripPathComponents) {
 #ifdef LOGGING
 	// Present best path
 	std::ostringstream oss;
-    if (!fsmCurrentPath.empty()) {
-        for (std::list<FSMNode*>::iterator j= fsmCurrentPath.begin(); j!=fsmCurrentPath.end(); ++j) {
-		    if (!oss.str().empty()) oss << ", "; oss << (*j)->id;
+	{ /* mutex(fsmCurrentPath)) */
+		boost::unique_lock<boost::mutex> lock(fsmPathMutex);		
+	    if (!fsmCurrentPath.empty()) {
+	        for (std::list<FSMNode*>::iterator j= fsmCurrentPath.begin(); j!=fsmCurrentPath.end(); ++j) {
+			    if (!oss.str().empty()) oss << ", "; oss << (*j)->id;
+		    }
 	    }
-    }
+	}
 	CVMWA_LOG("Debug", "Best path: " << oss.str() );
 #endif
 
@@ -330,7 +354,10 @@ void SimpleFSM::FSMJump(int state) {
     CVMWA_LOG("Debug", "Jumping to " << state);
 
 	// Reset path
-	fsmCurrentPath.clear();
+	{ /* mutex(fsmCurrentPath)) */
+		boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+		fsmCurrentPath.clear();
+	}
 
 	// Pick the current node
 	std::map<int,FSMNode>::iterator it = fsmNodes.find( state );
@@ -377,11 +404,20 @@ void SimpleFSM::FSMSkew(int state) {
 	fsmCurrentNode = &((*pt).second);
 
 	// Notify state change
-	FSMEnteringState( state, fsmCurrentPath.empty() );
+	bool isEmpty = false;
+	{ /* mutex(fsmCurrentPath)) */
+		boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+		isEmpty = fsmCurrentPath.empty();		
+	}
+	FSMEnteringState( state, isEmpty );
 
 	// Continue towards the active target only if the path is not empty. 
 	// Otherwise it's enough just to change the current node
-	if ( !fsmCurrentPath.empty() ) {
+	{ /* mutex(fsmCurrentPath)) */
+		boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+		isEmpty = fsmCurrentPath.empty();		
+	}
+	if ( !isEmpty ) {
 		FSMGoto( fsmTargetState, 0 );
 	}
 
@@ -410,10 +446,8 @@ void SimpleFSM::FSMThreadLoop() {
 				// Critical section
 				{
 					boost::unique_lock<boost::mutex> lock(fsmmThreadSafe);
-				    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmmThreadSafe");
 			        res = FSMContinue(true);
 				}
-			    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmmThreadSafe");
 
 				// Yield our time slice after executing an action
                 if (fsmtInterruptRequested) return;
@@ -466,6 +500,7 @@ void SimpleFSM::FSMThreadStop() {
     fsmtPauseMutex.try_lock(); fsmtPauseMutex.unlock();
     fsmwStateMutex.try_lock(); fsmwStateMutex.unlock();
     fsmGotoMutex.try_lock(); fsmGotoMutex.unlock();
+    fsmPathMutex.try_lock(); fsmPathMutex.unlock();
 
     // Join thread
 	fsmThread->join();
@@ -487,7 +522,6 @@ void SimpleFSM::_fsmPause() {
 	// do anything
 	if (fsmtPaused) {
 	    boost::unique_lock<boost::mutex> lock(fsmtPauseMutex);
-	    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmtPauseMutex");
 	    while(fsmtPaused) {
             if (fsmtInterruptRequested) {
                 fsmtPaused = false;
@@ -500,7 +534,6 @@ void SimpleFSM::_fsmPause() {
             }
 	    }
 	}
-    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmtPauseMutex");
 
     // Reset paused state
     fsmtPaused = true;
@@ -517,10 +550,8 @@ void SimpleFSM::_fsmWakeup() {
 
     {
         boost::unique_lock<boost::mutex> lock(fsmtPauseMutex);
-	    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmtPauseMutex");
         fsmtPaused = false;
     }
-    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmtPauseMutex");
 
     fsmtPauseChanged.notify_all();
     CRASH_REPORT_END;
@@ -659,6 +690,7 @@ void SimpleFSM::FSMWaitInactive ( int timeout ) {
  */
 bool SimpleFSM::FSMActive ( ) {
     CRASH_REPORT_BEGIN;
+	boost::unique_lock<boost::mutex> lock(fsmPathMutex);
 	return !fsmCurrentPath.empty();
     CRASH_REPORT_END;
 }
