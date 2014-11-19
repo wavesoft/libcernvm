@@ -13,7 +13,7 @@ VERSION_ACTIVE="4.3.12"
 
 # Make sure you keep the following list of versions up-to-date
 VERSION_ALL="
-4.3.16 4.3.14 4.3.12 4.3.10 4.3.8 4.3.6 4.3.4 4.3.2 4.3.0
+4.3.18 4.3.16 4.3.14 4.3.12 4.3.10 4.3.8 4.3.6 4.3.4 4.3.2 4.3.0
 4.2.26 4.2.24 4.2.22 4.2.20 4.2.18 4.2.16 4.2.14 4.2.12 4.2.10 4.2.8 4.2.6 4.2.4 4.2.2 4.2.0
 4.1.34 4.1.32 4.1.30 4.1.28 4.1.26 4.1.24 4.1.22 4.1.20 4.1.18 4.1.16 4.1.14 4.1.12 4.1.10 4.1.8 4.1.6 4.1.4 4.1.2 4.1.0
 4.0.26 4.0.24 4.0.22 4.0.20 4.0.18 4.0.16 4.0.14 4.0.12 4.0.10 4.0.8 4.0.6 4.0.4 4.0.2 4.0.0
@@ -23,6 +23,9 @@ VERSION_ALL="
 # on the checksum list, and specifically for RPM-based OSes
 RPM_MAPPING_VERSIONS="
 el6=scientificcernslc-carbon
+fedora18=fedora-spherical
+fedora18=fedora-schrödiger's
+fedora17=fedora-beefy
 "
 
 DEB_MAPPING_VERSIONS="
