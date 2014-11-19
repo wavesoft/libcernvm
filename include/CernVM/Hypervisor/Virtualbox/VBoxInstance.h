@@ -41,7 +41,7 @@
 class VBoxInstance : public HVInstance {
 public:
 
-    VBoxInstance( std::string fRoot, std::string fBin, std::string fIso ) : HVInstance(), execConfig() {
+    VBoxInstance( std::string fRoot, std::string fBin, std::string fIso ) : HVInstance(), execConfig(), reflectionValid(true) {
         CRASH_REPORT_BEGIN;
 
         // Populate variables

@@ -278,9 +278,10 @@ int CURLProvider::downloadText( const std::string& url, std::string * destinatio
 int CURLProvider::abort() {
     CRASH_REPORT_BEGIN;
     // Abort if there is anything pending
-    if (operationInstances>0)
+    if (operationInstances>0) {
         abortFlag = true;
         abortPersistsFlag = false;
+    }
     return HVE_OK;
     CRASH_REPORT_END;
 }
