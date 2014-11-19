@@ -2275,9 +2275,39 @@ void getLinuxInfo ( LINUX_INFO * info ) {
         
     } else if (file_exists("/etc/redhat-release")) {
 
-        // Check if we have the redhat-release file in place
+        // Try to open the redhat-release file
+        std::ifstream ifs ( "/etc/redhat-release" , std::ifstream::in);
+        if (ifs.fail()) return;
+        
+        // Read PID
+        std::string line;
+        std::string k,v1, v2;
+        if (std::getline(ifs, line)) {
 
+            // Try to identify version
+            if (line.substr(0,7).compare("fedora ") == 0) {
+                info->osDistID = "fedora-";
+            } else {
+                info->osDistID = "redhat-";
+            }
 
+            // To lower case
+            std::transform( line.begin(),  line.end(),  line.begin(), ::tolower);
+
+            // Get first component after '('
+            getKV( line, &k, &v1, '(', 0);
+
+            // If we have ' ' after '(', pick the first component
+            getKV( v1, &k, &v2, ' ', 0);
+
+            // Update distro ID
+            info->osDistID += k;
+
+        }
+        
+        // Close file
+        ifs.close();
+        
     }
     CRASH_REPORT_END;
 }
