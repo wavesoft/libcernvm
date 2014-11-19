@@ -1,4 +1,9 @@
 
+=== version-2.0.10
+
+ - Fixing race conditions
+ - Added 'sync' function
+
 === version-2.0.9
 
  - Making the process a system daemon
