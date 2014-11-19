@@ -263,7 +263,6 @@ void SimpleFSM::FSMGoto(int state, int stripPathComponents) {
 
 	// Allow only one thread to steer the FSM
 	boost::unique_lock<boost::mutex> lock(fsmGotoMutex);
-    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmGotoMutex");
 
     CVMWA_LOG("Debug", "Going towards " << state);
 
@@ -336,7 +335,6 @@ void SimpleFSM::FSMGoto(int state, int stripPathComponents) {
 	CVMWA_LOG("Debug", "Best path: " << oss.str() );
 #endif
 
-    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmGotoMutex");
     CRASH_REPORT_END;
 }
 
@@ -349,7 +347,6 @@ void SimpleFSM::FSMJump(int state) {
 
 	// Allow only one thread to steer the FSM
 	boost::unique_lock<boost::mutex> lock(fsmGotoMutex);
-    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmGotoMutex");
 
     CVMWA_LOG("Debug", "Jumping to " << state);
 
@@ -383,7 +380,6 @@ void SimpleFSM::FSMJump(int state) {
 
 	}
 
-    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmGotoMutex");
     CRASH_REPORT_END;
 }
 
@@ -658,10 +654,8 @@ void SimpleFSM::FSMWaitFor ( int state, int timeout ) {
 	
     {
 	    boost::unique_lock<boost::mutex> lock(fsmwStateMutex);
-	    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmwStateMutex");
 	    fsmwStateChanged.wait(lock);
     }
-    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmwStateMutex");
 
     CRASH_REPORT_END;
 }
@@ -675,12 +669,10 @@ void SimpleFSM::FSMWaitInactive ( int timeout ) {
 	// Wait until we are no longer active
 	{
 	    boost::unique_lock<boost::mutex> lock(fsmwWaitMutex);		
-	    CVMWA_LOG("Debug", "MUTEX_LOCK: fsmwWaitMutex");
 		while (FSMActive()) {
 			fsmwWaitCond.wait(lock);
 		}
 	}
-    CVMWA_LOG("Debug", "MUTEX_RELEASE: fsmwWaitMutex");
 
     CRASH_REPORT_END;
 }
