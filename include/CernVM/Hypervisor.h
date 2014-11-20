@@ -253,6 +253,9 @@ public:
         parameters->setDefault("diskChecksum",          "");
         parameters->setDefault("cernvmVersion",         DEFAULT_CERNVM_VERSION);
 
+        // Default download provider
+        downloadProvider = DownloadProvider::Default();
+
         // Open sub-groups
         userData = parameters->subgroup("user-data");
         local = parameters->subgroup("local");
@@ -293,9 +296,19 @@ public:
      */
     int                     instances;
 
+    /**
+     * The local instance of the download provider
+     */
+    DownloadProviderPtr     downloadProvider;
+
     ////////////////////////////////////////
     // Session API implementation
     ////////////////////////////////////////
+
+    /**
+     * Change the default download provider to the one specified
+     */
+    virtual void            setDownloadProvider( DownloadProviderPtr p );
 
     /**
      * Pause the VM
@@ -550,19 +563,19 @@ public:
      * Download an arbitrary file and validate it against a checksum
      * file, both provided as URLs
      */
-    int                     downloadFileURL     ( const std::string & fileURL, const std::string & checksumURL, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = 2 );
+    int                     downloadFileURL     ( const std::string & fileURL, const std::string & checksumURL, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = 2, const DownloadProviderPtr & customDownloadProvider = DownloadProviderPtr() );
 
     /**
      * Download an arbitrary file and validate it against a checksum
      * string specified in parameter
      */
-    int                     downloadFile        ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = 2 );
+    int                     downloadFile        ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = 2, const DownloadProviderPtr & customDownloadProvider = DownloadProviderPtr() );
     
     /**
      * Download a gzip-compressed arbitrary file and validate it's extracted
      * contents against a checksum string specified in parameter
      */
-    int                     downloadFileGZ      ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = 2 );
+    int                     downloadFileGZ      ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = 2, const DownloadProviderPtr & customDownloadProvider = DownloadProviderPtr() );
 
 
     /**

@@ -68,7 +68,8 @@ public:
     // Public interface
     virtual int                 downloadFile( const std::string &URL, const std::string &destination, const VariableTaskPtr& pf = VariableTaskPtr() ) = 0;
     virtual int                 downloadText( const std::string &URL, std::string *buffer, const VariableTaskPtr& pf = VariableTaskPtr() ) = 0;
-    
+    virtual DownloadProviderPtr clone() = 0;
+
     // Abort flag
     virtual int                 abort() = 0;
     virtual int                 abortAll() = 0;
@@ -92,6 +93,9 @@ public:
     // Constructor & Destructor
     CURLProvider() : DownloadProvider(), pf(), fStream(), sStream() {
         CRASH_REPORT_BEGIN;
+
+        // Initialize global CURL
+        curl_global_init(CURL_GLOBAL_ALL);
         
         // Initialize curl
         curl = curl_easy_init();
@@ -120,6 +124,7 @@ public:
     // Curl I/O
     virtual int                 downloadFile( const std::string &URL, const std::string &destination, const VariableTaskPtr& pf = VariableTaskPtr()  ) ;
     virtual int                 downloadText( const std::string &URL, std::string *buffer, const VariableTaskPtr& pf = VariableTaskPtr() );
+    virtual DownloadProviderPtr clone();
     virtual int                 abort();
     virtual int                 abortAll();
 

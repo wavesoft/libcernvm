@@ -342,6 +342,15 @@ bool HVSession::isAPIAlive( unsigned char handshake, int timeoutSec ) {
     CRASH_REPORT_END;
 }
 
+/**
+ * Change the default download provider
+ */
+void HVSession::setDownloadProvider( DownloadProviderPtr p ) { 
+    CRASH_REPORT_BEGIN;
+    this->downloadProvider = p;
+    CRASH_REPORT_END;
+};
+
 /////////////////////////////////////
 /////////////////////////////////////
 ////
@@ -610,9 +619,13 @@ int __downloadFile( const std::string & fileURL, const std::string & sOutFilenam
  * Download an arbitrary file and validate it against a checksum
  * file, both provided as URLs
  */
-int HVInstance::downloadFileURL ( const std::string & fileURL, const std::string & checksumURL, std::string * filename, const FiniteTaskPtr & pf, const int retries ) {
+int HVInstance::downloadFileURL ( const std::string & fileURL, const std::string & checksumURL, std::string * filename, const FiniteTaskPtr & pf, const int retries, const DownloadProviderPtr& customProvider ) {
     CRASH_REPORT_BEGIN;
     int ans;
+
+    // Pick the appropriate download provider
+    DownloadProviderPtr dp = this->downloadProvider;
+    if (customProvider) dp = customProvider;
 
     // Calculate filename and full URL hash
     std::string     sOutFilenameHash;
@@ -633,7 +646,7 @@ int HVInstance::downloadFileURL ( const std::string & fileURL, const std::string
     // Download checksum
     pfDownload = pf->begin<VariableTask>("Downloading Checksum");    
     ans = __downloadChecksum(
-            checksumURL, sOutChecksum, pfDownload, pf, this->downloadProvider,
+            checksumURL, sOutChecksum, pfDownload, pf, dp,
             retries, &sChecksumString
         );
     if (ans != HVE_OK) return ans;
@@ -641,7 +654,7 @@ int HVInstance::downloadFileURL ( const std::string & fileURL, const std::string
     // Download file
     pfDownload = pf->begin<VariableTask>("Downloading file");    
     ans = __downloadFile(
-            fileURL, sOutFilename, pfDownload, pf, this->downloadProvider,
+            fileURL, sOutFilename, pfDownload, pf, dp,
             sChecksumString, retries
         );
     if (ans != HVE_OK) return ans;
@@ -659,9 +672,13 @@ int HVInstance::downloadFileURL ( const std::string & fileURL, const std::string
  * Download an arbitrary file and validate it against a checksum
  * string specified in parameter
  */
-int HVInstance::downloadFile ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf, const int retries ) {
+int HVInstance::downloadFile ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf, const int retries, const DownloadProviderPtr& customProvider ) {
     CRASH_REPORT_BEGIN;
     int ans;
+
+    // Pick the appropriate download provider
+    DownloadProviderPtr dp = this->downloadProvider;
+    if (customProvider) dp = customProvider;
 
     // Calculate filename and full URL hash
     std::string     sOutFilenameHash;
@@ -678,7 +695,7 @@ int HVInstance::downloadFile ( const std::string & fileURL, const std::string & 
     // Download file
     pfDownload = pf->begin<VariableTask>("Downloading file");    
     ans = __downloadFile(
-            fileURL, sOutFilename, pfDownload, pf, this->downloadProvider,
+            fileURL, sOutFilename, pfDownload, pf, dp,
             checksumString, retries
         );
     if (ans != HVE_OK) return ans;
@@ -696,9 +713,13 @@ int HVInstance::downloadFile ( const std::string & fileURL, const std::string & 
  * Download a gzip-compressed arbitrary file and validate it's extracted
  * contents against a checksum string specified in parameter
  */
-int HVInstance::downloadFileGZ ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf, const int retries ) {
+int HVInstance::downloadFileGZ ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf, const int retries, const DownloadProviderPtr& customProvider ) {
     CRASH_REPORT_BEGIN;
     int ans;
+
+    // Pick the appropriate download provider
+    DownloadProviderPtr dp = this->downloadProvider;
+    if (customProvider) dp = customProvider;
 
     // Calculate filename and full URL hash
     std::string     sOutFilenameHash;
@@ -733,7 +754,7 @@ int HVInstance::downloadFileGZ ( const std::string & fileURL, const std::string 
             if (pfDownload) pfDownload->restart("Downloading compressed file", false);
 
             // Download file
-            ans = downloadProvider->downloadFile( fileURL, sOutFilename, pfDownload );
+            ans = dp->downloadFile( fileURL, sOutFilename, pfDownload );
             if (ans != HVE_OK) {
                 // Invalid contents. Erase and re-download
                 if (pf) pf->doing("Error while downloading. Will retry.");

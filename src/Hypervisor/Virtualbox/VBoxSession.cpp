@@ -845,7 +845,9 @@ void VBoxSession::DownloadMedia() {
                             urlFilename,
                             checksum,
                             &sFilename,
-                            pfDownload
+                            pfDownload,
+                            2,
+                            downloadProvider
                         );
 
             // Strip .gz from the filename
@@ -857,7 +859,9 @@ void VBoxSession::DownloadMedia() {
                             urlFilename,
                             checksum,
                             &sFilename,
-                            pfDownload
+                            pfDownload,
+                            2,
+                            downloadProvider
                         );
         }
 
@@ -901,7 +905,9 @@ void VBoxSession::DownloadMedia() {
                         urlFilename,
                         urlFilename + ".sha256",
                         &sFilename,
-                        pfDownload
+                        pfDownload,
+                        2,
+                        downloadProvider
                     );
 
         // Validate result

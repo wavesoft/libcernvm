@@ -273,6 +273,14 @@ int CURLProvider::downloadText( const std::string& url, std::string * destinatio
 }
 
 /**
+ * Create a clone of this instance
+ */
+DownloadProviderPtr CURLProvider::clone() {
+    // Just return a new CURL instance
+    return boost::make_shared< CURLProvider >();
+}
+
+/**
  * Abort a single file transfer
  */
 int CURLProvider::abort() {
