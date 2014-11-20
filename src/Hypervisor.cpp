@@ -944,6 +944,13 @@ HVSessionPtr HVInstance::sessionOpen( const ParameterMapPtr& parameters, const F
         return voidPtr;
     }
 
+    // Check for unsanitized input: 'name' is passed to sysExec,
+    // so we are triple-extra-careful.
+    if (!isSanitized(&name, SAFE_ALNUM_CHARS)) {
+        CVMWA_LOG("Error", "Sanitization checks for 'name' parameter failed on sessionOpen" );
+        return voidPtr;
+    }
+
     // Calculate the SHA256 checksum of the key, salted with a pre-defined salt
     std::string keyHash;
     sha256_buffer( CRYPTO_SALT + key, &keyHash );

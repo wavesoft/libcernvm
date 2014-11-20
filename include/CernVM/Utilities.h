@@ -115,6 +115,9 @@
 // GZip decompression block size (64k)
 #define GZ_BLOCK_SIZE 0x10000
 
+// Safe alphanumeric chars for sysExec
+#define SAFE_ALNUM_CHARS "abcdefghijklmnopqrstuvwxyz+ABCDEFGHIJKLMNOPQRSTUVWXYZ-0123456789_~"
+
 /**
  * Mutex configuration for multi-threaded openssl
  */ 
