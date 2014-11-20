@@ -692,7 +692,27 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
             return HVE_NOT_VALIDATED;
         } else {
 
-            // Installation was successful. Try to 30 seconds to remove the temporary file
+            // We have a hypervisor. Wait for 5 minutes until integrity validation returns true
+            int counter = 0;
+            if (pf) pf->doing("Validating installation integrity");
+            while (!hv->validateIntegrity()) {
+                if (++counter > 300) {
+                    if (tries<retries) {
+                        CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
+                        if (installerPf) installerPf->doing("Re-starting hypervisor installer");
+                        sleepMs(1000);
+                        continue;
+                    }
+                    // Cleanup
+                    ::remove( tmpHypervisorInstall.c_str() );
+                    if (pf) pf->fail("Timeout occured while waiting for hypervisor to be ready");
+                    return HVE_EXTERNAL_ERROR;
+                }
+                // Check with 1 sec intervals
+                sleepMs(1000);
+            }
+
+            // Installation was successful. Try for 30 seconds to remove the temporary file
             if (pf) pf->doing("Cleaning-up residual files");
             while (::remove( tmpHypervisorInstall.c_str() ) != 0) {
                 sleepMs(1000);

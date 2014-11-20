@@ -134,6 +134,9 @@ const SysExecConfig& SysExecConfig::Default() { return config; }
  */
 SysExecConfig& SysExecConfig::operator=(const SysExecConfig& rhs) {
 
+    // Prevent self-assign
+    if (*rhs == this) return *this;
+
     // Ovewrite the parameters specified
     retries = rhs.retries;
     timeout = rhs.timeout;
