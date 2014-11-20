@@ -58,13 +58,15 @@ bool VBoxInstance::validateIntegrity() {
         this->exec("--version", &out, &err, execConfig);
 
         // Check for common errors
-        if (out.find("WARNING") != std::string::npos) {
-            CVMWA_LOG("warning", "Warning keyword in the hypervisor version!");
-            return false;
-        }
-        if (out.find("ERROR") != std::string::npos) {
-            CVMWA_LOG("warning", "Error keyword in the hypervisor version!");
-            return false;
+        for (std::vector< std::string >::iterator sit = out.begin(); sit != out.end(); ++sit) {
+            if (sit->find("WARNING") != std::string::npos) {
+                CVMWA_LOG("warning", "Warning keyword in the hypervisor version!");
+                return false;
+            }
+            if (sit->find("ERROR") != std::string::npos) {
+                CVMWA_LOG("warning", "Error keyword in the hypervisor version!");
+                return false;
+            }
         }
         if (!err.empty()) {
             CVMWA_LOG("warning", "Error message in the hypervisor version!");
