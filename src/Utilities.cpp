@@ -504,8 +504,8 @@ int splitArguments( std::string source, char ** charBuffer, int bufferSize, int 
     // Start analyzer
     while (iPos < source.length()) {
         wsPos = source.find(' ', iPos);
-        sqPos = source.find('"', iPos);
-        dqPos = source.find('\'', iPos);
+        dqPos = source.find('"', iPos);
+        sqPos = source.find('\'', iPos);
 
         // Nothing found? We ran out of string
         if ((wsPos == string::npos) && (sqPos == string::npos) && (dqPos == string::npos)) {
@@ -516,7 +516,7 @@ int splitArguments( std::string source, char ** charBuffer, int bufferSize, int 
             break;
         
         // State 1: Checking for whitespace
-        } else if ((nextChar == ' ') && (wsPos < sqPos) && (wsPos < sqPos)) {
+        } else if ((nextChar == ' ') && (wsPos < dqPos) && (wsPos < sqPos)) {
             chunk = source.substr( iPos, wsPos - iPos );
             args.push_back( chunk );
             iPos = wsPos+1;
