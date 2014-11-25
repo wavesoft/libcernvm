@@ -183,6 +183,7 @@ HVInstancePtr vboxDetect() {
 int vboxInstall( const DownloadProviderPtr & downloadProvider, DomainKeystore & keystore, const UserInteractionPtr & ui, const FiniteTaskPtr & pf, int retries ) {
     CRASH_REPORT_BEGIN;
     HVInstancePtr hv;
+    vector<string> lines;
     int res;
 
     // Initialize progress feedback
