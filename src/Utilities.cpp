@@ -494,12 +494,9 @@ void splitLines( string rawString, vector<string> * out ) {
  */
 int splitArguments( std::string source, char ** charBuffer, int bufferSize, int bufferOffset ) {
     CRASH_REPORT_BEGIN;
-    static vector<string> args;
+    vector<string> args;
     size_t wsPos=0, sqPos=0, dqPos=0, qPos=0, iPos=0;
     string chunk; char nextChar = ' ';
-
-    // Clear static args array
-    args.clear();
 
     // Start analyzer
     while (iPos < source.length()) {
@@ -1875,7 +1872,7 @@ bool minHttpGet( const char * host, int port, const char * path, int timeoutSec 
  */
 char * getTimestamp () {
     CRASH_REPORT_BEGIN;
-	static char timeBuffer[80];
+	char timeBuffer[80];
     memset( timeBuffer, 0, 80 );
 
 	// Get current time in GMT

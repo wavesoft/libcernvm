@@ -22,6 +22,9 @@
 #ifndef COMMON_CRYPTO_H
 #define COMMON_CRYPTO_H
 
+// Forward declaration for a cycling dependance
+class DomainKeystore;
+
 #include <CernVM/Config.h>
 #include <CernVM/DownloadProvider.h>
 #include <CernVM/Utilities.h>
@@ -67,6 +70,11 @@ public:
      * Update the authorized domain keystore from out webserers.
      */
     int     updateAuthorizedKeystore    ( DownloadProviderPtr );
+
+    /**
+     * Get validated hypervisor configuration
+     */
+    int     downloadHypervisorConfig    ( DownloadProviderPtr downloadProvider, ParameterMapPtr hvData );
 
     /**
      * Verify the authenticity of the contextualization information received form the given domain

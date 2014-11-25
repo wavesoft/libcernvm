@@ -180,12 +180,10 @@ HVInstancePtr vboxDetect() {
 /**
  * Start installation of VirtualBox.
  */
-int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInteractionPtr & ui, const FiniteTaskPtr & pf, int retries ) {
+int vboxInstall( const DownloadProviderPtr & downloadProvider, DomainKeystore & keystore, const UserInteractionPtr & ui, const FiniteTaskPtr & pf, int retries ) {
     CRASH_REPORT_BEGIN;
     HVInstancePtr hv;
     int res;
-    string tmpHypervisorInstall;
-    string checksum;
 
     // Initialize progress feedback
     if (pf) {
@@ -198,7 +196,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
     ////////////////////////////////////
     // Contact the information point
     ////////////////////////////////////
-    string requestBuf;
+    ParameterMapPtr data = boost::make_shared<ParameterMap>();
 
     // Download trials
     for (int tries=0; tries<retries; tries++) {
@@ -208,8 +206,15 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
         if (pf) pf->doing("Downloading hypervisor configuration");
 
         // Try to download the configuration URL
-        res = downloadProvider->downloadText( URL_HYPERVISOR_CONFIG CERNVM_WEBAPI_VERSION, &requestBuf );
+        res = keystore.downloadHypervisorConfig( downloadProvider, data );
         if ( res != HVE_OK ) {
+
+            // Check for security errors
+            if (res == HVE_NOT_VALIDATED) {
+                if (pf) pf->fail("Hypervisor configuration signature could not be validated!");
+                return res;
+            }
+
             if (tries<retries) {
                 CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
 
@@ -239,11 +244,6 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
     ////////////////////////////////////
     // Extract information
     ////////////////////////////////////
-
-    // Prepare variables
-    vector<string> lines;
-    splitLines( requestBuf, &lines );
-    map<const string, const string> data = tokenize( &lines, '=' );
     
     // Pick the URLs to download from
     #ifdef _WIN32
@@ -286,7 +286,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
     ////////////////////////////////////
 
     // Verify that the keys we are looking for exist
-    if (data.find( kDownloadUrl ) == data.end()) {
+    if (data->contains( kDownloadUrl )) {
         CVMWA_LOG( "Error", "ERROR: No download URL data found" );
 
         // Send progress fedback
@@ -294,7 +294,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
 
         return HVE_EXTERNAL_ERROR;
     }
-    if (data.find( kChecksum ) == data.end()) {
+    if (data->contains( kChecksum )) {
         CVMWA_LOG( "Error", "ERROR: No checksum data found" );
 
         // Send progress fedback
@@ -302,7 +302,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
 
         return HVE_EXTERNAL_ERROR;
     }
-    if (data.find( kInstallerName ) == data.end()) {
+    if (data->contains( kInstallerName )) {
         CVMWA_LOG( "Error", "ERROR: No installer program data found" );
 
         // Send progress fedback
@@ -316,10 +316,10 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
     // Pick an extension and installation type based on the installer= parameter
     int installerType = PMAN_NONE;
     string kFileExt = ".run";
-    if (data[kInstallerName].compare("dpkg") == 0) {
+    if (data->get(kInstallerName).compare("dpkg") == 0) {
         installerType = PMAN_DPKG; /* Using debian installer */
         kFileExt = ".deb";
-    } else if (data[kInstallerName].compare("yum") == 0) {
+    } else if (data->get(kInstallerName).compare("yum") == 0) {
         installerType = PMAN_YUM; /* Using 'yum localinstall <package> -y' */
         kFileExt = ".rpm";
     }
@@ -328,6 +328,8 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
     ////////////////////////////////////
     // Download hypervisor installer
     ////////////////////////////////////
+    string tmpHypervisorInstall;
+    string checksum;
 
     // Prepare feedback pointers
     VariableTaskPtr downloadPf;
@@ -339,9 +341,9 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
     for (int tries=0; tries<retries; tries++) {
 
         // Download installer
-        tmpHypervisorInstall = getTmpFile( getURLFilename(data[kDownloadUrl]) );
-        CVMWA_LOG( "Info", "Downloading " << data[kDownloadUrl] << " to " << tmpHypervisorInstall  );
-        res = downloadProvider->downloadFile( data[kDownloadUrl], tmpHypervisorInstall, downloadPf );
+        tmpHypervisorInstall = getTmpFile( getURLFilename(data->get(kDownloadUrl) ));
+        CVMWA_LOG( "Info", "Downloading " << data->get(kDownloadUrl) << " to " << tmpHypervisorInstall  );
+        res = downloadProvider->downloadFile( data->get(kDownloadUrl), tmpHypervisorInstall, downloadPf );
         CVMWA_LOG( "Info", "    : Got " << res  );
         if ( res != HVE_OK ) {
             if (tries<retries) {
@@ -360,8 +362,8 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
         if (pf) pf->doing("Validating download");
         sha256_file( tmpHypervisorInstall, &checksum );
 
-        CVMWA_LOG( "Info", "File checksum " << checksum << " <-> " << data[kChecksum]  );
-        if (checksum.compare( data[kChecksum] ) != 0) {
+        CVMWA_LOG( "Info", "File checksum " << checksum << " <-> " << data->get(kChecksum)  );
+        if (checksum.compare( data->get(kChecksum) ) != 0) {
             if (tries<retries) {
                 CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
                 if (downloadPf) downloadPf->restart("Re-downloading hypervisor installer");
@@ -431,8 +433,8 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInterac
             CVMWA_LOG( "Info", "Got disk '" << dskDev << "', volume: '" << dskVolume  );
     
             if (installerPf) installerPf->doing("Starting installer");
-            CVMWA_LOG( "Info", "Installing using " << dskVolume << "/" << data[kInstallerName]  );
-            res = sysExec("/usr/bin/open", "-W " + dskVolume + "/" + data[kInstallerName], NULL, &errorMsg, sysExecConfig);
+            CVMWA_LOG( "Info", "Installing using " << dskVolume << "/" << data->get(kInstallerName)  );
+            res = sysExec("/usr/bin/open", "-W " + dskVolume + "/" + data->get(kInstallerName), NULL, &errorMsg, sysExecConfig);
             if (res != 0) {
 
                 CVMWA_LOG( "Info", "Detaching" );

@@ -44,11 +44,6 @@
 ///////////////////////////////////////////////////////////////////
 
 /**
- * The hypervisor configuration URL (plugin version will be appended)
- */
-#define		URL_HYPERVISOR_CONFIG			"http://cernvm.cern.ch/releases/webapi/hypervisor.config?ver="
-
-/**
  * The base URL where the releases tree is located
  */
 #define 	URL_CERNVM_RELEASES				"http://cernvm.cern.ch/releases"
@@ -62,6 +57,16 @@
  * The URL of the signature of the trusted domain list
  */
 #define 	URL_CRYPTO_SIGNATURE        	"http://cernvm.cern.ch/releases/webapi/keystore/domainkeys.sig"
+
+/**
+ * The hypervisor configuration URL (plugin version will be appended)
+ */
+#define		URL_HYPERVISOR_CONFIG			"http://cernvm.cern.ch/releases/webapi/keystore/hvconfig.lst?ver="
+
+/**
+ * The hypervisor configuration URL (plugin version will be appended)
+ */
+#define		URL_HYPERVISOR_SIGNATURE		"http://cernvm.cern.ch/releases/webapi/keystore/hvconfig.sig?ver="
 
 
 ///////////////////////////////////////////////////////////////////

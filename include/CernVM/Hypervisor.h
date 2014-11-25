@@ -27,6 +27,7 @@
 
 #include <CernVM/Config.h>
 #include <CernVM/Hypervisor.h>
+#include <CernVM/DomainKeystore.h>
 
 #include <CernVM/ProgressFeedback.h>
 #include <CernVM/DownloadProvider.h>
@@ -646,6 +647,7 @@ HVInstancePtr                   detectHypervisor    ( );
  * Install the default hypervisor in the system
  */
 int                             installHypervisor   ( const DownloadProviderPtr & downloadProvider, 
+                                                      DomainKeystore & keystore,
                                                       const UserInteractionPtr & ui = UserInteractionPtr(), 
                                                       const FiniteTaskPtr & pf = FiniteTaskPtr(), 
                                                       int retries = 4 );

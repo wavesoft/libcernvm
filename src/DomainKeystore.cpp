@@ -70,7 +70,77 @@ static void locking_function(int mode, int n, const char * file, int line) {
 static unsigned long id_function(void) {
   return ((unsigned long)THREAD_ID);
 }
- 
+
+/**
+ * Validate the signature of the given data file, using the contents
+ * of the given signature file.
+ */
+bool validateSignature( std::string dataFile, std::string sigFile ) {
+    CRASH_REPORT_BEGIN;
+
+    std::string keys;
+    std::string sigData;
+    
+    // Open files
+    std::ifstream iData( dataFile.c_str(), ifstream::binary  );
+    std::ifstream iSig( sigFile.c_str(), ifstream::binary );
+    if (iData.fail()) return false;
+    if (iSig.fail()) return false;
+    
+    // Allocate buffers
+    iData.seekg(0, std::ios::end);   
+    keys.reserve(iData.tellg());
+    iData.seekg(0, std::ios::beg);
+    iSig.seekg(0, std::ios::end);   
+    sigData.reserve(iSig.tellg());
+    iSig.seekg(0, std::ios::beg);
+
+    // Read contents
+    keys.assign((std::istreambuf_iterator<char>(iData)),
+            std::istreambuf_iterator<char>());
+    sigData.assign((std::istreambuf_iterator<char>(iSig)),
+            std::istreambuf_iterator<char>());
+
+    // Close files
+    iSig.close();
+    iData.close();
+
+    CVMWA_LOG( "Crypto", "Verifying store signature" );
+    //hexDump( "Store data", (void *)keys.c_str(), keys.length() );
+    //hexDump( "Store signature", (void *) sigData.c_str(), sigData.length() );
+
+    // Verify signature
+    EVP_MD_CTX ctx;
+    EVP_VerifyInit( &ctx, EVP_sha512());
+    EVP_VerifyUpdate( &ctx, keys.c_str(), keys.length() );
+    int ans = EVP_VerifyFinal( &ctx, (unsigned char *) sigData.c_str(), sigData.length(), cvmPublicKey );
+    if (ans != 1) return false;
+    
+    // Looks good
+    return true;
+    CRASH_REPORT_END;
+}
+
+/**
+ * Validate the signature of the given payload buffer, using the contents
+ * of the given signature buffer.
+ */
+bool validateBuffer( const std::string& payload, const std::string& sigData ) {
+    CRASH_REPORT_BEGIN;
+    CVMWA_LOG( "Crypto", "Verifying store signature" );
+    
+    // Verify signature
+    EVP_MD_CTX ctx;
+    EVP_VerifyInit( &ctx, EVP_sha512());
+    EVP_VerifyUpdate( &ctx, payload.c_str(), payload.length() );
+    int ans = EVP_VerifyFinal( &ctx, (unsigned char *) sigData.c_str(), sigData.length(), cvmPublicKey );
+    if (ans != 1) return false;
+    
+    // Looks good
+    return true;
+    CRASH_REPORT_END;
+}
+
 /**
  * Initialize cryptographic library
  */
@@ -158,53 +228,33 @@ DomainKeystore::~DomainKeystore () {
 }
 
 /**
- * Validate the signature of the given data file, using the contents
- * of the given signature file.
+ * Download and validate hypervisor configuration data file
  */
-bool validateSignature( std::string dataFile, std::string sigFile ) {
-    CRASH_REPORT_BEGIN;
+int DomainKeystore::downloadHypervisorConfig ( DownloadProviderPtr downloadProvider, ParameterMapPtr config ) {
 
-    std::string keys;
-    std::string sigData;
-    
-    // Open files
-    std::ifstream iData( dataFile.c_str(), ifstream::binary  );
-    std::ifstream iSig( sigFile.c_str(), ifstream::binary );
-    if (iData.fail()) return false;
-    if (iSig.fail()) return false;
-    
-    // Allocate buffers
-    iData.seekg(0, std::ios::end);   
-    keys.reserve(iData.tellg());
-    iData.seekg(0, std::ios::beg);
-    iSig.seekg(0, std::ios::end);   
-    sigData.reserve(iSig.tellg());
-    iSig.seekg(0, std::ios::beg);
+    std::string configBuf, sigBuf;
+    int res;
 
-    // Read contents
-    keys.assign((std::istreambuf_iterator<char>(iData)),
-            std::istreambuf_iterator<char>());
-    sigData.assign((std::istreambuf_iterator<char>(iSig)),
-            std::istreambuf_iterator<char>());
+    // Try to download the configuration URL
+    res = downloadProvider->downloadText( URL_HYPERVISOR_CONFIG CERNVM_WEBAPI_VERSION, &configBuf );
+    if ( res != HVE_OK ) return res;
 
-    // Close files
-    iSig.close();
-    iData.close();
+    // Try to download the configuration signature
+    res = downloadProvider->downloadText( URL_HYPERVISOR_SIGNATURE CERNVM_WEBAPI_VERSION, &sigBuf );
+    if ( res != HVE_OK ) return res;
 
-    CVMWA_LOG( "Crypto", "Verifying store signature" );
-    //hexDump( "Store data", (void *)keys.c_str(), keys.length() );
-    //hexDump( "Store signature", (void *) sigData.c_str(), sigData.length() );
+    // Validate signature
+    if (!validateBuffer(configBuf, sigBuf)) return HVE_NOT_VALIDATED;
 
-    // Verify signature
-    EVP_MD_CTX ctx;
-    EVP_VerifyInit( &ctx, EVP_sha512());
-    EVP_VerifyUpdate( &ctx, keys.c_str(), keys.length() );
-    int ans = EVP_VerifyFinal( &ctx, (unsigned char *) sigData.c_str(), sigData.length(), cvmPublicKey );
-    if (ans != 1) return false;
-    
-    // Looks good
-    return true;
-    CRASH_REPORT_END;
+    // Tokenize output
+    vector<string> lines;
+    splitLines( configBuf, &lines );
+    map<const string, const string> data = tokenize( &lines, '=' );
+
+    // Update parameter map config
+    config->fromMap( &data, true );
+    return HVE_OK;
+
 }
 
 /**

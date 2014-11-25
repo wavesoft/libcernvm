@@ -1108,11 +1108,11 @@ HVInstancePtr detectHypervisor() {
 /**
  * Install hypervisor
  */
-int installHypervisor( const DownloadProviderPtr& downloadProvider, const UserInteractionPtr & ui, const FiniteTaskPtr & pf, int retries ) {
+int installHypervisor( const DownloadProviderPtr& downloadProvider, DomainKeystore & keystore, const UserInteractionPtr & ui, const FiniteTaskPtr & pf, int retries ) {
     CRASH_REPORT_BEGIN;
     
     // The only hypervisor we currently support is VirtualBox
-    return vboxInstall( downloadProvider, ui, pf, retries );
+    return vboxInstall( downloadProvider, keystore, ui, pf, retries );
 
     CRASH_REPORT_END;
 }

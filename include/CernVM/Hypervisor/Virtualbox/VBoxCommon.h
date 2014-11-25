@@ -22,8 +22,9 @@
 #ifndef VBOXCOMMON_H
 #define VBOXCOMMON_H
 
-#include "CernVM/ProgressFeedback.h"
-#include "CernVM/Hypervisor.h"
+#include <CernVM/ProgressFeedback.h>
+#include <CernVM/Hypervisor.h>
+#include <CernVM/DomainKeystore.h>
 
 // Where to mount the bootable CD-ROM
 #define BOOT_CONTROLLER     "IDE"
@@ -114,7 +115,7 @@ std::string _vbox_changeUpperIP( std::string baseIP, int value );
 HVInstancePtr 	vboxDetect();
 
 /* Global function to try to install a VirtualBox Hypervisor */
-int 			vboxInstall( const DownloadProviderPtr & downloadProvider, const UserInteractionPtr & ui = UserInteractionPtr(), const FiniteTaskPtr & pf = FiniteTaskPtr(), int retries = 3 );
+int 			vboxInstall( const DownloadProviderPtr & downloadProvider, DomainKeystore & keystore, const UserInteractionPtr & ui = UserInteractionPtr(), const FiniteTaskPtr & pf = FiniteTaskPtr(), int retries = 3 );
 
 /* Check if virtualbox binary exists (lightweight version of vboxDetect) */
 bool 			vboxExists();
