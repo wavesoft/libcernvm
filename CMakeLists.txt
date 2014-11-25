@@ -44,7 +44,7 @@ endif()
 
 # CernVM Library
 project ( libcernvm )
-set(VERSION "2.0.10")
+set(VERSION "2.0.11")
 
 #############################################################
 # HELPER FUNCTIONS 
