@@ -241,7 +241,7 @@ ExternalProject_Add_Step(
     openssl
     build_configure
     COMMENT "Configuring OpenSSL environment"
-    COMMAND ${OPENSSL_COMMAND_PREFIX} ${PERL_EXECUTABLE} "Configure" ${OPENSSL_TARGET} ${OPENSSL_CONFIG_ARGS} "--prefix='${OPENSSL_BIN_DIR}'" "--openssldir='${OPENSSL_SRC_DIR}'"
+    COMMAND ${OPENSSL_COMMAND_PREFIX} ${PERL_EXECUTABLE} "Configure" ${OPENSSL_TARGET} ${OPENSSL_CONFIG_ARGS} "--prefix=${OPENSSL_BIN_DIR}" "--openssldir=${OPENSSL_SRC_DIR}"
     WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
     DEPENDEES download
     DEPENDERS configure
