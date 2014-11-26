@@ -83,6 +83,7 @@ set_directory_properties(
 # Pick openssl variables according to target
 set( OPENSSL_TARGET "" )
 set( OPENSSL_CONFIG_ARGS "" )
+set( OPENSSL_COMMAND_PREFIX "" )
 set( OPENSSL_LIB_SUFFIX "" )
 
 # Check if we are on Windows
@@ -130,6 +131,8 @@ elseif(APPLE)
     # Configure arguments
     list( APPEND OPENSSL_CONFIG_ARGS "no-asm" )
     list( APPEND OPENSSL_CONFIG_ARGS "no-krb5" )
+    list( APPEND OPENSSL_COMMAND_PREFIX "env" )
+    list( APPEND OPENSSL_COMMAND_PREFIX "COMMAND_MODE=unix2003" )
 
     # MacOSX build ".a" for static and ".dylib" for dynamic
     if (${BUILD_SHARED_LIBS})
@@ -210,8 +213,8 @@ else()
         PREFIX ${OPENSSL_BIN_DIR}
         SOURCE_DIR ${OPENSSL_SRC_DIR}
         CONFIGURE_COMMAND ""
-        BUILD_COMMAND     env COMMAND_MODE=unix2003 make
-        INSTALL_COMMAND   env COMMAND_MODE=unix2003 make install
+        BUILD_COMMAND     ${OPENSSL_COMMAND_PREFIX} make
+        INSTALL_COMMAND   ${OPENSSL_COMMAND_PREFIX} make install
         BUILD_IN_SOURCE ON
         LOG_BUILD ON
         LOG_INSTALL ON
@@ -238,7 +241,7 @@ ExternalProject_Add_Step(
     openssl
     build_configure
     COMMENT "Configuring OpenSSL environment"
-    COMMAND env COMMAND_MODE=unix2003 ${PERL_EXECUTABLE} "Configure" ${OPENSSL_TARGET} ${OPENSSL_CONFIG_ARGS} "--prefix='${OPENSSL_BIN_DIR}'" "--openssldir='${OPENSSL_SRC_DIR}'"
+    COMMAND ${OPENSSL_COMMAND_PREFIX} ${PERL_EXECUTABLE} "Configure" ${OPENSSL_TARGET} ${OPENSSL_CONFIG_ARGS} "--prefix='${OPENSSL_BIN_DIR}'" "--openssldir='${OPENSSL_SRC_DIR}'"
     WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
     DEPENDEES download
     DEPENDERS configure
@@ -250,7 +253,7 @@ ExternalProject_Add_Step(
     openssl
     make_depend
     COMMENT "Configuring OpenSSL dependencies"
-    COMMAND env COMMAND_MODE=unix2003 make depend
+    COMMAND ${OPENSSL_COMMAND_PREFIX} make depend
     WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
     DEPENDEES build_configure
     DEPENDERS build
