@@ -232,6 +232,18 @@ else()
         LOG 1
     )
 
+    # On UNIX platforms, include 'make depend' step
+    ExternalProject_Add_Step(
+        openssl
+        make_depend
+        COMMENT "Configuring OpenSSL dependencies"
+        COMMAND ${OPENSSL_COMMAND_PREFIX} make depend
+        WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
+        DEPENDEES build_configure
+        DEPENDERS build
+        LOG 1
+    )
+
 endif()
 
 
@@ -248,17 +260,6 @@ ExternalProject_Add_Step(
     LOG 1
 )
 
-# Make depend must also be executed before build
-ExternalProject_Add_Step(
-    openssl
-    make_depend
-    COMMENT "Configuring OpenSSL dependencies"
-    COMMAND ${OPENSSL_COMMAND_PREFIX} make depend
-    WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
-    DEPENDEES build_configure
-    DEPENDERS build
-    LOG 1
-)
 # Define the include directory
 if (WIN32)
     set (OPENSSL_INCLUDE_DIRS
