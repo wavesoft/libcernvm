@@ -353,7 +353,6 @@ void VBoxSession::CreateVM() {
     FSMDoing("Creating Virtual Machine");
     ostringstream args;
     vector<string> lines;
-    map<const string, const string> toks;
     string vboxid;
     int ans;
 
@@ -416,7 +415,7 @@ void VBoxSession::CreateVM() {
     } else {
 
         // Parse output
-        toks = tokenize( &lines, ':' );
+        map<const string, const string> toks = tokenize( &lines, ':' );
         if (toks.find("UUID") == toks.end()) {
             errorOccured("Unable to detect the VirtualBox ID of the newly allocated VM", HVE_CREATE_ERROR);
             return;
@@ -2278,7 +2277,6 @@ int VBoxSession::mountDisk ( const std::string & controller,
     if (isAborting) return HVE_INVALID_STATE;
 
     vector<string> lines;
-    map<const string, const string> info;
     ostringstream args;
     string kk, kv;
     int ans;
@@ -2318,14 +2316,14 @@ int VBoxSession::mountDisk ( const std::string & controller,
                 string parentUUID = "_child_", actualParentUUID = "_parent_";
 
                 // Get more information for this disk
-                info = this->getDiskInfo(kv);
-                if (info.find("Parent UUID") != info.end())
-                    parentUUID = info["Parent UUID"];
+                map<const string, const string> infoParent = this->getDiskInfo(kv);
+                if (infoParent.find("Parent UUID") != infoParent.end())
+                    parentUUID = infoParent["Parent UUID"];
 
                 // Get more information regarding the parent disk
-                info = this->getDiskInfo(diskFile);
-                if (info.find("UUID") != info.end())
-                    actualParentUUID = info["UUID"];
+                map<const string, const string> infoDisk = this->getDiskInfo(diskFile);
+                if (infoDisk.find("UUID") != infoDisk.end())
+                    actualParentUUID = infoDisk["UUID"];
 
                 // If these two UUID matches, we are done
                 if (parentUUID.compare( actualParentUUID ) == 0) {
@@ -2471,8 +2469,6 @@ int VBoxSession::getHostOnlyAdapter ( std::string * adapterName, const FiniteTas
     if (isAborting) return HVE_INVALID_STATE;
 
     vector<string> lines;
-    vector< map<const string, const string> > ifs;
-    vector< map<const string, const string> > dhcps;
     string ifName = "", vboxName, ipServer, ipMin, ipMax;
     
     // Progress update
@@ -2523,7 +2519,7 @@ int VBoxSession::getHostOnlyAdapter ( std::string * adapterName, const FiniteTas
     }
 
     // Fetch the interface in existance
-    ifs = tokenizeList( &lines, ':' );
+    vector< map<const string, const string> > ifs = tokenizeList( &lines, ':' );
     
     /////////////////////////////
     // [2] Check for DHCP
@@ -2538,7 +2534,7 @@ int VBoxSession::getHostOnlyAdapter ( std::string * adapterName, const FiniteTas
     }
 
     // Parse DHCP server info
-    dhcps = tokenizeList( &lines, ':' );
+    vector< map<const string, const string> > dhcps = tokenizeList( &lines, ':' );
     
     // Initialize DHCP lookup variables
     bool    foundDHCPServer = false;
@@ -2729,8 +2725,11 @@ std::map<const std::string, const std::string> VBoxSession::getMachineInfo ( con
     }
     
     /* Tokenize response */
-    lastMachineInfo = tokenize( &lines, ':' );
+    map<const string, const string> machineInfo = tokenize( &lines, ':' );
+    lastMachineInfo.clear();
+    lastMachineInfo.insert( machineInfo.begin(), machineInfo.end() );
     lastMachineInfoTimestamp = ms;
+    
     return lastMachineInfo;
 
     CRASH_REPORT_END;

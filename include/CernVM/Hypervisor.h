@@ -537,7 +537,7 @@ public:
     /**
      * Wait until the hypervisor is initialized
      */
-    virtual bool            waitTillReady       ( const FiniteTaskPtr & pf = FiniteTaskPtr(), const UserInteractionPtr & ui = UserInteractionPtr() ) = 0;
+    virtual bool            waitTillReady       ( DomainKeystore & keystore, const FiniteTaskPtr & pf = FiniteTaskPtr(), const UserInteractionPtr & ui = UserInteractionPtr() ) = 0;
 
     /**
      * Count the resources used by the hypervisor

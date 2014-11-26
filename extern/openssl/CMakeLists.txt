@@ -127,6 +127,10 @@ if(WIN32)
 
 elseif(APPLE)
 
+    # Configure arguments
+    list( APPEND OPENSSL_CONFIG_ARGS "no-asm" )
+    list( APPEND OPENSSL_CONFIG_ARGS "no-krb5" )
+
     # MacOSX build ".a" for static and ".dylib" for dynamic
     if (${BUILD_SHARED_LIBS})
         set( OPENSSL_LIB_SUFFIX ".dylib" )
@@ -206,8 +210,8 @@ else()
         PREFIX ${OPENSSL_BIN_DIR}
         SOURCE_DIR ${OPENSSL_SRC_DIR}
         CONFIGURE_COMMAND ""
-        BUILD_COMMAND     make
-        INSTALL_COMMAND   make install
+        BUILD_COMMAND     env COMMAND_MODE=unix2003 make
+        INSTALL_COMMAND   env COMMAND_MODE=unix2003 make install
         BUILD_IN_SOURCE ON
         LOG_BUILD ON
         LOG_INSTALL ON
@@ -227,19 +231,31 @@ else()
 
 endif()
 
+
 # Configure is an intermediate step
 message( STATUS "Building OpenSSL for ${OPENSSL_TARGET} (${TARGET_ARCH})")
 ExternalProject_Add_Step(
     openssl
     build_configure
     COMMENT "Configuring OpenSSL environment"
-    COMMAND ${PERL_EXECUTABLE} "Configure" ${OPENSSL_TARGET} ${OPENSSL_CONFIG_ARGS} "--prefix='${OPENSSL_BIN_DIR}'"
+    COMMAND env COMMAND_MODE=unix2003 ${PERL_EXECUTABLE} "Configure" ${OPENSSL_TARGET} ${OPENSSL_CONFIG_ARGS} "--prefix='${OPENSSL_BIN_DIR}'" "--openssldir='${OPENSSL_SRC_DIR}'"
     WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
     DEPENDEES download
     DEPENDERS configure
     LOG 1
 )
 
+# Make depend must also be executed before build
+ExternalProject_Add_Step(
+    openssl
+    make_depend
+    COMMENT "Configuring OpenSSL dependencies"
+    COMMAND env COMMAND_MODE=unix2003 make depend
+    WORKING_DIRECTORY ${OPENSSL_SRC_DIR}
+    DEPENDEES build_configure
+    DEPENDERS build
+    LOG 1
+)
 # Define the include directory
 if (WIN32)
     set (OPENSSL_INCLUDE_DIRS

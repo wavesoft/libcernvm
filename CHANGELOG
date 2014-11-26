@@ -1,4 +1,9 @@
 
+=== version-2.0.11
+
+ - Critical security fixes
+ - Thread-safety fixes
+
 === version-2.0.10
 
  - Fixing race conditions

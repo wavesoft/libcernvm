@@ -379,7 +379,7 @@ void                                                explodeStr      ( std::strin
 /**
  * Get current date/time as a string
  */
-char *                                              getTimestamp    ();
+std::string                                         getTimestamp    ();
 
 /**
  * Get file modification time in milliseconds
@@ -480,7 +480,7 @@ int                                                           getKV           ( 
  * Returns true if the given file exists and is readable
  */
 inline bool file_exists( std::string path_to_file )
- { return std::ifstream( (const char*)path_to_file.c_str()) ; }
+ { std::ifstream f( (const char*)path_to_file.c_str()); return f.good(); }
 
 /**
  * Returns the current time in milliseconds
@@ -519,11 +519,8 @@ inline unsigned long long getTimeInMs() {
  * Cross-platform function to wait for some milliseconds
  */
 inline void sleepMs(int sleepMs) {
-    #ifdef _WIN32
-    Sleep(sleepMs);
-    #else
-    usleep(sleepMs * 1000 );   // usleep takes sleep time in us
-    #endif
+    // Use boost implementation in order to catch interrupts
+    boost::this_thread::sleep( boost::posix_time::millisec( sleepMs ) );
 }
 
 /**

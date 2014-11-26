@@ -157,7 +157,7 @@ map<string, string> VBoxInstance::getAllProperties( string uuid ) {
 /**
  * Load sessions if they are not yet loaded
  */
-bool VBoxInstance::waitTillReady( const FiniteTaskPtr & pf, const UserInteractionPtr & ui ) {
+bool VBoxInstance::waitTillReady( DomainKeystore & keystore, const FiniteTaskPtr & pf, const UserInteractionPtr & ui ) {
     CRASH_REPORT_BEGIN;
     
     // Update progress
@@ -202,6 +202,7 @@ bool VBoxInstance::waitTillReady( const FiniteTaskPtr & pf, const UserInteractio
 
         // Start extension pack installation
         this->installExtPack(
+                keystore,
                 this->downloadProvider,
                 pfInstall
             );
@@ -368,7 +369,7 @@ int VBoxInstance::getCapabilities ( HVINFO_CAPS * caps ) {
 std::vector< std::map< const std::string, const std::string > > VBoxInstance::getDiskList() {
     CRASH_REPORT_BEGIN;
     vector<string> lines;
-    std::vector< std::map< const std::string, const std::string > > resMap;
+    std::vector< std::map< const std::string, const std::string > > emptyMap;
     string err;
 
     // List the running VMs in the system
@@ -376,11 +377,11 @@ std::vector< std::map< const std::string, const std::string > > VBoxInstance::ge
     NAMED_MUTEX_LOCK("generic");
     ans = this->exec("list hdds", &lines, &err, execConfig);
     NAMED_MUTEX_UNLOCK;
-    if (ans != 0) return resMap;
-    if (lines.empty()) return resMap;
+    if (ans != 0) return emptyMap;
+    if (lines.empty()) return emptyMap;
 
     // Tokenize lists
-    resMap = tokenizeList( &lines, ':' );
+    std::vector< std::map< const std::string, const std::string > > resMap = tokenizeList( &lines, ':' );
     return resMap;
     CRASH_REPORT_END;
 }
@@ -552,7 +553,7 @@ int VBoxInstance::loadSessions( const FiniteTaskPtr & pf ) {
     CRASH_REPORT_BEGIN;
     HVSessionPtr inst;
     vector<string> lines;
-    map<const string, const string> vms, diskinfo, vboxVms;
+    map<const string, const string> diskinfo, vboxVms;
     string secret, kk, kv;
     string err;
 
@@ -604,7 +605,7 @@ int VBoxInstance::loadSessions( const FiniteTaskPtr & pf ) {
 
     // [2] Collect the running VM info
     // ================================
-    vms = tokenize( &lines, '{' );
+    map<const string, const string> vms = tokenize( &lines, '{' );
     for (std::map<const string, const string>::iterator jt, it=vms.begin(); it!=vms.end(); ++it) {
         string name = (*it).first;
         string uuid = (*it).second;
@@ -741,11 +742,12 @@ bool VBoxInstance::hasExtPack() {
  * on it's own.
  *
  */
-int VBoxInstance::installExtPack( const DownloadProviderPtr & downloadProvider, const FiniteTaskPtr & pf ) {
+int VBoxInstance::installExtPack( DomainKeystore & keystore, const DownloadProviderPtr & downloadProvider, const FiniteTaskPtr & pf ) {
     CRASH_REPORT_BEGIN;
     string requestBuf;
     string checksum;
     string err;
+    vector<string> lines;
 
     // Local exec config
     SysExecConfig config(execConfig);
@@ -768,16 +770,16 @@ int VBoxInstance::installExtPack( const DownloadProviderPtr & downloadProvider, 
     
     /* Contact the information point */
     CVMWA_LOG( "Info", "Fetching data" );
-    int res = downloadProvider->downloadText( URL_HYPERVISOR_CONFIG CERNVM_WEBAPI_VERSION, &requestBuf, downloadPf );
+    ParameterMapPtr data = boost::make_shared<ParameterMap>();
+    int res = keystore.downloadHypervisorConfig( downloadProvider, data );
     if ( res != HVE_OK ) {
-        if (pf) pf->fail("Unable to fetch hypervisor configuration", res);
+        if ((res == HVE_NOT_VALIDATED) || (res == HVE_NOT_TRUSTED)) {
+            if (pf) pf->fail("Hypervisor configuration integrity check failed", res);
+        } else {
+            if (pf) pf->fail("Unable to fetch hypervisor configuration", res);
+        }
         return res;
     }
-    
-    // Extract information
-    vector<string> lines;
-    splitLines( requestBuf, &lines );
-    map<const string, const string> data = tokenize( &lines, '=' );
 
     // Build version string (it will be something like "vbox-2.4.12")
     ostringstream oss;
@@ -791,12 +793,12 @@ int VBoxInstance::installExtPack( const DownloadProviderPtr & downloadProvider, 
     string kExtpackExt = ".vbox-extpack";
 
     // Verify integrity of the data
-    if (data.find( kExtpackUrl ) == data.end()) {
+    if (!data->contains( kExtpackUrl )) {
         CVMWA_LOG( "Error", "ERROR: No extensions package URL found" );
         if (pf) pf->fail("No extensions package URL found", HVE_EXTERNAL_ERROR);
         return HVE_EXTERNAL_ERROR;
     }
-    if (data.find( kExtpackChecksum ) == data.end()) {
+    if (!data->contains( kExtpackChecksum )) {
         CVMWA_LOG( "Error", "ERROR: No extensions package checksum found" );
         if (pf) pf->fail("No extensions package checksum found", HVE_EXTERNAL_ERROR);
         return HVE_EXTERNAL_ERROR;
@@ -806,9 +808,9 @@ int VBoxInstance::installExtPack( const DownloadProviderPtr & downloadProvider, 
     if (pf) downloadPf = pf->begin<VariableTask>("Downloading extension pack");
 
     // Download extension pack
-    string tmpExtpackFile = getTmpDir() + "/" + getFilename( data[kExtpackUrl] );
-    CVMWA_LOG( "Info", "Downloading " << data[kExtpackUrl] << " to " << tmpExtpackFile  );
-    res = downloadProvider->downloadFile( data[kExtpackUrl], tmpExtpackFile, downloadPf );
+    string tmpExtpackFile = getTmpDir() + "/" + getFilename( data->get(kExtpackUrl) );
+    CVMWA_LOG( "Info", "Downloading " << data->get(kExtpackUrl) << " to " << tmpExtpackFile  );
+    res = downloadProvider->downloadFile( data->get(kExtpackUrl), tmpExtpackFile, downloadPf );
     CVMWA_LOG( "Info", "    : Got " << res  );
     if ( res != HVE_OK ) {
         if (pf) pf->fail("Unable to download extension pack", res);
@@ -818,8 +820,8 @@ int VBoxInstance::installExtPack( const DownloadProviderPtr & downloadProvider, 
     // Validate checksum
     if (pf) pf->doing("Validating extension pack integrity");
     sha256_file( tmpExtpackFile, &checksum );
-    CVMWA_LOG( "Info", "File checksum " << checksum << " <-> " << data[kExtpackChecksum]  );
-    if (checksum.compare( data[kExtpackChecksum] ) != 0) {
+    CVMWA_LOG( "Info", "File checksum " << checksum << " <-> " << data->get(kExtpackChecksum)  );
+    if (checksum.compare( data->get(kExtpackChecksum) ) != 0) {
         if (pf) pf->fail("Extension pack integrity was not validated", HVE_NOT_VALIDATED);
         return HVE_NOT_VALIDATED;
     }

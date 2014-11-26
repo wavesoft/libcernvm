@@ -494,7 +494,7 @@ void splitLines( string rawString, vector<string> * out ) {
  */
 int splitArguments( std::string source, char ** charBuffer, int bufferSize, int bufferOffset ) {
     CRASH_REPORT_BEGIN;
-    vector<string> args;
+    static vector<string> args;
     size_t wsPos=0, sqPos=0, dqPos=0, qPos=0, iPos=0;
     string chunk; char nextChar = ' ';
 
@@ -1163,6 +1163,10 @@ int sysExec( const string& app, const string& cmdline, vector<string> * stdoutLi
     CRASH_REPORT_BEGIN;
     string stdError;
     int res = 252, matchedRes = 0;
+    
+    // Check if app does not exist
+    if (!file_exists(app))
+        return 252;
 
     // If we have already aborted, return
     if (sysExecAborted) {
@@ -1870,7 +1874,7 @@ bool minHttpGet( const char * host, int port, const char * path, int timeoutSec 
 /**
  * Get current date/time as a string
  */
-char * getTimestamp () {
+string getTimestamp () {
     CRASH_REPORT_BEGIN;
 	char timeBuffer[80];
     memset( timeBuffer, 0, 80 );

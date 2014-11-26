@@ -32,6 +32,7 @@
 #include "CernVM/ProgressFeedback.h"
 #include "CernVM/CrashReport.h"
 #include "CernVM/LocalConfig.h"
+#include "CernVM/DomainKeystore.h"
 
 #include <boost/regex.hpp>
 
@@ -78,7 +79,7 @@ public:
 
     virtual int             getType             ( ) { return reflectionValid ? HV_VIRTUALBOX : HV_NONE; };
     virtual int             loadSessions        ( const FiniteTaskPtr & pf = FiniteTaskPtr() );
-    virtual bool            waitTillReady       ( const FiniteTaskPtr & pf = FiniteTaskPtr(), const UserInteractionPtr & ui = UserInteractionPtr() );
+    virtual bool            waitTillReady       ( DomainKeystore & keystore, const FiniteTaskPtr & pf = FiniteTaskPtr(), const UserInteractionPtr & ui = UserInteractionPtr() );
     virtual HVSessionPtr    allocateSession     ( );
     virtual int             getCapabilities     ( HVINFO_CAPS * caps );
     virtual void            abort               ( );
@@ -97,7 +98,7 @@ public:
     std::map<std::string, std::string> 
                             getAllProperties    ( std::string uuid );
     bool                    hasExtPack          ();
-    int                     installExtPack      ( const DownloadProviderPtr & downloadProvider, const FiniteTaskPtr & pf = FiniteTaskPtr() );
+    int                     installExtPack      ( DomainKeystore & keystore, const DownloadProviderPtr & downloadProvider, const FiniteTaskPtr & pf = FiniteTaskPtr() );
     HVSessionPtr            sessionByVBID       ( const std::string& virtualBoxGUID );
 
     /////////////////////////

@@ -287,7 +287,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, DomainKeystore & 
     ////////////////////////////////////
 
     // Verify that the keys we are looking for exist
-    if (data->contains( kDownloadUrl )) {
+    if (!data->contains( kDownloadUrl )) {
         CVMWA_LOG( "Error", "ERROR: No download URL data found" );
 
         // Send progress fedback
@@ -295,7 +295,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, DomainKeystore & 
 
         return HVE_EXTERNAL_ERROR;
     }
-    if (data->contains( kChecksum )) {
+    if (!data->contains( kChecksum )) {
         CVMWA_LOG( "Error", "ERROR: No checksum data found" );
 
         // Send progress fedback
@@ -303,7 +303,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, DomainKeystore & 
 
         return HVE_EXTERNAL_ERROR;
     }
-    if (data->contains( kInstallerName )) {
+    if (!data->contains( kInstallerName )) {
         CVMWA_LOG( "Error", "ERROR: No installer program data found" );
 
         // Send progress fedback
@@ -391,7 +391,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, DomainKeystore & 
     ////////////////////////////////////
     // OS-Dependant installation process
     ////////////////////////////////////
-    
+
     // Prepare feedback pointers
     FiniteTaskPtr installerPf;
     if (pf) {
@@ -403,69 +403,97 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, DomainKeystore & 
     for (int tries=0; tries<retries; tries++) {
         #if defined(__APPLE__) && defined(__MACH__)
             if (installerPf) installerPf->setMax(4, false);
-
-            CVMWA_LOG( "Info", "Attaching" << tmpHypervisorInstall );
-            if (installerPf) installerPf->doing("Mouting hypervisor DMG disk");
-            if (installerPf) installerPf->markLengthy(true);
-            res = sysExec("/usr/bin/hdiutil", "attach " + tmpHypervisorInstall, &lines, &errorMsg, sysExecConfig);
-            if (res != 0) {
-                if (tries<retries) {
-                    CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
-                    if (installerPf) installerPf->doing("Retrying installation");
-                    sleepMs(1000);
-                    continue;
-                }
-
-                // Cleanup
-                ::remove( tmpHypervisorInstall.c_str() );
-
-                // Send progress fedback
-                if (installerPf) installerPf->markLengthy(false);
-                if (pf) pf->fail("Unable to use hdiutil to mount DMG");
-
-                return HVE_EXTERNAL_ERROR;
-            }
-            if (installerPf) installerPf->done("Mounted DMG disk");
-
-            string infoLine = lines.back();
             string dskDev, dskVolume, extra;
-            getKV( infoLine, &dskDev, &extra, ' ', 0);
-            getKV( extra, &extra, &dskVolume, ' ', dskDev.size()+1);
-            CVMWA_LOG( "Info", "Got disk '" << dskDev << "', volume: '" << dskVolume  );
-    
-            if (installerPf) installerPf->doing("Starting installer");
-            CVMWA_LOG( "Info", "Installing using " << dskVolume << "/" << data->get(kInstallerName)  );
-            res = sysExec("/usr/bin/open", "-W " + dskVolume + "/" + data->get(kInstallerName), NULL, &errorMsg, sysExecConfig);
-            if (res != 0) {
 
+            // Catch thread interruptions so we can cleanly unmount and delete
+            // residual files and disks.
+            try {
+
+                // Attach hard disk
+                CVMWA_LOG( "Info", "Attaching" << tmpHypervisorInstall );
+                if (installerPf) installerPf->doing("Mouting hypervisor DMG disk");
+                if (installerPf) installerPf->markLengthy(true);
+                res = sysExec("/usr/bin/hdiutil", "attach " + tmpHypervisorInstall, &lines, &errorMsg, sysExecConfig);
+                if (res != 0) {
+                    if (tries<retries) {
+                        CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
+                        if (installerPf) installerPf->doing("Retrying installation");
+                        sleepMs(1000);
+                        continue;
+                    }
+
+                    // Cleanup
+                    ::remove( tmpHypervisorInstall.c_str() );
+
+                    // Send progress fedback
+                    if (installerPf) installerPf->markLengthy(false);
+                    if (pf) pf->fail("Unable to use hdiutil to mount DMG");
+
+                    return HVE_EXTERNAL_ERROR;
+                }
+                if (installerPf) installerPf->done("Mounted DMG disk");
+
+                string infoLine = lines.back();
+                getKV( infoLine, &dskDev, &extra, ' ', 0);
+                getKV( extra, &extra, &dskVolume, ' ', dskDev.size()+1);
+                CVMWA_LOG( "Info", "Got disk '" << dskDev << "', volume: '" << dskVolume  );
+        
+                if (installerPf) installerPf->doing("Starting installer");
+                CVMWA_LOG( "Info", "Installing using " << dskVolume << "/" << data->get(kInstallerName)  );
+                res = sysExec("/usr/bin/open", "-W " + dskVolume + "/" + data->get(kInstallerName), NULL, &errorMsg, sysExecConfig);
+                if (res != 0) {
+
+                    CVMWA_LOG( "Info", "Detaching" );
+                    if (installerPf) installerPf->doing("Unmounting DMG");
+                    res = sysExec("/usr/bin/hdiutil", "detach " + dskDev, NULL, &errorMsg, sysExecConfig);
+                    if (tries<retries) {
+                        CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
+                        if (installerPf) installerPf->doing("Restarting installer");
+                        sleepMs(1000);
+                        continue;
+                    }
+
+                    // Cleanup
+                    ::remove( tmpHypervisorInstall.c_str() );
+
+                    // Send progress fedback
+                    if (installerPf) installerPf->markLengthy(false);
+                    if (pf) pf->fail("Unable to launch hypervisor installer");
+
+                    return HVE_EXTERNAL_ERROR;
+                }
+                if (installerPf) installerPf->done("Installed hypervisor");
+
+                // Detach hard disk
                 CVMWA_LOG( "Info", "Detaching" );
-                if (installerPf) installerPf->doing("Unmounting DMG");
+                if (installerPf) installerPf->doing("Cleaning-up");
                 res = sysExec("/usr/bin/hdiutil", "detach " + dskDev, NULL, &errorMsg, sysExecConfig);
-                if (tries<retries) {
-                    CVMWA_LOG( "Info", "Going for retry. Trials " << tries << "/" << retries << " used." );
-                    if (installerPf) installerPf->doing("Restarting installer");
-                    sleepMs(1000);
-                    continue;
+                if (installerPf) {
+                    installerPf->markLengthy(false);
+                    installerPf->done("Cleaning-up completed");
+                    installerPf->complete("Installed hypervisor");
                 }
 
-                // Cleanup
+            } catch (boost::thread_interrupted &) {
+
+                // If operations were interrupted within this context, it most probably means
+                // that we have a residual, mounted hard disk. 
+                CVMWA_LOG( "Info", "Operation interrupted. Detaching..." );
+
+                // Try to unmount disk
+                if (!dskDev.empty())
+                    res = sysExec("/usr/bin/hdiutil", "detach " + dskDev, NULL, &errorMsg, sysExecConfig);
+
+                // Try to remove the file
                 ::remove( tmpHypervisorInstall.c_str() );
 
-                // Send progress fedback
+                // Cleanup progress feedback objects
                 if (installerPf) installerPf->markLengthy(false);
-                if (pf) pf->fail("Unable to launch hypervisor installer");
+                if (pf) pf->fail("Installation interrupted");
 
-                return HVE_EXTERNAL_ERROR;
-            }
-            if (installerPf) installerPf->done("Installed hypervisor");
+                // Rethrow
+                throw;
 
-            CVMWA_LOG( "Info", "Detaching" );
-            if (installerPf) installerPf->doing("Cleaning-up");
-            res = sysExec("/usr/bin/hdiutil", "detach " + dskDev, NULL, &errorMsg, sysExecConfig);
-            if (installerPf) {
-                installerPf->markLengthy(false);
-                installerPf->done("Cleaning-up completed");
-                installerPf->complete("Installed hypervisor");
             }
 
         #elif defined(_WIN32)
@@ -731,22 +759,6 @@ try_continue:
 
     }
 
-    /**
-     * If we are installing VirtualBox, make sure the VBOX Extension pack are installed
-     */
-     /*
-    if ((hv != NULL) && (hv->type == HV_VIRTUALBOX)) {
-        if ( !((Virtualbox*)hv)->hasExtPack() ) {
-
-            // Install extension pack, and fail on error
-            if ( (res = ((Virtualbox*)hv)->installExtPack( versionID, downloadProvider, cbProgress, 110, maxSteps, maxSteps )) != HVE_OK ) {
-                freeHypervisor(hv);
-                return res;
-            };
-
-        }
-    }
-    */
 
     // Completed
     if (pf) pf->complete("Hypervisor installed successfully");
