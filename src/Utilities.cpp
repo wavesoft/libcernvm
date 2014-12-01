@@ -2288,15 +2288,15 @@ void getLinuxInfo ( LINUX_INFO * info ) {
         std::string k,v1, v2;
         if (std::getline(ifs, line)) {
 
+            // To lower case
+            std::transform( line.begin(),  line.end(),  line.begin(), ::tolower);
+
             // Try to identify version
             if (line.substr(0,7).compare("fedora ") == 0) {
                 info->osDistID = "fedora-";
             } else {
                 info->osDistID = "redhat-";
             }
-
-            // To lower case
-            std::transform( line.begin(),  line.end(),  line.begin(), ::tolower);
 
             // Get first component after '('
             getKV( line, &k, &v1, '(', 0);
