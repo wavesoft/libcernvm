@@ -198,7 +198,7 @@ void crashSendReport( const char * function, const char * message, std::string s
 	CURLcode res;
 
 	// Get current time in GMT
-	char * timeBuffer = getTimestamp();
+	std::string timeBuffer = getTimestamp();
 
     // Build backlog
     string backlog = "";
