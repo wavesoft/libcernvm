@@ -441,11 +441,6 @@ public:
     std::string             hvBinary;
 
     /**
-     * The root path of the hypervisor
-     */
-    std::string             hvRoot;
-
-    /**
      * The directory where the VM data should be placed (permanent)
      */
     std::string             dirData;

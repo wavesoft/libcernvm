@@ -42,28 +42,18 @@
 class VBoxInstance : public HVInstance {
 public:
 
-    VBoxInstance( std::string fRoot, std::string fBin, std::string fIso ) : HVInstance(), execConfig(), reflectionValid(true) {
+    VBoxInstance( std::string fBin ) : HVInstance(), execConfig(), reflectionValid(true) {
         CRASH_REPORT_BEGIN;
 
         // Populate variables
         this->sessionLoaded = false;
-        this->hvRoot = fRoot;
         this->hvBinary = fBin;
-        this->hvGuestAdditions = fIso;
 
         // Load hypervisor-specific runtime configuration
         this->hvConfig = LocalConfig::forRuntime("virtualbox");
 
-        // Detect and update VirtualBox Version
-        std::vector< std::string > out;
-        std::string err;
-        this->exec("--version", &out, &err, execConfig);
-
-        // If we got some output, extract version numbers
-        if (out.size() > 0) {
-            version.set( out[0] );
-            reflectionValid = true;
-        }
+        // Detect and update VirtualBox Version & Reflection flag
+        this->validateIntegrity();
 
         CRASH_REPORT_END;
     };

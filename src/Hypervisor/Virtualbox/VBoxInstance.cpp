@@ -77,6 +77,25 @@ bool VBoxInstance::validateIntegrity() {
         if (out.size() > 0)
             version.set( out[0] );
 
+        // Query system properties in order to find the 
+        // location of the guest additions ISO
+        this->hvGuestAdditions = "";
+        if (this->exec("list systemproperties", &out, &err, execConfig) == 0) {
+            map<string, string> data;
+
+            // Parse system output
+            parseLines( &out, &data, ":", " \t", 0, 1 );
+
+            // Look for guest additions ISO
+            if (data.find("Default Guest Additions ISO") != data.end()) {
+                this->hvGuestAdditions = data["Default Guest Additions ISO"];
+            }
+
+        }
+
+        // Reflection is valid
+        reflectionValid = true;
+
         // Return
         return true;
     }

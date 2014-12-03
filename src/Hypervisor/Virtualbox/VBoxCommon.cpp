@@ -29,15 +29,78 @@ using namespace std;
 /**
  * Allocate a new hypervisor using the specified paths
  */
-HVInstancePtr __vboxInstance( string hvRoot, string hvBin, string hvAdditionsIso ) {
+HVInstancePtr __vboxInstance( string hvBin ) {
     CRASH_REPORT_BEGIN;
     VBoxInstancePtr hv;
 
     // Create a new hypervisor instance
-    hv = boost::make_shared<VBoxInstance>( hvRoot, hvBin, hvAdditionsIso );
+    hv = boost::make_shared<VBoxInstance>( hvBin );
 
     return hv;
     CRASH_REPORT_END;
+}
+
+/**
+ * Locate the VBoxManage binary path
+ */
+std::string __vboxBinaryPath() {
+    vector<string> paths;
+    string bin, envPath, p;
+    
+    // Initialize path with the environment variables
+    envPath = getenv("PATH");
+    #ifdef _WIN32
+    trimSplit( &envPath, &paths, ";", "" );
+    #else
+    trimSplit( &envPath, &paths, ":", "" );
+    #endif
+
+    // Include additional default directories
+    #ifdef _WIN32
+    paths.push_back( "C:/Program Files/Oracle/VirtualBox" );
+    paths.push_back( "C:/Program Files (x86)/Oracle/VirtualBox" );
+    #endif
+    #if defined(__APPLE__) && defined(__MACH__)
+    paths.push_back( "/Applications/VirtualBox.app/Contents/MacOS" );
+    paths.push_back( "/Applications/Utilities/VirtualBox.app/Contents/MacOS" );
+    #endif
+    #ifdef __linux__
+    paths.push_back( "/bin" );
+    paths.push_back( "/usr/bin" );
+    paths.push_back( "/usr/local/bin" );
+    paths.push_back( "/opt/VirtualBox/bin" );
+    #endif
+
+    // Detect hypervisor
+    for (vector<string>::iterator i = paths.begin(); i != paths.end(); i++) {
+        p = *i;
+        
+        #ifdef _WIN32
+        bin = p + "/VBoxManage.exe";
+        if (file_exists(bin)) {
+            return bin;
+        }
+        #endif
+
+        #if defined(__APPLE__) && defined(__MACH__)
+        bin = p + "/VBoxManage";
+        if (file_exists(bin)) {
+            return bin;
+        }
+        #endif
+
+        #ifdef __linux__
+        bin = p + "/VBoxManage";
+        if (file_exists(bin)) {
+            return bin;
+        }
+        #endif
+        
+    }
+
+    // Return blank hypervisor
+    return "";
+
 }
 
 /**
@@ -45,49 +108,10 @@ HVInstancePtr __vboxInstance( string hvRoot, string hvBin, string hvAdditionsIso
  */
 bool vboxExists() {
     CRASH_REPORT_BEGIN;
-    vector<string> paths;
-    string bin, p;
+
+    // Hypervisor exists if the virtualbox exists in path
+    return !__vboxBinaryPath().empty();
     
-    // In which directories to look for the binary
-    #ifdef _WIN32
-    paths.push_back( "C:/Program Files/Oracle/VirtualBox" );
-    paths.push_back( "C:/Program Files (x86)/Oracle/VirtualBox" );
-    #endif
-    #if defined(__APPLE__) && defined(__MACH__)
-    paths.push_back( "/Applications/VirtualBox.app/Contents/MacOS" );
-    #endif
-    #ifdef __linux__
-    paths.push_back( "/usr" );
-    paths.push_back( "/usr/local" );
-    paths.push_back( "/opt/VirtualBox" );
-    #endif
-    
-    // Detect hypervisor
-    for (vector<string>::iterator i = paths.begin(); i != paths.end(); i++) {
-        p = *i;
-        
-        // Check for virtualbox
-        #ifdef _WIN32
-        bin = p + "/VBoxManage.exe";
-        if (file_exists(bin))
-            return true;
-        #endif
-
-        #if defined(__APPLE__) && defined(__MACH__)
-        bin = p + "/VBoxManage";
-        if (file_exists(bin))
-            return true;
-        #endif
-
-        #ifdef __linux__
-        bin = p + "/bin/VBoxManage";
-        if (file_exists(bin))
-            return true;
-        #endif
-    }
-
-    // Return hypervisor instance or nothing
-    return false;
     CRASH_REPORT_END;
 }
 
@@ -98,78 +122,15 @@ bool vboxExists() {
 HVInstancePtr vboxDetect() {
     CRASH_REPORT_BEGIN;
     HVInstancePtr hv;
-    vector<string> paths;
-    string bin, iso, p;
-    
-    // In which directories to look for the binary
-    #ifdef _WIN32
-    paths.push_back( "C:/Program Files/Oracle/VirtualBox" );
-    paths.push_back( "C:/Program Files (x86)/Oracle/VirtualBox" );
-    #endif
-    #if defined(__APPLE__) && defined(__MACH__)
-    paths.push_back( "/Applications/VirtualBox.app/Contents/MacOS" );
-    #endif
-    #ifdef __linux__
-    paths.push_back( "/usr" );
-    paths.push_back( "/usr/local" );
-    paths.push_back( "/opt/VirtualBox" );
-    #endif
-    
-    // Detect hypervisor
-    for (vector<string>::iterator i = paths.begin(); i != paths.end(); i++) {
-        p = *i;
-        
-        // Check for virtualbox
-        #ifdef _WIN32
-        bin = p + "/VBoxManage.exe";
-        if (file_exists(bin)) {
+    std::string bin;
 
-            // Check for iso
-            iso = p + "/VBoxGuestAdditions.iso";
-            if (!file_exists(iso)) iso = "";
+    // Detect VBox Binary
+    bin = __vboxBinaryPath();
+    if (!bin.empty()) {
 
-            // Instance hypervisor
-            hv = __vboxInstance( p, bin, iso );
-            break;
+        // Create a virtualbox instance
+        hv = __vboxInstance( bin );
 
-        }
-        #endif
-
-        #if defined(__APPLE__) && defined(__MACH__)
-        bin = p + "/VBoxManage";
-        if (file_exists(bin)) {
-
-            // Check for iso
-            iso = p + "/VBoxGuestAdditions.iso";
-            if (!file_exists(iso)) iso = "";
-
-            // Instance hypervisor
-            hv = __vboxInstance( p, bin, iso );
-            break;
-
-        }
-        #endif
-
-        #ifdef __linux__
-        bin = p + "/bin/VBoxManage";
-        if (file_exists(bin)) {
-
-            // (1) Check for additions on XXX/share/virtualbox [/usr, /usr/local]
-            iso = p + "/share/virtualbox/VBoxGuestAdditions.iso";
-            if (!file_exists(iso)) {
-                // (2) Check for additions on XXX/additions [/opt/VirtualBox]
-                iso = p + "/additions/VBoxGuestAdditions.iso";
-                if (!file_exists(iso)) {
-                    iso = "";
-                }
-            }
-
-            // Instance hypervisor
-            hv = __vboxInstance( p, bin, iso );
-
-        }
-        #endif
-        
     }
 
     // Return hypervisor instance or nothing
