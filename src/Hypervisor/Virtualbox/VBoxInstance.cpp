@@ -88,7 +88,7 @@ bool VBoxInstance::validateIntegrity() {
 
             // Look for guest additions ISO
             if (data.find("Default Guest Additions ISO") != data.end()) {
-                this->hvGuestAdditions = data["Default Guest Additions ISO"];
+                this->hvGuestAdditions = systemPath(data["Default Guest Additions ISO"]);
             }
 
         }
