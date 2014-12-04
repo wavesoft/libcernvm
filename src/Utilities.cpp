@@ -402,9 +402,9 @@ int getKV( string line, string * key, string * value, unsigned char delim, int o
 /**
  * Split the given string into 
  */
-int trimSplit( std::string * line, std::vector< std::string > * parts, std::string split, std::string trim ) {
+int trimSplit( std::string * line, std::vector< std::string > * parts, std::string split, std::string trim, int limit ) {
     CRASH_REPORT_BEGIN;
-    size_t i, pos, nextPos, ofs = 0;
+    size_t i, pos, nextPos, splits = 0, ofs = 0;
     parts->clear();
     while (ofs < line->length()) {
         
@@ -413,6 +413,12 @@ int trimSplit( std::string * line, std::vector< std::string > * parts, std::stri
         for (i=0; i<split.length(); i++) {
             pos = line->find( split[i], ofs+1 );
             if ((pos != string::npos) && (pos < nextPos)) nextPos = pos;
+        }
+
+        // Check if we reached split limit
+        if ((limit > 0) && (++splits >= limit)) {
+            // Get the rest of the line
+            nextPos = line->length();
         }
         
         // Get part
@@ -446,7 +452,7 @@ int parseLines( std::vector< std::string > * lines, std::map< std::string, std::
     map->clear();
     for (vector<string>::iterator i = lines->begin(); i != lines->end(); i++) {
         line = *i;
-        trimSplit( &line, &parts, csplit, ctrim );
+        trimSplit( &line, &parts, csplit, ctrim, 2 );
         if ((key < parts.size()) && (value < parts.size())) {
             map->insert(std::pair<string,string>(parts[key], parts[value]));
         }

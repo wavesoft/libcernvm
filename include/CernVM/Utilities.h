@@ -326,7 +326,7 @@ template <typename T> std::string                   ntos            ( T &value )
  * Split the given *line into *parts, using the characters found in the split string as delimiters
  * while removing the trailing characters found in the trim string.
  */
-int                                                 trimSplit       ( std::string * line, std::vector< std::string > * parts, std::string split, std::string trim );
+int                                                 trimSplit       ( std::string * line, std::vector< std::string > * parts, std::string split, std::string trim, int limit = 0 );
 
 /**
  * Apply the trimSplit() function for every line in *lines. Then create a map using the splitted
