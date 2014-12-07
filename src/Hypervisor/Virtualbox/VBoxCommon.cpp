@@ -24,7 +24,35 @@
 #include "CernVM/Config.h"
 #include <cerrno>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 using namespace std;
+
+#ifdef _WIN32
+/**
+ * Helper to read registry keys
+ */
+std::string REG_GET_STRING( HKEY hRootKey, LPCTSTR lpSubKey, LPCTSTR lpValueName, std::string defaultValue ) {
+
+    // Open key
+    HKEY hKey;
+    LONG lRes = RegOpenKeyExW(hRootKey, lpSubKey, 0, KEY_READ, &hKey);
+    if (lRes != ERROR_SUCCESS)
+        return defaultValue;
+
+    // Read string value
+    WCHAR szBuffer[512];
+    DWORD dwBufferSize = sizeof(szBuffer);
+    lRes = RegQueryValueExW(hKey, lpValueName, 0, NULL, (LPBYTE)szBuffer, &dwBufferSize);
+    if (lRes != ERROR_SUCCESS)
+        return defaultValue;
+
+    // Cast to string and return value
+    return szBuffer;
+}
+#endif
 
 /**
  * Allocate a new hypervisor using the specified paths
@@ -55,6 +83,13 @@ std::string __vboxBinaryPath() {
     trimSplit( &envPath, &paths, ":", "" );
     #endif
 
+    // On windows, include the HKEY_LOCAL_MACHINE/SOFTWARE/Oracle/VirtualBox/[InstallDir]
+    #ifdef _WIN32
+    string regValue = REG_GET_STRING(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Oracle\\VirtualBox", L"InstallDir", "");
+    if (!regValue.empty())
+        paths.push_back( regValue );
+    #endif
+
     // Include additional default directories
     #ifdef _WIN32
     paths.push_back( "C:/Program Files/Oracle/VirtualBox" );
@@ -80,22 +115,13 @@ std::string __vboxBinaryPath() {
         if (file_exists(bin)) {
             return bin;
         }
-        #endif
-
-        #if defined(__APPLE__) && defined(__MACH__)
+        #else
         bin = p + "/VBoxManage";
         if (file_exists(bin)) {
             return bin;
         }
         #endif
 
-        #ifdef __linux__
-        bin = p + "/VBoxManage";
-        if (file_exists(bin)) {
-            return bin;
-        }
-        #endif
-        
     }
 
     // Return blank hypervisor

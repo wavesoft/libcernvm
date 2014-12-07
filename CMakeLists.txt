@@ -275,6 +275,13 @@ if (UNIX AND NOT APPLE)
 	set( EXTRA_LIBRARIES pthread )
 endif()
 
+#
+# [Advapi32.lib] required only on Windows
+# 
+if (WIN32)
+	set( EXTRA_LIBRARIES advapi32 )
+endif()
+
 # Include libraries
 set( PROJECT_INCLUDES
 	${ZLIB_INCLUDE_DIRS}
