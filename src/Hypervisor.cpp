@@ -451,6 +451,78 @@ int HVInstance::cernVMCached( std::string version, std::string * filename ) {
 }
 
 /**
+ * Download a particular version of the CernVM ISO
+ */
+int HVInstance::cernVMDownload( std::string& version, const std::string flavor, const std::string machineArch, std::string * toFilename,
+                                const FiniteTaskPtr & pf, const int retries, const DownloadProviderPtr& downloadProvider ) {
+
+    // Check for latest version
+    if (version.compare("latest") == 0) {
+
+        // Buffer holder
+        std::string latestVersion = "";
+
+        // Download latest version information
+        for (int tries = 0; tries < retries; tries++) {
+
+            // Try to download the latest version information
+            pf->doing("Looking for latest CernVM Version");
+            int ans = downloadProvider->downloadText(
+                URL_CERNVM_RELEASES "/latest",
+                &latestVersion
+            );
+
+            // If we found it, break
+            if (ans == HVE_OK) {
+
+                // Remove whitespaces
+                latestVersion.erase( 
+                    std::remove_if( latestVersion.begin(), latestVersion.end(), 
+                        ::isspace ), 
+                    latestVersion.end() 
+                );
+
+                // Verify sanity of the version string
+                if (!isSanitized(&latestVersion, SAFE_VERSION_CHARS))
+                    return HVE_NOT_VALIDATED;
+
+                // We now have a version!
+                break;
+
+            }
+
+        }
+
+        // Empty version? We could not get anything
+        if (latestVersion.empty())
+            return HVE_IO_ERROR;
+
+        // Replace version with latestVersion
+        version = latestVersion;
+
+    }
+
+    // Form CernVM iso URL
+    std::string urlFilename = URL_CERNVM_RELEASES "/ucernvm-images." + version  \
+                            + ".cernvm." + machineArch \
+                            + "/ucernvm-" + flavor \
+                            + "." + version \
+                            + ".cernvm." + machineArch + ".iso";
+
+    // Download file
+    pf->doing("Downloading CernVM");
+    return this->downloadFileURL(
+        urlFilename,
+        urlFilename + ".sha256",
+        toFilename,
+        pf,
+        retries,
+        downloadProvider
+    );
+
+}
+
+/**
  * Reusable chunk of code to download a SHA256 checksum file
  */
 int __downloadChecksum( const std::string & checksumURL, const std::string & sOutChecksum, 

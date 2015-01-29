@@ -573,6 +573,17 @@ public:
      */
     int                     downloadFileGZ      ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = 2, const DownloadProviderPtr & customDownloadProvider = DownloadProviderPtr() );
 
+    /**
+     * Download a specific version of CernVM and return the path where it was saved.
+     *
+     * This function automatically resolves the special version keyword "latest" into the latest
+     * version of uCernVM currently available. If that's the case, the variable "version" is changed
+     * in order to point to the version string obtained.
+     *
+     * Internally it uses downloadFileURL in order to download the final file in place.
+     *
+     */
+    int                     cernVMDownload      ( std::string& version, const std::string flavor, const std::string machineArch, std::string * toFilename, const FiniteTaskPtr & pf, const int retries, const DownloadProviderPtr& downloadProvider );
 
     /**
      * Return the cached disk image for the specified CernVM version

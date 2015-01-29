@@ -897,17 +897,23 @@ void VBoxSession::DownloadMedia() {
                                 + "." + parameters->get("cernvmVersion", DEFAULT_CERNVM_VERSION) \
                                 + ".cernvm." + machineArch + ".iso";
 
+        // Get the version of CernVM to fetch
+        string cernvmVersion = parameters->get("cernvmVersion", DEFAULT_CERNVM_VERSION);
+
         // Download boot disk
         FiniteTaskPtr pfDownload;
         if (pf) pfDownload = pf->begin<FiniteTask>("Downloading CernVM ISO");
-        ans = hypervisor->downloadFileURL(
-                        urlFilename,
-                        urlFilename + ".sha256",
-                        &sFilename,
-                        pfDownload,
-                        2,
-                        downloadProvider
-                    );
+        ans = hypervisor->cernVMDownload(
+            
+            cernvmVersion,                                              // Version
+            parameters->get("cernvmFlavor",  DEFAULT_CERNVM_FLAVOR),    // Flavor
+            machineArch,                                                // Architecture
+
+            &sFilename,         // Variable to receive the resulting filename
+            pfDownload,         // The download progress feedback
+            2,                  // The number of retries
+            downloadProvider    // The custom download provider
+        );
 
         // Validate result
         if (ans != HVE_OK) {

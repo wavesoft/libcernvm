@@ -38,19 +38,20 @@ std::string REG_GET_STRING( HKEY hRootKey, LPCTSTR lpSubKey, LPCTSTR lpValueName
 
     // Open key
     HKEY hKey;
-    LONG lRes = RegOpenKeyExW(hRootKey, lpSubKey, 0, KEY_READ, &hKey);
+    LONG lRes = RegOpenKeyExA(hRootKey, lpSubKey, 0, KEY_READ, &hKey);
     if (lRes != ERROR_SUCCESS)
         return defaultValue;
 
     // Read string value
-    WCHAR szBuffer[512];
+    CHAR szBuffer[512];
     DWORD dwBufferSize = sizeof(szBuffer);
-    lRes = RegQueryValueExW(hKey, lpValueName, 0, NULL, (LPBYTE)szBuffer, &dwBufferSize);
+    lRes = RegQueryValueExA(hKey, lpValueName, 0, NULL, (LPBYTE)szBuffer, &dwBufferSize);
     if (lRes != ERROR_SUCCESS)
         return defaultValue;
 
     // Cast to string and return value
-    return szBuffer;
+    std::string ans; ans.assign( szBuffer, dwBufferSize );
+    return ans;
 }
 #endif
 
@@ -85,7 +86,7 @@ std::string __vboxBinaryPath() {
 
     // On windows, include the HKEY_LOCAL_MACHINE/SOFTWARE/Oracle/VirtualBox/[InstallDir]
     #ifdef _WIN32
-    string regValue = REG_GET_STRING(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Oracle\\VirtualBox", L"InstallDir", "");
+    string regValue = REG_GET_STRING(HKEY_LOCAL_MACHINE, "SOFTWARE\\Oracle\\VirtualBox", "InstallDir", "");
     if (!regValue.empty())
         paths.push_back( regValue );
     #endif
