@@ -33,7 +33,7 @@
 /**
  * The plug-in version
  */
-#define     CERNVM_WEBAPI_VERSION           "latest"
+#define     CERNVM_WEBAPI_VERSION           "2.0.12"
 
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
@@ -129,7 +129,7 @@
 /**
  * Default CernVM Version 
  */
-#define 	DEFAULT_CERNVM_VERSION  		"1.17-8"
+#define 	DEFAULT_CERNVM_VERSION  		"latest"
 
 /**
  * Default CernVM Flavor 
