@@ -915,6 +915,9 @@ void VBoxSession::DownloadMedia() {
             downloadProvider    // The custom download provider
         );
 
+        // If version was 'latest', replace version with the latest version id
+        parameters->set("cernvmVersion", cernvmVersion);
+
         // Validate result
         if (ans != HVE_OK) {
             errorOccured("Unable to download the CernVM Disk", ans);
