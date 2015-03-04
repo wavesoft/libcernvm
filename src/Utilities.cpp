@@ -1478,6 +1478,7 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
     SOCKET sock;
     char readBuf[1024];
     int nDataArrived = 0;
+    int n;
 
     struct sockaddr_in client;    
     memset(&client, 0, sizeof(struct sockaddr_in));
@@ -1562,8 +1563,13 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
     // If we have simple handsake, do it now
     if (handshake == HSK_SIMPLE) {
 
-        // Try to send some data
-        int n = send(sock," \n",2,0);
+        // Wait a couple of ms and check if we got any data on the other side
+        boost::this_thread::sleep( boost::posix_time::millisec( 100 ) );
+
+        // Try to read from input
+        n = recv(sock, (char*)&readBuf, 1024, 0);
+
+        // Check for error (ex. not connected)
         if (n < 0) {
             #ifdef _WIN32
                 shutdown(sock, SD_BOTH ); 
@@ -1575,28 +1581,50 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
             return false;
         }
 
-        // Check if it's still connected
-        int errorCode = 0;
-        socklen_t szErrorCode = sizeof(errorCode);
-        getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*) &errorCode, &szErrorCode );
-        if (errorCode != 0 ){
-            #ifdef _WIN32
-                shutdown(sock, SD_BOTH ); 
-                closesocket(sock);
-            #else
-                ::shutdown(sock, SHUT_RDWR);
-                ::close(sock);
-            #endif
-            return false;
+        // If no data arrived, the remote end is waiting for our input
+        // send something...
+        if (n == 0) {
+
+            // Try to send some data
+            n = send(sock," \n",2,0);
+            if (n < 0) {
+                #ifdef _WIN32
+                    shutdown(sock, SD_BOTH ); 
+                    closesocket(sock);
+                #else
+                    ::shutdown(sock, SHUT_RDWR);
+                    ::close(sock);
+                #endif
+                return false;
+            }
+
+            // Wait a couple of ms and check if we got any data from the other side
+            boost::this_thread::sleep( boost::posix_time::millisec( 100 ) );
+
+            // Check if it's still connected
+            int errorCode = 0;
+            socklen_t szErrorCode = sizeof(errorCode);
+            getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*) &errorCode, &szErrorCode );
+            if (errorCode != 0 ){
+                #ifdef _WIN32
+                    shutdown(sock, SD_BOTH ); 
+                    closesocket(sock);
+                #else
+                    ::shutdown(sock, SHUT_RDWR);
+                    ::close(sock);
+                #endif
+                return false;
+            }
+
         }
 
         // Drain buffer
-        while ( (n = recv(sock, (char*)&readBuf, 1024, 0)) >= 0 ) {
+        while ( (n = recv(sock, (char*)&readBuf, 1024, 0)) > 0 ) {
             nDataArrived += n;
         }
 
         // Check for errors
-        if (n < 0) {
+        if ((n < 0) && (errno != EAGAIN)) {
             #ifdef _WIN32
                 shutdown(sock, SD_BOTH ); 
                 closesocket(sock);
@@ -1606,6 +1634,7 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
             #endif
             return false;
         }
+
 
     // If we have HTTP handsake, do it now
     } else if (handshake == HSK_HTTP) {
