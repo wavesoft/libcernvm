@@ -33,6 +33,7 @@ DEB_MAPPING_VERSIONS="
 wheezy=debian-jessie
 raring=ubuntu-saucy
 raring=ubuntu-trusty
+raring=ubuntu-utopic
 "
 
 # Configuration for VirtualBox
