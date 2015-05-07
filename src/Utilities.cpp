@@ -2339,8 +2339,11 @@ void getLinuxInfo ( LINUX_INFO * info ) {
             // If we have ' ' after '(', pick the first component
             getKV( v1, &k, &v2, ' ', 0);
 
+            // Exclude tailing ')'
+            getKV( k, &v1, &v2, ')', 0);
+
             // Update distro ID
-            info->osDistID += k;
+            info->osDistID += v1;
 
         }
         
