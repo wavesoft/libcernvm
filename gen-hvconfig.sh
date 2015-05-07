@@ -26,6 +26,7 @@ el6=scientificcernslc-carbon
 el6=redhat-carbon
 fedora18=fedora-spherical
 fedora18=fedora-schrödiger's
+fedora18=fedora-heisenbug
 fedora17=fedora-beefy
 "
 
