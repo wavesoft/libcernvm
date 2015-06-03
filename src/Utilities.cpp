@@ -1616,23 +1616,23 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
                 return false;
             }
 
-        }
+            // Drain buffer
+            while ( (n = recv(sock, (char*)&readBuf, 1024, 0)) > 0 ) {
+                nDataArrived += n;
+            }
 
-        // Drain buffer
-        while ( (n = recv(sock, (char*)&readBuf, 1024, 0)) > 0 ) {
-            nDataArrived += n;
-        }
+            // Check for errors
+            if ((n < 0) && (errno != EAGAIN)) {
+                #ifdef _WIN32
+                    shutdown(sock, SD_BOTH ); 
+                    closesocket(sock);
+                #else
+                    ::shutdown(sock, SHUT_RDWR);
+                    ::close(sock);
+                #endif
+                return false;
+            }
 
-        // Check for errors
-        if ((n < 0) && (errno != EAGAIN)) {
-            #ifdef _WIN32
-                shutdown(sock, SD_BOTH ); 
-                closesocket(sock);
-            #else
-                ::shutdown(sock, SHUT_RDWR);
-                ::close(sock);
-            #endif
-            return false;
         }
 
 
