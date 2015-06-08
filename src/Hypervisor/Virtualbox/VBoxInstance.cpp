@@ -562,6 +562,11 @@ void VBoxInstance::sessionClose( const HVSessionPtr& session ) {
         }
     }
 
+    // If session is in SS_MISSING state, remove it
+    if (session->local->getNum<int>( "state" ) == SS_MISSING) {
+        sessionDelete( session );
+    }
+
     CRASH_REPORT_END;
 }
 
