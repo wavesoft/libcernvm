@@ -57,11 +57,27 @@ bool VBoxInstance::validateIntegrity() {
         std::string err;
         this->exec("--version", &out, &err, execConfig);
 
+#ifdef __linux__
+        vboxDrvKernelLoaded = true;
+#endif
+
         // Check for common errors
         for (std::vector< std::string >::iterator sit = out.begin(); sit != out.end(); ++sit) {
             if (sit->find("WARNING") != std::string::npos) {
                 CVMWA_LOG("warning", "Warning keyword in the hypervisor version!");
+
+                // On linux, there is a solvable case, where 'vboxdrv'
+                // kernel module is not loaded. 
+                // This function just sets a flag. The actions are taken
+#ifdef __linux__
+                if (sit->find("vboxdrv kernel module is not loaded") != std::string::npos) {
+                    vboxDrvKernelLoaded = false;
+                } else {
+#endif
                 return false;
+#ifdef __linux__
+                }
+#endif
             }
             if (sit->find("ERROR") != std::string::npos) {
                 CVMWA_LOG("warning", "Error keyword in the hypervisor version!");
@@ -75,7 +91,7 @@ bool VBoxInstance::validateIntegrity() {
 
         // If we got some output, extract version numbers
         if (out.size() > 0)
-            version.set( out[0] );
+            version.set( out[out.size()-1] );
 
         // Query system properties in order to find the 
         // location of the guest additions ISO
@@ -95,8 +111,6 @@ bool VBoxInstance::validateIntegrity() {
 
         // Reflection is valid
         reflectionValid = true;
-
-        // Return
         return true;
     }
 
@@ -180,8 +194,79 @@ bool VBoxInstance::waitTillReady( DomainKeystore & keystore, const FiniteTaskPtr
     CRASH_REPORT_BEGIN;
     
     // Update progress
-    if (pf) pf->setMax(2);
-    
+    if (pf) pf->setMax(3);
+
+#ifdef __linux__
+    // Check for problems in linux where vbox kernel driver is not loaded
+    if (!vboxDrvKernelLoaded) {
+
+        // Confirm action to be taken by the user
+        if (ui) {
+
+            // Confirm with the user
+            if (ui->confirm(
+                "Virtualbox kernel driver problem", 
+                "It seems VirtualBox did not manage to install the kernel driver. Do you want to try and fix this? (It will require root privileges)") != UI_OK) {
+                // Alert
+                ui->alert(
+                    "Virtualbox kernel driver problem",
+                    "Try to run the following command and then try again:\n\nsudo /etc/init.d/vboxdrv setup"
+                );
+                // Send error
+                if (pf) pf->fail("vboxdrv kernel module is not loaded");
+                // Abort
+                return false;
+            }
+
+        }
+
+        // Do some more in-depth analysis of the linux platform
+        LINUX_INFO linuxInfo;
+        getLinuxInfo( &linuxInfo );
+        if (linuxInfo.terminalCmdline.empty()) {
+            // Alert
+            ui->alert(
+                "Could not fix the problem",
+                "We could not open a terminal for you. Please run the following command and try again:\n\nsudo /etc/init.d/vboxdrv setup"
+            );
+            // Send error
+            if (pf) pf->fail("Could not find a usable terminal emulator");
+            // Abort
+            return false;
+        }
+
+        // Try to prompt user
+        string cmdline = linuxInfo.terminalCmdline + "\"sudo /etc/init.d/vboxdrv setup\"";
+        res = system( cmdline.c_str() );
+        if (res < 0) {
+            // Alert
+            ui->alert(
+                "Could not fix the problem",
+                "Unable to install virtualbox kernel driver. Please make sure you have your linux kernel headers installed and try again."
+            );
+            // Send error
+            if (pf) pf->fail("Virtualbox driver installation failed");
+            // Abort
+            return false;
+        }
+
+        // Re-check integrity (And check if this made things worse)
+        if (!validateIntegrity() || !vboxDrvKernelLoaded) {
+            // Alert
+            ui->alert(
+                "Could not fix the problem",
+                "Unable to install virtualbox kernel driver. Please try to uninstall and re-install Virtualbox manually!"
+            );
+            // Send error
+            if (pf) pf->fail("Could not validate hypervisor integrity after install");
+            // Abort
+            return false;
+        }
+
+    }
+#endif
+    if (pf) pf->done("VirtualBox driver in place");
+
     // Session loading takes time, so instead of blocking the plugin
     // at creation time, use this mechanism to delay-load it when first accessed.
     if (!this->sessionLoaded) {

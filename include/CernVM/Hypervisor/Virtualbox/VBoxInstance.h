@@ -112,6 +112,11 @@ private:
     // The virtualbox reflection is still valid
     bool                    reflectionValid;
 
+#ifdef __linux__
+    // On linux, we also check for 'The vboxdrv kernel module is not loaded' warnings 
+    bool                    vboxDrvKernelLoaded;
+#endif
+
 };
 
 #endif /* end of include guard: VBoxInstance_H */

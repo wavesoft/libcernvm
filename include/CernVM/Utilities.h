@@ -258,6 +258,11 @@ int                                                 sha256_buffer   ( std::strin
 bool                                                is_empty        ( const std::string& path, std::streampos minSize = 0 );
 
 /**
+ * Get the full path to a binary, by searching the PATH property
+ */
+std::string                                         which           ( const std::string& binary );
+
+/**
  * Platform-independant function to execute the given command-line and return the
  * STDOUT lines to the string vector in *stdoutList.
  *
@@ -322,6 +327,11 @@ template <typename T> T                             ston            ( const std:
   * Convert a numeric value to it's string representation
   */
 template <typename T> std::string                   ntos            ( T &value );
+
+/**
+ * Split a string using a character as delimiter
+ */
+std::vector< std::string >                          split           ( const std::string & str, const char delimiter);
 
 /**
  * Split the given *line into *parts, using the characters found in the split string as delimiters
@@ -439,6 +449,7 @@ typedef struct {
     bool                hasGKSudo;              // If we have graphical SUDO display
     bool                hasPKExec;              // Another GKSUDO approach
     bool                hasXDGOpen;
+    std::string         terminalCmdline;        // Path to terminal application
 
 } LINUX_INFO;
 
@@ -480,8 +491,11 @@ int                                                           getKV           ( 
 /**
  * Returns true if the given file exists and is readable
  */
-inline bool file_exists( std::string path_to_file )
- { std::ifstream f( (const char*)path_to_file.c_str()); return f.good(); }
+inline bool file_exists( std::string path_to_file ) { 
+    if (path_to_file.empty()) return false;
+    std::ifstream f( (const char*)path_to_file.c_str()); 
+    return f.good(); 
+}
 
 /**
  * Returns the current time in milliseconds

@@ -205,6 +205,38 @@ std::string newGUID( ) {
 }
 
 /**
+ * Search the $PATH environment variable in order to locate
+ * the specified binary.
+ */
+std::string which( const std::string& binary ) {
+    // Get path environment variable
+    std::string path = getenv("PATH");
+
+    // Use defaults from system
+    if (path.empty())
+#ifdef _WIN32
+        path = "C:\\windows;C:\\windows\\system32";
+#else
+        path = "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin";
+#endif
+
+    // Split path component
+#ifdef _WIN32
+    std::vector< std::string > paths = split( path, ';' );
+#else
+    std::vector< std::string > paths = split( path, ':' );
+#endif
+    for (std::vector< std::string >::iterator it = paths.begin(); it != paths.end(); ++it) {
+        std::string file = *it + binary;
+        if (file_exists(file))
+            return file;
+    }
+
+    // Return empty
+    return "";
+}
+
+/**
  * Get the location of the platform-dependant application data folder
  * This function also builds the required directory structure:
  *
@@ -378,6 +410,19 @@ std::string getAppDataPath() {
         appDataDir = prepareAppDataPath();
     return appDataDir;
     CRASH_REPORT_END;
+}
+
+/**
+ * Split a string using a character as delimiter
+ */
+std::vector< std::string > split( const std::string & str, const char delimiter) {
+    std::vector<std::string> internal;
+    std::stringstream ss(str); // Turn the string into a stream.
+    std::string tok;  
+    while(getline(ss, tok, delimiter)) {
+        internal.push_back(tok);
+    }
+    return internal;
 }
 
 /**
@@ -2271,7 +2316,23 @@ void getLinuxInfo ( LINUX_INFO * info ) {
     CRASH_REPORT_BEGIN;
     std::vector< std::string > vLines;
     std::string stdError;
-    
+
+    // Lookup terminal
+    info->terminalCmdline = which("gnome-terminal");
+    if (!info->terminalCmdline.empty()) {
+        info->terminalCmdline += " -e ";
+    } else {
+        info->terminalCmdline = which("konsole");
+        if (!info->terminalCmdline.empty()) {
+            info->terminalCmdline += " -e ";
+        } else {
+            info->terminalCmdline = which("xterm");
+            if (!info->terminalCmdline.empty()) {
+                info->terminalCmdline += " -e ";
+            }
+        }
+    }
+
     // Check if we have gksudo
     info->hasGKSudo = file_exists("/usr/bin/gksudo");
     info->hasPKExec = file_exists("/usr/bin/pkexec");
