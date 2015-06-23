@@ -170,6 +170,11 @@ int CURLProvider::downloadFile( const std::string& url, const std::string& desti
     CVMWA_LOG("Debug", "Downloading file from '" << url << "'");
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     
+    // There is no way to wait for more than 10 seconds just for the connection
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L );
+    // Files can be big (assume up to 10G), with the worst case of 10Mbps, it won't take more than 2h
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 7200L );
+
     // Store a local pointer
     this->pf = pf;
     this->maxStreamSize = 0;
@@ -230,7 +235,12 @@ int CURLProvider::downloadText( const std::string& url, std::string * destinatio
     // Setup CURL url
     CVMWA_LOG("Debug", "Downloading string from '" << url << "'");
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    
+
+    // There is no way to wait for more than 10 seconds just for the connection
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L );
+    // Texts are usually small, so we are not expecting it to take more than a minute on the slowest networks ever
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L );
+
     // Store a local pointer
     this->pf = pf;
     this->maxStreamSize = 0;
