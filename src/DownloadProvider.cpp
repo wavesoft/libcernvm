@@ -251,6 +251,7 @@ int CURLProvider::downloadText( const std::string& url, std::string * destinatio
     // Setup callbacks
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, __curl_headerfunc);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, __curl_datacb_string);
+    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, __curl_xferinfo);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, this);
     
