@@ -237,7 +237,7 @@ bool VBoxInstance::waitTillReady( DomainKeystore & keystore, const FiniteTaskPtr
 
         // Try to prompt user
         string cmdline = linuxInfo.terminalCmdline + "\"sudo /etc/init.d/vboxdrv setup\"";
-        res = system( cmdline.c_str() );
+        int res = system( cmdline.c_str() );
         if (res < 0) {
             // Alert
             ui->alert(
