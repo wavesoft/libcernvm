@@ -27,7 +27,7 @@
 #include <vector>
 #include <cmath>
 
-#include <boost/regex.hpp>
+#include <regex>
 #include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
 
@@ -63,7 +63,7 @@ namespace fs = boost::filesystem;
  *  <major>.<minor>[.revision>][-other]
  *
  */
-boost::regex reVersionParse("(\\d+)\\.(\\d+)(?:\\.(\\d+))?(?:[\\.\\-\\w](\\d+))?(?:[\\.\\-\\w]([\\w\\.\\-]+))?"); 
+std::regex reVersionParse("(\\d+)\\.(\\d+)(?:\\.(\\d+))?(?:[\\.\\-\\w](\\d+))?(?:[\\.\\-\\w]([\\w\\.\\-]+))?"); 
 
 /**
  * Constructor of version class
@@ -94,30 +94,24 @@ void HypervisorVersion::set( const std::string & version ) {
     this->isDefined = false;
 
     // Try to match the expression
-    boost::smatch matches;
-    if (boost::regex_match(version, matches, reVersionParse, boost::match_extra)) {
+    std::smatch matches;
+    if (std::regex_match(version, matches, reVersionParse)) {
 
         // Get the entire matched string
-        string stringMatch(matches[0].first, matches[0].second);
-        this->verString = stringMatch;
+        this->verString = matches[0].str();
 
         // Get major/minor
-        string strMajor(matches[1].first, matches[1].second);
-        this->major = ston<int>( strMajor );
-        string strMinor(matches[2].first, matches[2].second);
-        this->minor = ston<int>( strMinor );
+        this->major = ston<int>( matches[1].str() );
+        this->minor = ston<int>( matches[2].str() );
 
         // Get build
-        string strBuild(matches[3].first, matches[3].second);
-        this->build = ston<int>( strBuild );
+        this->build = ston<int>( matches[3].str() );
 
         // Get revision
-        string strRevision(matches[4].first, matches[4].second);
-        this->revision = ston<int>( strRevision );
+        this->revision = ston<int>( matches[4].str() );
 
         // Get misc
-        string strMisc(matches[5].first, matches[5].second);
-        this->misc = strMisc;
+        this->misc = matches[5].str();
 
         // Mark as defined
         this->isDefined = true;

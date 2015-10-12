@@ -27,7 +27,7 @@ option(SYSTEM_ZLIB "Set to ON to use zlib from the system" OFF)
 option(SYSTEM_JSONCPP "Set to ON to use jsoncpp from the system" OFF)
 option(SYSTEM_OPENSSL "Set to ON to use openssl from the system" OFF)
 option(SYSTEM_CURL "Set to ON to use CURL from the system" OFF)
-option(SYSTEM_BOOST "Set to ON to use BOOST from the system" OFF)
+# option(SYSTEM_BOOST "Set to ON to use BOOST from the system" OFF)
 option(COVERITY_RUN "Set to ON when running this application with coverity" OFF)
 
 set(TARGET_ARCH "${GUESS_ARCH}" CACHE STRING "Override the identified target architecture (x86_64 or i386)" )
@@ -212,60 +212,60 @@ else()
 
 endif()
 
-#
-# [BOOST] We use various accelerators from boost
-#
-set( BOOST_MODE "EXTERN" )
-set( BOOST_REQUIRE_LIBRARIES thread system filesystem regex date_time chrono )
-if ( NOT DEFINED(BOOST_LIBRARIES) OR NOT DEFINED(BOOST_INCLUDE_DIRS) )
+# #
+# # [BOOST] We use various accelerators from boost
+# #
+# set( BOOST_MODE "EXTERN" )
+# set( BOOST_REQUIRE_LIBRARIES thread system filesystem regex date_time chrono )
+# if ( NOT DEFINED(BOOST_LIBRARIES) OR NOT DEFINED(BOOST_INCLUDE_DIRS) )
 
-	# Check if we should check for local
-	set( USE_LOCAL 1 )
-	if (${USE_SYSTEM_LIBS} OR ${SYSTEM_BOOST})
- 		# Check if we can find it on the system
-		set(Boost_USE_MULTITHREADED ON)  
-		set(Boost_USE_STATIC_RUNTIME NOT BUILD_SHARED_LIBS) 
-		set(Boost_USE_STATIC_LIBS NOT BUILD_SHARED_LIBS) 
-		find_package(Boost COMPONENTS ${BOOST_REQUIRE_LIBRARIES}) 
-		if(Boost_FOUND)
-			set( USE_LOCAL 0 )
-			set( BOOST_MODE "SYSTEM" )
-			set( BOOST_LIBRARIES ${Boost_LIBRARIES} )
-			set( BOOST_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} )
-			message( STATUS "Using BOOST from system")
-		endif()
-	endif()
+# 	# Check if we should check for local
+# 	set( USE_LOCAL 1 )
+# 	if (${USE_SYSTEM_LIBS} OR ${SYSTEM_BOOST})
+#  		# Check if we can find it on the system
+# 		set(Boost_USE_MULTITHREADED ON)  
+# 		set(Boost_USE_STATIC_RUNTIME NOT BUILD_SHARED_LIBS) 
+# 		set(Boost_USE_STATIC_LIBS NOT BUILD_SHARED_LIBS) 
+# 		find_package(Boost COMPONENTS ${BOOST_REQUIRE_LIBRARIES}) 
+# 		if(Boost_FOUND)
+# 			set( USE_LOCAL 0 )
+# 			set( BOOST_MODE "SYSTEM" )
+# 			set( BOOST_LIBRARIES ${Boost_LIBRARIES} )
+# 			set( BOOST_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} )
+# 			message( STATUS "Using BOOST from system")
+# 		endif()
+# 	endif()
 
-	# Use shipped BOOST if not found locally
-	if(${USE_LOCAL})
+# 	# Use shipped BOOST if not found locally
+# 	if(${USE_LOCAL})
 
-		# We are shipping BOOST with the project
-		set( EXTERN_BOOST "extern/boost" )
-		add_subdirectory( ${EXTERN_BOOST} ${CMAKE_BINARY_DIR}/${EXTERN_BOOST} )
+# 		# We are shipping BOOST with the project
+# 		set( EXTERN_BOOST "extern/boost" )
+# 		add_subdirectory( ${EXTERN_BOOST} ${CMAKE_BINARY_DIR}/${EXTERN_BOOST} )
 
-		# Link targets and populate libraries/include dirs
-		set( BOOST_LIBRARIES "" )
-		set( BOOST_DEPEND_TARGETS "")
-		set( BOOST_INCLUDE_DIRS ${BoostSourceDir} )
-		foreach(LIB ${BOOST_REQUIRE_LIBRARIES}) 
-			# Camel-case lib
-			ms_underscores_to_camel_case( ${LIB} LIBCAMELCASE )
-			# Depend target
-			set( BOOST_DEPEND_TARGETS ${BOOST_DEPEND_TARGETS} boost_${LIB} )
-			# Use given library
-			set( BOOST_LIBRARIES ${BOOST_LIBRARIES} ${Boost${LIBCAMELCASE}Libs} )
-		endforeach()
+# 		# Link targets and populate libraries/include dirs
+# 		set( BOOST_LIBRARIES "" )
+# 		set( BOOST_DEPEND_TARGETS "")
+# 		set( BOOST_INCLUDE_DIRS ${BoostSourceDir} )
+# 		foreach(LIB ${BOOST_REQUIRE_LIBRARIES}) 
+# 			# Camel-case lib
+# 			ms_underscores_to_camel_case( ${LIB} LIBCAMELCASE )
+# 			# Depend target
+# 			set( BOOST_DEPEND_TARGETS ${BOOST_DEPEND_TARGETS} boost_${LIB} )
+# 			# Use given library
+# 			set( BOOST_LIBRARIES ${BOOST_LIBRARIES} ${Boost${LIBCAMELCASE}Libs} )
+# 		endforeach()
 
-		# Log
-		set( BOOST_MODE "LOCAL" )
-		message( STATUS "Using BOOST shipped with libcernvm")
+# 		# Log
+# 		set( BOOST_MODE "LOCAL" )
+# 		message( STATUS "Using BOOST shipped with libcernvm")
 
-	endif()
+# 	endif()
 
-else()
-	message( STATUS "Using BOOST from: ${BOOST_INCLUDE_DIRS}")
+# else()
+# 	message( STATUS "Using BOOST from: ${BOOST_INCLUDE_DIRS}")
 
-endif()
+# endif()
 
 #
 # [PThread] required by BOOST only on Linux
@@ -297,7 +297,7 @@ set( PROJECT_LIBRARIES
 	${JSONCPP_LIBRARIES}
 	${OPENSSL_LIBRARIES}
 	${CURL_LIBRARIES}
-	${BOOST_LIBRARIES}
+	# ${BOOST_LIBRARIES}
 	${EXTRA_LIBRARIES}
 )
 
@@ -381,15 +381,15 @@ add_library( ${PROJECT_NAME}
 	${PLATFORM_SOURCES}
 )
 
-# Depend boost targets if we are building them
-# ourselves - That's the only way I know for starting
-# the build process for these libraries, since BOOST
-# was not added as a library, but as an external project
-if (${BOOST_MODE} STREQUAL "LOCAL")
-	foreach(TARGET ${BOOST_DEPEND_TARGETS})
-		add_dependencies(${PROJECT_NAME} ${TARGET})
-	endforeach()
-endif()
+# # Depend boost targets if we are building them
+# # ourselves - That's the only way I know for starting
+# # the build process for these libraries, since BOOST
+# # was not added as a library, but as an external project
+# if (${BOOST_MODE} STREQUAL "LOCAL")
+# 	foreach(TARGET ${BOOST_DEPEND_TARGETS})
+# 		add_dependencies(${PROJECT_NAME} ${TARGET})
+# 	endforeach()
+# endif()
 
 # in the same way we have to depend openssl (if we are the ones)
 # building it.

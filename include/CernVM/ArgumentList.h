@@ -22,12 +22,20 @@
 #ifndef ARGUMENTS_LIST_H
 #define ARGUMENTS_LIST_H
 
-#include <boost/variant.hpp>
+//#include <boost/variant.hpp>
 #include <string>
 #include <vector>
 
+/**
+ * Minimal implementation of variant arguments
+ */
+class VariantArg
+{
+
+};
+
 /* Typedef for variant callbacks */
-typedef boost::variant< float, double, int, std::string >								VariantArg;
+//typedef boost::variant< float, double, int, std::string >								VariantArg;
 typedef std::vector< VariantArg >														VariantArgList;
 
 /**

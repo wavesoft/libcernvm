@@ -19,7 +19,7 @@
  */
 
 #include <CernVM/CrashReport.h>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 #include <time.h>
 using namespace std;
@@ -36,7 +36,7 @@ struct upload_context {
 };
 
 /* Scrollback buffer for the crashReport */
-boost::mutex 		scrollbackAccessMutex;
+mutex 				scrollbackAccessMutex;
 string 				scrollbackBuffer[ CRASH_LOG_SCROLLBACK ];
 int 				scrollBackPosition = 0;
 map<string, string>	crashReportInfo;
@@ -100,7 +100,7 @@ string crashReportBuildString() {
  * Register log entry to the crash report scroll-back buffer 
  */
 void crashReportStoreLog( ostringstream & oss ) {
-	boost::unique_lock<boost::mutex> lock(scrollbackAccessMutex);
+	std::unique_lock objectLock(scrollbackAccessMutex, std::try_to_lock);
 
     const std::string ossstr = oss.str();
     size_t strLength = ossstr.length();
@@ -125,7 +125,7 @@ void crashReportStoreLog( ostringstream & oss ) {
  * Pretty-print the stack trace to the response string given
  */
 std::string crashReportBuildStackTrace() {
-	boost::unique_lock<boost::mutex> lock(scrollbackAccessMutex);
+	std::unique_lock objectLock(scrollbackAccessMutex, std::try_to_lock);
     try {
 	    // Allocate space
 	    string cBuffer = "";
@@ -193,7 +193,7 @@ static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp) 
  * Transmit the crash report
  */
 void crashSendReport( const char * function, const char * message, std::string stackTrace ) { 
-	boost::unique_lock<boost::mutex> lock(scrollbackAccessMutex);
+	std::unique_lock objectLock(scrollbackAccessMutex, std::try_to_lock);
 	CURL *curl;
 	CURLcode res;
 

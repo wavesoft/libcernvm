@@ -25,12 +25,17 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/thread/mutex.hpp>
+#include <functional>
+#include <mutex>
+#include <memory>
+#include <thread>
+
+//#include <boost/bind.hpp>
+//#include <boost/function.hpp>
+//#include <boost/shared_ptr.hpp>
+//#include <boost/make_shared.hpp>
+//#include <boost/enable_shared_from_this.hpp>
+//#include <boost/thread/mutex.hpp>
 
 #include <CernVM/Utilities.h>
 #include <CernVM/ArgumentList.h>
@@ -40,8 +45,8 @@
 //////////////////////////////////////
 
 /* Typedef for variant callbacks */
-typedef boost::function<void ( const std::string& event, VariantArgList& args )>		cbAnyEvent;
-typedef boost::function<void ( VariantArgList& args )>									cbNamedEvent;
+typedef std::function<void(const std::string& event, VariantArgList& args)>		cbAnyEvent;
+typedef std::function<void(VariantArgList& args)>									cbNamedEvent;
 
 //////////////////////////////////////
 // Classes and structures
@@ -56,7 +61,7 @@ public:
     AnyEventSlot( cbAnyEvent cb ): callback(cb) { };
 	cbAnyEvent 		callback;
 };
-typedef boost::shared_ptr< AnyEventSlot >	AnyEventSlotPtr;
+typedef std::shared_ptr< AnyEventSlot >	AnyEventSlotPtr;
 
 /**
  * Helper class for looking up the appropriate function to
@@ -67,7 +72,7 @@ public:
     NamedEventSlot( cbNamedEvent cb ): callback(cb) { };
 	cbNamedEvent 	callback;
 };
-typedef boost::shared_ptr< NamedEventSlot >	NamedEventSlotPtr;
+typedef std::shared_ptr< NamedEventSlot >	NamedEventSlotPtr;
 
 
 /**
@@ -111,7 +116,7 @@ public:
 	std::map< std::string, std::vector< NamedEventSlotPtr > > 	namedEventCallbacks;
 
 	// Shared operations mutex
-	boost::mutex 		shopMutex;
+	std::mutex 			shopMutex;
 
 };
 

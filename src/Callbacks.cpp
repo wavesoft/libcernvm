@@ -25,14 +25,14 @@
  */
 NamedEventSlotPtr Callbacks::on ( const std::string& name, cbNamedEvent cb ) {
     CRASH_REPORT_BEGIN;
-	boost::mutex::scoped_lock lock(shopMutex);
+	std::unique_lock<std::mutex> localLock(shopMutex, std::try_to_lock);
 
     // Allocate missing entry
 	if (namedEventCallbacks.find(name) == namedEventCallbacks.end())
         namedEventCallbacks[name] = std::vector< NamedEventSlotPtr >();
     // Update map
     std::vector< NamedEventSlotPtr > * cbs = &namedEventCallbacks[name];
-    NamedEventSlotPtr ptr = boost::make_shared<NamedEventSlot>( cb );
+    NamedEventSlotPtr ptr = std::make_shared<NamedEventSlot>( cb );
 	cbs->push_back( ptr );
 	return ptr;
     CRASH_REPORT_END;
@@ -44,7 +44,7 @@ NamedEventSlotPtr Callbacks::on ( const std::string& name, cbNamedEvent cb ) {
 void Callbacks::off ( const std::string& name, NamedEventSlotPtr cb ) {
     CRASH_REPORT_BEGIN;
 	if (!cb) return;
-	boost::mutex::scoped_lock lock(shopMutex);
+	std::unique_lock<std::mutex> localLock(shopMutex, std::try_to_lock);
 
     // Allocate missing entry
 	if (namedEventCallbacks.find(name) == namedEventCallbacks.end()) return;
@@ -65,8 +65,8 @@ void Callbacks::off ( const std::string& name, NamedEventSlotPtr cb ) {
  */
 AnyEventSlotPtr Callbacks::onAnyEvent ( cbAnyEvent cb ) {
     CRASH_REPORT_BEGIN;
-	boost::mutex::scoped_lock lock(shopMutex);
-	AnyEventSlotPtr ptr = boost::make_shared<AnyEventSlot>( cb );
+	std::unique_lock<std::mutex> localLock(shopMutex, std::try_to_lock);
+	AnyEventSlotPtr ptr = std::make_shared<AnyEventSlot>(cb);
 	anyEventCallbacks.push_back( ptr );
 	return ptr;
     CRASH_REPORT_END;
@@ -78,7 +78,7 @@ AnyEventSlotPtr Callbacks::onAnyEvent ( cbAnyEvent cb ) {
 void Callbacks::offAnyEvent ( AnyEventSlotPtr cb ) {
     CRASH_REPORT_BEGIN;
 	if (!cb) return;
-	boost::mutex::scoped_lock lock(shopMutex);
+	std::unique_lock<std::mutex> localLock(shopMutex, std::try_to_lock);
 
 	// Find and erase the given anyEvent slot
 	for (std::vector< AnyEventSlotPtr >::iterator it = anyEventCallbacks.begin(); it != anyEventCallbacks.end(); ++it) {
@@ -95,7 +95,7 @@ void Callbacks::offAnyEvent ( AnyEventSlotPtr cb ) {
  */
 void Callbacks::fire( const std::string& name, VariantArgList& args ){
     CRASH_REPORT_BEGIN;
-	boost::mutex::scoped_lock lock(shopMutex);
+	std::unique_lock<std::mutex> localLock(shopMutex, std::try_to_lock);
 
 	// First, call the anyEvent handlers
 	for (std::vector< AnyEventSlotPtr >::iterator it = anyEventCallbacks.begin(); it != anyEventCallbacks.end(); ++it) {

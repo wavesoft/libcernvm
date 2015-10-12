@@ -49,16 +49,22 @@
 #endif
 
 // BOOST Subset of functions
-#include <boost/function.hpp>
-#include <boost/shared_array.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread/locks.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
+#include <functional>
+#include <memory>
+#include <thread>
+#include <mutex>
+#include <chrono>
+
+//#include <boost/function.hpp>
+//#include <boost/shared_array.hpp>
+//#include <boost/shared_ptr.hpp>
+//#include <boost/make_shared.hpp>
+//#include <boost/thread.hpp>
+//#include <boost/thread/locks.hpp>
+//#include <boost/thread/mutex.hpp>
+//#include <boost/uuid/uuid.hpp>
+//#include <boost/uuid/uuid_generators.hpp>
+//#include <boost/uuid/uuid_io.hpp>
 
 #include <CernVM/CrashReport.h>
 
@@ -144,11 +150,11 @@
 #define HSK_HTTP        2   // Send a basic HTTP GET / request and expect some data as response
 
 /* Callback function definitions */
-typedef boost::function< void () >                                                   callbackVoid;
-typedef boost::function< void (const std::string&) >                                 callbackDebug;
-typedef boost::function< void (const std::string&, const int, const std::string&) >  callbackError;
-typedef boost::function<void ( const boost::shared_array<uint8_t>&, const size_t)>   callbackData;
-typedef boost::function<void ( const size_t, const size_t, const std::string& )>     callbackProgress;
+typedef std::function<void()>                                                   callbackVoid;
+typedef std::function<void(const std::string&)>                                 callbackDebug;
+typedef std::function<void(const std::string&, const int, const std::string&)>  callbackError;
+typedef std::function<void(const std::shared_ptr<uint8_t[]>&, const size_t)>	callbackData;
+typedef std::function<void(const size_t, const size_t, const std::string& )>    callbackProgress;
 
 /* Parameters for the SysExec Function */
 class SysExecConfig {
@@ -535,15 +541,15 @@ inline unsigned long long getTimeInMs() {
  */
 inline void sleepMs(int sleepMs) {
     // Use boost implementation in order to catch interrupts
-    boost::this_thread::sleep( boost::posix_time::millisec( sleepMs ) );
+	std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs));
 }
 
 /**
  * Named mutex context lock mechanisms
  */
-typedef boost::shared_ptr< boost::mutex >   sharedMutex;
+typedef std::shared_ptr< std::mutex >		sharedMutex;
 sharedMutex                                 __nmutex_get( std::string name );
-#define NAMED_MUTEX_LOCK(x)                 { sharedMutex __mutex = __nmutex_get(x); boost::unique_lock<boost::mutex> __mLock( *__mutex.get() );
+#define NAMED_MUTEX_LOCK(x)                 { sharedMutex __mutex = __nmutex_get(x); std::unique_lock<std::mutex> __mLock( *__mutex.get() );
 #define NAMED_MUTEX_UNLOCK                  }; 
 
 /**

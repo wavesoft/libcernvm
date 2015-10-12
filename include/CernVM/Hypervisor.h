@@ -22,8 +22,10 @@
 #ifndef HVENV_H
 #define HVENV_H
 
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/regex.hpp> 
+//#include <boost/enable_shared_from_this.hpp>
+//#include <boost/regex.hpp> 
+#include <regex>
+#include <memory>
 
 #include <CernVM/Config.h>
 #include <CernVM/Hypervisor.h>
