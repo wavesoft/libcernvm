@@ -90,8 +90,8 @@ class VBoxSession;
 class VBoxInstance;
 
 // Shared pointer definition
-typedef boost::shared_ptr< VBoxSession >	VBoxSessionPtr;
-typedef boost::shared_ptr< VBoxInstance >  	VBoxInstancePtr;
+typedef std::shared_ptr< VBoxSession >	VBoxSessionPtr;
+typedef std::shared_ptr< VBoxInstance > VBoxInstancePtr;
 
 /////////////////////////
 // Local tool functions

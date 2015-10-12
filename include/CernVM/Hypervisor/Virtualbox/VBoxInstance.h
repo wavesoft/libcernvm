@@ -34,7 +34,7 @@
 #include "CernVM/LocalConfig.h"
 #include "CernVM/DomainKeystore.h"
 
-#include <boost/regex.hpp>
+//#include <boost/regex.hpp>
 
 /**
  * VirtualBox Hypervisor

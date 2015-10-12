@@ -27,15 +27,28 @@
 #include <vector>
 
 /**
- * Minimal implementation of variant arguments
+ * Minimal implementation of boost::variant
  */
-class VariantArg
+template< typename A, typename B, typename C, typename D >
+class CVMVariantClass
 {
+public:
+
+	// Constructor
+	CVMVariantClass(const A & v) { a = v; };
+	CVMVariantClass(const B & v) { b = v; };
+	CVMVariantClass(const C & v) { c = v; };
+	CVMVariantClass(const D & v) { d = v; };
+
+private:
+
+	// Internal data
+	A a; B b; C c; D d;
 
 };
 
 /* Typedef for variant callbacks */
-//typedef boost::variant< float, double, int, std::string >								VariantArg;
+typedef CVMVariantClass< float, double, int, std::string >								VariantArg;
 typedef std::vector< VariantArg >														VariantArgList;
 
 /**

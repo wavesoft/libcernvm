@@ -63,7 +63,7 @@ HVInstancePtr __vboxInstance( string hvBin ) {
     VBoxInstancePtr hv;
 
     // Create a new hypervisor instance
-    hv = boost::make_shared<VBoxInstance>( hvBin );
+    hv = std::make_shared<VBoxInstance>( hvBin );
 
     return hv;
     CRASH_REPORT_END;
@@ -185,7 +185,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, DomainKeystore & 
     ////////////////////////////////////
     // Contact the information point
     ////////////////////////////////////
-    ParameterMapPtr data = boost::make_shared<ParameterMap>();
+    ParameterMapPtr data = std::make_shared<ParameterMap>();
 
     // Download trials
     for (int tries=0; tries<retries; tries++) {

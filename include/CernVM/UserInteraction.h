@@ -25,6 +25,9 @@
 #include <CernVM/Utilities.h>  // It also contains the common global headers
 #include <CernVM/CrashReport.h>
 
+#include <mutex>
+#include <condition_variable>
+
 /**
  * User interaction constants
  */
@@ -39,16 +42,16 @@
  */
 class UserInteraction;
 class AcceptInteraction;
-typedef boost::shared_ptr< UserInteraction >       	UserInteractionPtr;
-typedef boost::shared_ptr< AcceptInteraction >      AcceptInteractionPtr;
+typedef std::shared_ptr< UserInteraction >       	UserInteractionPtr;
+typedef std::shared_ptr< AcceptInteraction >      AcceptInteractionPtr;
 
 /**
  * User interaction callbacks
  */
-typedef boost::function< void (int result) >  															callbackResult;
-typedef boost::function< void (const std::string&, const std::string&, const callbackResult& cb) >		callbackConfirm;
-typedef boost::function< void (const std::string&, const std::string&, const callbackResult& cb) >		callbackAlert;
-typedef boost::function< void (const std::string&, const std::string&, const callbackResult& cb) >		callbackLicense;
+typedef std::function< void(int result) >  															callbackResult;
+typedef std::function< void(const std::string&, const std::string&, const callbackResult& cb) >		callbackConfirm;
+typedef std::function< void(const std::string&, const std::string&, const callbackResult& cb) >		callbackAlert;
+typedef std::function< void(const std::string&, const std::string&, const callbackResult& cb) >		callbackLicense;
 
 /**
  * A class through interaction with the user can happen
@@ -181,15 +184,15 @@ private:
 	/**
 	 * Mutex and condition variable
 	 */
-	boost::mutex 				mutex;
-	boost::condition_variable 	cond;
+	std::mutex 					mutex;
+	std::condition_variable 	cond;
 
 	/**
 	 * Mutex and contition variable for
 	 * abort handling
 	 */
-	boost::mutex 				abortHandledMutex;
-	boost::condition_variable 	abortHandledCond;
+	std::mutex 					abortHandledMutex;
+	std::condition_variable 	abortHandledCond;
 	bool 						abortHandledFlag;
 
 };

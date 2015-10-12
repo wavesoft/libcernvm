@@ -112,8 +112,8 @@ enum HVFailures {
  */
 class HVSession;
 class HVInstance;
-typedef boost::shared_ptr< HVSession >                  HVSessionPtr;
-typedef boost::shared_ptr< HVInstance >                 HVInstancePtr;
+typedef std::shared_ptr< HVSession >                  HVSessionPtr;
+typedef std::shared_ptr< HVInstance >                 HVInstancePtr;
 
 /**
  * Resource information structure
@@ -218,7 +218,7 @@ private:
  * A hypervisor session is actually a VM instance.
  * This is where the actual I/O happens
  */
-class HVSession : public boost::enable_shared_from_this<HVSession>, public Callbacks {
+class HVSession : public std::enable_shared_from_this<HVSession>, public Callbacks {
 public:
 
 
@@ -242,7 +242,7 @@ public:
         parameters->setDefault("memory",                "512");
         parameters->setDefault("disk",                  "1024");
         parameters->setDefault("executionCap",          "100");
-        parameters->setDefault("apiPort",               BOOST_PP_STRINGIZE( DEFAULT_API_PORT ) );
+        parameters->setDefault("apiPort",               ntos<int>( DEFAULT_API_PORT ) );
         parameters->setDefault("flags",                 "0");
         parameters->setDefault("daemonControlled",      "0");
         parameters->setDefault("daemonMinCap",          "0");
@@ -425,7 +425,7 @@ public:
 /**
  * Overloadable base hypervisor class
  */
-class HVInstance : public boost::enable_shared_from_this<HVInstance> {
+class HVInstance : public std::enable_shared_from_this<HVInstance> {
 public:
 
     /**

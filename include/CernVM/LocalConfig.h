@@ -26,14 +26,17 @@
 #include <CernVM/CrashReport.h>
 #include <CernVM/ParameterMap.h>
 
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/make_shared.hpp>
+#include <thread>
+#include <list>
+
+//#include <boost/enable_shared_from_this.hpp>
+//#include <boost/make_shared.hpp>
 
 /**
  * Shared pointer for the LocalConfig class
  */
 class LocalConfig;
-typedef boost::shared_ptr< LocalConfig >                                LocalConfigPtr;
+typedef std::shared_ptr< LocalConfig >                                LocalConfigPtr;
 
 /**
  * LocalConfig is a subclass of ParameterMap that can be stored

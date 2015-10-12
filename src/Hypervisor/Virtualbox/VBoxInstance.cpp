@@ -366,7 +366,7 @@ HVSessionPtr VBoxInstance::allocateSession() {
     cfg->set("uuid", guid);
 
     // Return new session instance
-    VBoxSessionPtr session = boost::make_shared< VBoxSession >( cfg, this->shared_from_this() );
+    VBoxSessionPtr session = std::make_shared< VBoxSession >( cfg, this->shared_from_this() );
     
     // Store on session registry and return session object
     this->sessions[ guid ] = session;
@@ -566,7 +566,7 @@ HVSessionPtr VBoxInstance::sessionOpen ( const ParameterMapPtr& parameters, cons
 
     // Call parent function to open session
     HVSessionPtr  sess = HVInstance::sessionOpen(parameters,pf);
-    VBoxSessionPtr vbs = boost::static_pointer_cast<VBoxSession>( sess );
+    VBoxSessionPtr vbs = std::static_pointer_cast<VBoxSession>( sess );
 
     // Set progress feedack object
     vbs->FSMUseProgress( pf, "Updating VM information" );
@@ -602,7 +602,7 @@ void VBoxInstance::sessionDelete ( const HVSessionPtr& session ) {
                     // Remove from open sessions
                     openSessions.erase( jt );
                     // Let session know that it has gone away
-                    boost::static_pointer_cast<VBoxSession>(sess)->hvNotifyDestroyed();
+                    std::static_pointer_cast<VBoxSession>(sess)->hvNotifyDestroyed();
                     break;
                 }
             }
@@ -694,7 +694,7 @@ int VBoxInstance::loadSessions( const FiniteTaskPtr & pf ) {
             CVMWA_LOG("Warning", "Missing 'uuid' in file " << sessName );
         } else {
             // Store session with the given UUID
-            sessions[ sessConfig->get("uuid") ] = boost::make_shared< VBoxSession >( 
+            sessions[ sessConfig->get("uuid") ] = std::make_shared< VBoxSession >( 
                 sessConfig, this->shared_from_this() 
             );
         }
@@ -779,7 +779,7 @@ int VBoxInstance::loadSessions( const FiniteTaskPtr & pf ) {
         if (sessions.find(sess->uuid) == sessions.end()) {
    
             // Let session know that it has gone away
-            boost::static_pointer_cast<VBoxSession>(sess)->hvNotifyDestroyed();
+            std::static_pointer_cast<VBoxSession>(sess)->hvNotifyDestroyed();
 
             // Remove it from open and rewind
             openSessions.erase( it );
@@ -879,7 +879,7 @@ int VBoxInstance::installExtPack( DomainKeystore & keystore, const DownloadProvi
     
     /* Contact the information point */
     CVMWA_LOG( "Info", "Fetching data" );
-    ParameterMapPtr data = boost::make_shared<ParameterMap>();
+    ParameterMapPtr data = std::make_shared<ParameterMap>();
     int res = keystore.downloadHypervisorConfig( downloadProvider, data );
     if ( res != HVE_OK ) {
         if ((res == HVE_NOT_VALIDATED) || (res == HVE_NOT_TRUSTED)) {

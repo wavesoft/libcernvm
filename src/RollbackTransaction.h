@@ -26,11 +26,12 @@
 #include <CernVM/CrashReport.h>
 
 #include <vector>
+#include <functional>
 
 /**
  * The transaction rollback action template
  */
-typedef boost::function< void (const std::vector<void *>& ) >		callbackTransaction;
+typedef std::function< void (const std::vector<void *>& ) >		callbackTransaction;
 
 /**
  * A rollback transaction entry in the RollbackTransaction class

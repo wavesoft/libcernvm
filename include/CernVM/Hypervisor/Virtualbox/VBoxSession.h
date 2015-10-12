@@ -31,10 +31,14 @@
 #include <CernVM/Hypervisor.h>
 #include <CernVM/CrashReport.h>
 
-#include <boost/regex.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread/condition_variable.hpp>
-#include <boost/thread/mutex.hpp>
+//#include <boost/regex.hpp>
+//#include <boost/thread.hpp>
+//#include <boost/thread/condition_variable.hpp>
+//#include <boost/thread/mutex.hpp>
+#include <regex>
+#include <thread>
+#include <condition_variable>
+#include <mutex>
 
 /**
  * Mount/Unmount disk constants
@@ -283,7 +287,7 @@ protected:
     unsigned long long      lastLogTime;
 
     // For having only a single system command running
-    boost::mutex            execMutex;
+    std::mutex				execMutex;
 
     /*  Default sysExecConfig */
     SysExecConfig           execConfig;

@@ -27,26 +27,30 @@
 #include <vector>
 #include <list>
 
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/enable_shared_from_this.hpp>
+#include <functional>
+#include <thread>
+#include <memory>
+
+//#include <boost/bind.hpp>
+//#include <boost/function.hpp>
+//#include <boost/shared_ptr.hpp>
+//#include <boost/make_shared.hpp>
+//#include <boost/enable_shared_from_this.hpp>
 
 /* Forward-declaration of ProgressFeedback class */
 class ProgressTask;
 class FiniteTask;
 class VariableTask;
 class BooleanTask;
-typedef boost::shared_ptr< ProgressTask >           ProgressTaskPtr;
-typedef boost::shared_ptr< FiniteTask >       		FiniteTaskPtr;
-typedef boost::shared_ptr< VariableTask >       	VariableTaskPtr;
-typedef boost::shared_ptr< BooleanTask >       		BooleanTaskPtr;
+typedef std::shared_ptr< ProgressTask >           ProgressTaskPtr;
+typedef std::shared_ptr< FiniteTask >       		FiniteTaskPtr;
+typedef std::shared_ptr< VariableTask >       	VariableTaskPtr;
+typedef std::shared_ptr< BooleanTask >       		BooleanTaskPtr;
 
 /**
  * Base class to monitor progress events
  */
-class ProgressTask: public boost::enable_shared_from_this<ProgressTask>, public CallbacksProgress {
+class ProgressTask : public std::enable_shared_from_this<ProgressTask>, public CallbacksProgress {
 public:
 
 	//////////////////////
@@ -201,7 +205,7 @@ public:
 	 * Create a sub-task
 	 */
 	template <typename T>
-	 	boost::shared_ptr<T> 	begin( const std::string& message );
+		std::shared_ptr<T> 		begin(const std::string& message);
 
 
 protected:

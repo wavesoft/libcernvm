@@ -32,8 +32,11 @@
 #include <iostream>
 #include <sstream>
 
-#include <boost/filesystem.hpp> 
-#include <boost/filesystem/path.hpp>
+#include <chrono>
+#include <thread>
+
+//#include <boost/filesystem.hpp> 
+//#include <boost/filesystem/path.hpp>
 #include <openssl/evp.h>
 #include <errno.h>
 #include "zlib.h"
@@ -42,7 +45,6 @@
 #include <CernVM/Hypervisor.h>
 
 using namespace std;
-namespace fs = boost::filesystem;
 
 /* Base64 Helper */
 static const char b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -75,10 +77,14 @@ template <typename T> T hex_ston( const std::string &Text ) {
     stringstream ss; T result; ss << std::hex << Text;
     return ss >> result ? result : 0;
 }
-
-template <typename T> std::string ntos( T &value ) {
-    std::stringstream out; out << value;
-    return out.str();
+//
+//template <typename T> std::string ntos(const T &value) {
+//    std::stringstream out; out << value;
+//    return out.str();
+//}
+template <typename T> std::string ntos( T value ) {
+	std::stringstream out; out << value;
+	return out.str();
 }
 
 /**
@@ -94,12 +100,19 @@ template size_t ston<size_t>( const std::string &Text );
 template double ston<double>( const std::string &Text );
 template float ston<float>( const std::string &Text );
 
-template std::string ntos<int>( int &value );
-template std::string ntos<unsigned int>( unsigned int &value );
-template std::string ntos<long>( long &value );
-template std::string ntos<size_t>( size_t &value );
-template std::string ntos<double>( double &value );
-template std::string ntos<float>( float &value );
+//template std::string ntos<int>( const int &value );
+//template std::string ntos<unsigned int>(const unsigned int &value);
+//template std::string ntos<long>(const long &value);
+//template std::string ntos<size_t>(const size_t &value);
+//template std::string ntos<double>(const double &value);
+//template std::string ntos<float>(const float &value);
+
+template std::string ntos<int>(int value);
+template std::string ntos<unsigned int>(unsigned int value);
+template std::string ntos<long>(long value);
+template std::string ntos<size_t>(size_t value);
+template std::string ntos<double>(double value);
+template std::string ntos<float>(float value);
 
 
 /**
@@ -110,7 +123,7 @@ sharedMutex __nmutex_get( std::string name ) {
     
     // If we don't have a mutex under this name, allocate it now
     if (namedMutexStack.find(name) == namedMutexStack.end()) {
-        sharedMutex m = boost::make_shared<boost::mutex>();
+        sharedMutex m = std::make_shared<std::mutex>();
         namedMutexStack[name] = m;
         return m;
     } 
@@ -194,10 +207,26 @@ void flushNamedMutexes() {
  */
 std::string newGUID( ) {
     CRASH_REPORT_BEGIN;
-    try {
-        boost::uuids::uuid uuid = boost::uuids::random_generator()();
-        std::stringstream out; out << uuid;
-        return out.str();
+	static const int UUID_LEN = 10;
+	static const char alphanum[] =
+		"0123456789"
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		"abcdefghijklmnopqrstuvwxyz";
+
+	try {
+
+		// Randomize
+		srand(time(NULL));
+
+		// Allocate uuid buffer
+		std::string uuid(UUID_LEN, ' ');
+		for (int i = 0; i < UUID_LEN; ++i) {
+			uuid[i] = alphanum[rand() % (sizeof(alphanum)-1)];
+		}
+
+		// Return UUID
+		return uuid;
+
     } catch (std::runtime_error& err) {
         return "";
     }
@@ -1609,7 +1638,7 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
     if (handshake == HSK_SIMPLE) {
 
         // Wait a couple of ms and check if we got any data on the other side
-        boost::this_thread::sleep( boost::posix_time::millisec( 100 ) );
+        std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
 
         // Try to read from input
         n = recv(sock, (char*)&readBuf, 1024, 0);
@@ -1644,7 +1673,7 @@ bool isPortOpen( const char * host, int port, unsigned char handshake, int timeo
             }
 
             // Wait a couple of ms and check if we got any data from the other side
-            boost::this_thread::sleep( boost::posix_time::millisec( 100 ) );
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             // Check if it's still connected
             int errorCode = 0;
@@ -2301,6 +2330,119 @@ unsigned long long getFileTimeMs ( const std::string& file ) {
 
 #endif
 }
+
+/**
+ * Cross-platform directory enumeration that does not depend on BOOST
+ */
+vector< EnumFile > enumDirectory(const std::string & directory, const bool fullPath)
+{
+	vector< EnumFile > files;
+
+	// Strip trailing path component
+	string basePath, filenamePrefix;
+#ifdef WIN32
+	static const char pathChar = '\\';
+#else
+	static const char pathChar = '/';
+#endif
+	if (directory[directory.size() - 1] == pathChar) {
+		basePath = directory.substr(0, directory.size() - 1);
+	}
+	else {
+		basePath = directory;
+	}
+
+	// Check if we should include a full-path prefix
+	if (fullPath) {
+		filenamePrefix = basePath + pathChar;
+	}
+	else {
+		filenamePrefix = "";
+	}
+
+	// UNIX & Windows Directory Listing
+#ifdef WIN32
+	WIN32_FIND_DATA ffd;
+	LARGE_INTEGER filesize;
+	TCHAR szDir[MAX_PATH];
+	size_t length_of_arg;
+	HANDLE hFind = INVALID_HANDLE_VALUE;
+	DWORD dwError = 0;
+
+	// Make sure the path does not exceed MAX_PATH length
+	StringCchLength(basePath.c_str(), MAX_PATH, &length_of_arg);
+	if (length_of_arg > (MAX_PATH - 3)) {
+		// Return empty
+		return files;
+	}
+
+	// Prepare string for use with FindFile functions.  First, copy the
+	// string to a buffer, then append '\*' to the directory name.
+	StringCchCopy(szDir, MAX_PATH, basePath.c_str());
+	StringCchCat(szDir, MAX_PATH, TEXT("\\*"));
+
+	// Find the first file in the directory.
+	hFind = FindFirstFile(szDir, &ffd);
+	if (INVALID_HANDLE_VALUE == hFind)  {
+		CVMWA_LOG("error", "Unable to enumerate directory " << directory);
+		return files;
+	} 
+
+	// List all the files in the directory with some info about them.
+	do {
+		// Get filename
+		std::string fName; fName = ffd.cFileName;
+
+		// Chceck if this is directory
+		if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+			// Collect directory
+			files.push_back(EnumFile(filenamePrefix+fName, true));
+		} else {
+			// Collect file
+			files.push_back(EnumFile(filenamePrefix+fName, false));
+		}
+	}
+	while (FindNextFile(hFind, &ffd) != 0);
+
+	// Check for errors
+	dwError = GetLastError();
+	if (dwError != ERROR_NO_MORE_FILES) {
+		CVMWA_LOG("error", "Error #" << dwError << " while enumerating directory " << directory);
+		return files;
+	}
+
+	// Close handle
+	FindClose(hFind);
+
+#else
+
+	// Open directory listing
+	DIR *dp;
+	struct dirent *ep;
+	dp = opendir( basePath.c_str() );
+
+	// Iterate over directory listing
+	if (dp != NULL)
+	{
+		while (ep = readdir(dp)) {
+
+			// Cast to properties
+			std::string fName; fName = ep->d_name;
+			bool isDir = ((ep->d_type & DI_DIR) != 0);
+
+			// Collect file
+			files.push_back(EnumFile(filenamePrefix+fName, isDir));
+
+		}
+		(void)closedir(dp);
+	}
+
+#endif
+
+	// Return listing
+	return files;
+}
+
 
 /* ======================================================== */
 /*                  PLATFORM-SPECIFIC CODE                  */

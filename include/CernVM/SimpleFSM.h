@@ -29,11 +29,15 @@
 #include <vector>
 #include <map>
 
-#include <boost/thread.hpp>
-#include <boost/thread/condition_variable.hpp>
-#include <boost/thread/mutex.hpp>
+//#include <boost/thread.hpp>
+//#include <boost/thread/condition_variable.hpp>
+//#include <boost/thread/mutex.hpp>
+#include <functional>
+#include <thread>
+#include <condition_variable>
+#include <mutex>
 
-typedef boost::function< void () >	fsmHandler;
+typedef std::function< void () >	fsmHandler;
 
 // Forward declerations
 struct  _FSMNode;
@@ -62,7 +66,7 @@ struct  _FSMNode{
  	FSMRegistryEnd(root);
 
 #define FSM_HANDLER(id,cb,...) \
- 	FSMRegistryAdd(id, boost::bind(cb, this), __VA_ARGS__, 0);
+ 	FSMRegistryAdd(id, std::bind(cb, this), __VA_ARGS__, 0);
 
 #define FSM_STATE(id,...) \
  	FSMRegistryAdd(id, 0, __VA_ARGS__, 0);
@@ -113,7 +117,7 @@ public:
 	/**
 	 * Start the FSM management thread
 	 */
-	boost::thread *					FSMThreadStart		();
+	std::thread *					FSMThreadStart		();
 
 	/**
 	 * Stop the FSM thread
@@ -178,7 +182,7 @@ protected:
 	 * This function cannot be used when FSMDoing/FSMDone are used.
 	 */
 	template <typename T>
-	 	boost::shared_ptr<T> 		FSMBegin 			( const std::string & message );
+	 	std::shared_ptr<T> 			FSMBegin 			( const std::string & message );
 
 	// Registry functions encapsulated by the FSM_ macros
 	void 					        FSMRegistryBegin	();
@@ -199,32 +203,32 @@ protected:
 	int								fsmTargetState;
 	bool 							fsmInsideHandler;
 	bool 							fsmThreadActive;
-	boost::thread *					fsmThread;
+	std::thread *					fsmThread;
 
 private:
 
 	// Thread synchronization variables
 	bool 							fsmtPaused;
 	bool 							fsmtInterruptRequested;
-	boost::mutex 					fsmtPauseMutex;
-	boost::condition_variable 		fsmtPauseChanged;
+	std::mutex 						fsmtPauseMutex;
+	std::condition_variable 		fsmtPauseChanged;
 
 	// Wait synchronization
 	FSMNode *						fsmwState;
 	bool 							fsmwStateWaiting;
-	boost::mutex 					fsmwStateMutex;
-	boost::condition_variable 		fsmwStateChanged;
-	boost::mutex 					fsmwWaitMutex;
-	boost::condition_variable 		fsmwWaitCond;
+	std::mutex 						fsmwStateMutex;
+	std::condition_variable 		fsmwStateChanged;
+	std::mutex 						fsmwWaitMutex;
+	std::condition_variable 		fsmwWaitCond;
 
 	// Mutex for safely stopping the thread
-	boost::mutex 					fsmmThreadSafe;
+	std::mutex 						fsmmThreadSafe;
 
 	// Mutex for FSMGoto
-	boost::mutex  					fsmGotoMutex;
+	std::mutex  					fsmGotoMutex;
 
 	// Mutex for accessing fsmPath
-	boost::mutex  					fsmPathMutex;
+	std::mutex  					fsmPathMutex;
 
 	// Progress
 	std::string 					fsmProgressResetMsg;

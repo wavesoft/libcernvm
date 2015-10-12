@@ -38,7 +38,7 @@ void ParameterMap::putOnMap( ParameterDataMapPtr map, const std::string& key, co
  */
 ParameterMapPtr ParameterMap::instance ( ) {
     CRASH_REPORT_BEGIN;
-    return boost::make_shared< ParameterMap >();
+    return std::make_shared< ParameterMap >();
     CRASH_REPORT_END;
 }
 
@@ -59,7 +59,7 @@ std::string ParameterMap::get( const std::string& kname, std::string defaultValu
     name = prefix + name;
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
         if (parameters->find(name) == parameters->end())
             return defaultValue;
         return (*parameters)[name];
@@ -76,7 +76,7 @@ ParameterMap& ParameterMap::set ( const std::string& kname, const std::string va
     
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
         putOnMap(parameters, name, value);
     }
 
@@ -96,7 +96,7 @@ ParameterMap& ParameterMap::erase ( const std::string& name ) {
     CRASH_REPORT_BEGIN;
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
         std::map<const std::string, const std::string>::iterator e = parameters->find(prefix+name);
         if (e != parameters->end())
             parameters->erase(e);
@@ -117,7 +117,7 @@ void ParameterMap::setDefault ( const std::string& kname, std::string value ) {
     // and don't trigger commitChanges.
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
         parameters->insert(std::pair< const std::string, const std::string >( name, value ));
     }
 
@@ -132,7 +132,7 @@ template<typename T> T ParameterMap::getNum ( const std::string& kname, T defaul
     std::string name = prefix + kname;
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
         if (parameters->find(name) == parameters->end())
             return defaultValue;
         return ston<T>((*parameters)[name]);
@@ -162,7 +162,7 @@ ParameterMap& ParameterMap::clear( ) {
     // Delete keys
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
         for (std::vector<std::string>::iterator it = myKeys.begin(); it != myKeys.end(); ++it) {
             parameters->erase( prefix + *it );
         }
@@ -179,7 +179,7 @@ ParameterMap& ParameterMap::clearAll( ) {
     CRASH_REPORT_BEGIN;
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
         parameters->clear();
     }
     return *this;
@@ -231,7 +231,7 @@ ParameterMapPtr ParameterMap::subgroup( const std::string& kname ) {
 
     // Return a new ParametersMap instance that encapsulate us
     // as parent.
-    return boost::make_shared<ParameterMap>( shared_from_this(), name );
+	return std::make_shared<ParameterMap>(shared_from_this(), name);
 
     CRASH_REPORT_END;
 }
@@ -246,7 +246,7 @@ std::vector<std::string > ParameterMap::enumKeys ( ) {
     // Loop over the entries in the record
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
         for ( std::map<const std::string, const std::string>::iterator it = parameters->begin(); it != parameters->end(); ++it ) {
             std::string key = (*it).first;
 
@@ -274,7 +274,7 @@ std::vector<std::string > ParameterMap::enumKeys ( ) {
 bool ParameterMap::contains ( const std::string& name, const bool useBlank ) {
     CRASH_REPORT_BEGIN;
     // Mutex for thread-safety
-    boost::unique_lock<boost::mutex> lock(*parametersMutex);
+	std::unique_lock<std::mutex> lock(*parametersMutex);
 
     bool ans = (parameters->find(prefix + name) != parameters->end());
     if ( ans && useBlank ) {
@@ -304,7 +304,7 @@ void ParameterMap::fromParameters ( const ParameterMapPtr& ptr, bool clearBefore
         k = prefix + *it;
         if (replace || (this->parameters->find(k) == this->parameters->end())) {
             // Mutex for thread-safety
-            boost::unique_lock<boost::mutex> lock(*parametersMutex);
+			std::unique_lock<std::mutex> lock(*parametersMutex);
             putOnMap(this->parameters, k, (*ptr->parameters)[*it]);
         }
     }
@@ -333,7 +333,7 @@ void ParameterMap::fromMap ( std::map< const std::string, const std::string> * m
     if (map == NULL) return;
     {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
 
         // Update parameters
         std::string k;
@@ -375,14 +375,14 @@ void ParameterMap::fromJSON( const Json::Value& json, bool clearBefore, const bo
         } else if (v.isString()) {
             if (replace || (parameters->find(k) == parameters->end())) {
                 // Mutex for thread-safety
-                boost::unique_lock<boost::mutex> lock(*parametersMutex);
+				std::unique_lock<std::mutex> lock(*parametersMutex);
                 putOnMap(this->parameters, k, v.asString());
             }
         } else if (v.isInt()) {
             int vv = v.asInt();
             if (replace || (parameters->find(k) == parameters->end())) {
                 // Mutex for thread-safety
-                boost::unique_lock<boost::mutex> lock(*parametersMutex);
+				std::unique_lock<std::mutex> lock(*parametersMutex);
                 putOnMap(this->parameters, k, ntos<int>( vv ));
             }
         }
@@ -408,7 +408,7 @@ void ParameterMap::toMap ( std::map< const std::string, const std::string> * map
     // Clear map
     if (clearBefore) {
         // Mutex for thread-safety
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
         // Clear
         map->clear();
     }

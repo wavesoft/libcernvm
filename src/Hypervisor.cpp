@@ -28,8 +28,11 @@
 #include <cmath>
 
 #include <regex>
-#include <boost/thread.hpp>
-#include <boost/filesystem.hpp>
+
+//#include <boost/thread.hpp>
+//#include <boost/filesystem.hpp>
+#include <thread>
+#include <functional>
 
 #include "CernVM/Config.h"
 #include "CernVM/Utilities.h"
@@ -43,7 +46,6 @@
 #include <CernVM/Hypervisor/Virtualbox/VBoxSession.h>
 
 using namespace std;
-namespace fs = boost::filesystem;
 
 // The length of the checksum. For SHA256 that's 64
 #define  CHECKSUM_LENGTH    64
@@ -269,10 +271,10 @@ int __diskExtract( const std::string& sGZOutput, const std::string& checksum, co
     } else {
         
         // Notify progress (from another thread, because we are going to be blocking soon)
-        boost::thread * t = NULL;
+        std::thread * t = NULL;
         if (pf) {
             pf->setMax(1);
-            t = new boost::thread( boost::bind( &__notifyDecompressStart, pf ) );
+			t = new std::thread(std::bind(&__notifyDecompressStart, pf));
         }
 
         // Decompress the file

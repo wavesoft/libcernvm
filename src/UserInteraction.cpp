@@ -19,7 +19,7 @@
  */
 
 #include <CernVM/UserInteraction.h>
-#include <boost/bind.hpp>
+#include <functional>
 
 // Initialize singleton to default
 UserInteractionPtr defaultSingleton;
@@ -33,7 +33,7 @@ UserInteractionPtr UserInteraction::Default() {
 	// Automatically create an 'accept' singleton
 	// if it's not still there.
 	if (!defaultSingleton)
-		defaultSingleton = boost::make_shared<AcceptInteraction>();
+		defaultSingleton = std::make_shared<AcceptInteraction>();
 
 	// Return singleton isntance
 	return defaultSingleton;
@@ -45,10 +45,11 @@ UserInteractionPtr UserInteraction::Default() {
  * Display the specified message and wait for an OK/Cancel response.
  */
 int UserInteraction::confirm ( const std::string& title, const std::string & message, int timeout ) {
+	using namespace std::placeholders;
 	if (!cbConfirm) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
-	cbConfirm( title, message, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
+	cbConfirm( title, message, std::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
 }
 
@@ -56,10 +57,11 @@ int UserInteraction::confirm ( const std::string& title, const std::string & mes
  * Display the specified message and wait until the user clicks OK.
  */
 int UserInteraction::alert ( const std::string& title, const std::string& message, int timeout ) {
+	using namespace std::placeholders;
 	if (!cbAlert) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
-	cbAlert( title, message, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
+	cbAlert( title, message, std::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
 }
 
@@ -68,10 +70,11 @@ int UserInteraction::alert ( const std::string& title, const std::string& messag
  * wait for user response for accepting or declining it.
  */
 int UserInteraction::confirmLicenseURL	( const std::string& title, const std::string& url, int timeout ) {
+	using namespace std::placeholders;
 	if (!cbLicenseURL) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
-	cbLicenseURL( title, url, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
+	cbLicenseURL( title, url, std::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
 }
 
@@ -79,10 +82,11 @@ int UserInteraction::confirmLicenseURL	( const std::string& title, const std::st
  * Display a licence whose contents is provided as a parameter
  */
 int UserInteraction::confirmLicense	( const std::string& title, const std::string& buffer, int timeout ) {
+	using namespace std::placeholders;
 	if (!cbLicense) return UI_UNDEFINED;
 	// Set result to -1 (Pending response)
 	result = -1;
-	cbLicense( title, buffer, boost::bind( &UserInteraction::__cbResult, this, _1 ) );
+	cbLicense( title, buffer, std::bind( &UserInteraction::__cbResult, this, _1 ) );
 	return __waitResult( timeout );
 }
 
@@ -130,7 +134,7 @@ int UserInteraction::abort( bool wait, int setResult ) {
 
 	// If there was nothing to abort return 0
     {
-        boost::unique_lock<boost::mutex> lock(mutex);
+        std::unique_lock<std::mutex> lock(mutex);
 		if (result >= 0)
 			return 0;
 	}
@@ -148,14 +152,14 @@ int UserInteraction::abort( bool wait, int setResult ) {
 		abortHandledFlag = false;
 
 		// Wait on abortHandledMutex
-		boost::unique_lock<boost::mutex> lock(abortHandledMutex);
+		std::unique_lock<std::mutex> lock(abortHandledMutex);
 		while(!abortHandledFlag) {
 			abortHandledCond.wait(lock);
 		}
 
 	} else {
 
-        boost::unique_lock<boost::mutex> lock(abortHandledMutex);
+        std::unique_lock<std::mutex> lock(abortHandledMutex);
         this->abortHandledFlag = true;
 
 	}
@@ -174,7 +178,7 @@ void UserInteraction::abortHandled() {
 
 	// Ensure unique access
     {
-        boost::unique_lock<boost::mutex> lock(abortHandledMutex);
+        std::unique_lock<std::mutex> lock(abortHandledMutex);
         if (this->abortHandledFlag) return;
         this->abortHandledFlag = true;
     }
@@ -193,7 +197,7 @@ int UserInteraction::__waitResult ( int timeout ) {
     // Reset
 	result = -1;
 	// Wait on mutex
-	boost::unique_lock<boost::mutex> lock(mutex);
+	std::unique_lock<std::mutex> lock(mutex);
 	while(result < 0) {
 		cond.wait(lock);
 	}
@@ -214,7 +218,7 @@ void UserInteraction::__cbResult( int result ) {
 
 	// Update result
     {
-        boost::unique_lock<boost::mutex> lock(mutex);
+        std::unique_lock<std::mutex> lock(mutex);
         this->result = result;
     }
 

@@ -26,10 +26,12 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <thread>
+#include <mutex>
 
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/thread/mutex.hpp>
+//#include <boost/enable_shared_from_this.hpp>
+//#include <boost/make_shared.hpp>
+//#include <boost/thread/mutex.hpp>
 
 #include <json/json.h>
 
@@ -38,8 +40,8 @@
  * Shared pointer for the map instance
  */
 class ParameterMap;
-typedef boost::shared_ptr< ParameterMap >       						ParameterMapPtr;
-typedef boost::shared_ptr< std::map< const std::string, const std::string > >       ParameterDataMapPtr;
+typedef std::shared_ptr< ParameterMap >       						ParameterMapPtr;
+typedef std::shared_ptr< std::map< const std::string, const std::string > >       ParameterDataMapPtr;
 
 /**
  * This is a generic parameter mapping class.
@@ -48,7 +50,7 @@ typedef boost::shared_ptr< std::map< const std::string, const std::string > >   
  * automatically converted to string. The string map can then be stored
  * to a file or handled appropriately.
  */
-class ParameterMap : public boost::enable_shared_from_this<ParameterMap> {
+class ParameterMap : public std::enable_shared_from_this<ParameterMap> {
 public:
 
 	/**
@@ -62,8 +64,8 @@ public:
 	ParameterMap( ) : parameters(), prefix(""), locked(false), parent(),  changed(false) {
 
 		// Allocate a new shared pointer
-		parameters = boost::make_shared< std::map< const std::string, const std::string > >( );
-		parametersMutex = new boost::mutex();
+		parameters = std::make_shared< std::map< const std::string, const std::string > >();
+		parametersMutex = new std::mutex();
 
 	};
 
@@ -254,7 +256,7 @@ protected:
     /**
      * Mutex for accessing properties
      */
-    boost::mutex *              parametersMutex;
+	std::mutex *				parametersMutex;
 
     /**
      * Helper function to perform []= on const map

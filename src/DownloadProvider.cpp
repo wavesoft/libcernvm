@@ -29,7 +29,7 @@ DownloadProviderPtr systemProvider;
 DownloadProviderPtr DownloadProvider::Default() {
     CRASH_REPORT_BEGIN;
     if (!systemProvider)
-        systemProvider = boost::make_shared< CURLProvider >();
+        systemProvider = std::make_shared< CURLProvider >();
     return systemProvider;
     CRASH_REPORT_END;
 }
@@ -288,7 +288,7 @@ int CURLProvider::downloadText( const std::string& url, std::string * destinatio
  */
 DownloadProviderPtr CURLProvider::clone() {
     // Just return a new CURL instance
-    return boost::make_shared< CURLProvider >();
+    return std::make_shared< CURLProvider >();
 }
 
 /**

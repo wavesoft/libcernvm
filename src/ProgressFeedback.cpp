@@ -382,7 +382,7 @@ void FiniteTask::done( const std::string& message ) {
 /**
  * Allocate a new child task
  */
-template <typename T> boost::shared_ptr<T> 
+template <typename T> std::shared_ptr<T> 
 FiniteTask::begin( const std::string& message ) {
     CRASH_REPORT_BEGIN;
 
@@ -393,7 +393,7 @@ FiniteTask::begin( const std::string& message ) {
 	size_t len = tasks.size();
 
     // Create a new object instance
-    boost::shared_ptr<T> newPtr = boost::make_shared<T>();
+	std::shared_ptr<T> newPtr = std::make_shared<T>();
     newPtr->parent = shared_from_this();
     newPtr->lastMessage = message;
 

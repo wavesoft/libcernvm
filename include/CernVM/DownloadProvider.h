@@ -30,14 +30,18 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <functional>
+#include <thread>
+#include <tuple>
+#include <memory>
 
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/shared_array.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/enable_shared_from_this.hpp>
+//#include <boost/bind.hpp>
+//#include <boost/function.hpp>
+//#include <boost/shared_ptr.hpp>
+//#include <boost/make_shared.hpp>
+//#include <boost/shared_array.hpp>
+//#include <boost/tuple/tuple.hpp>
+//#include <boost/enable_shared_from_this.hpp>
 
 #include <curl/curl.h>
 #include <curl/easy.h>
@@ -52,8 +56,8 @@
  */
 class DownloadProvider; 
 class CURLProvider; 
-typedef boost::shared_ptr< DownloadProvider >       DownloadProviderPtr;
-typedef boost::shared_ptr< CURLProvider >           CURLProviderPtr;
+typedef std::shared_ptr< DownloadProvider >       DownloadProviderPtr;
+typedef std::shared_ptr< CURLProvider >           CURLProviderPtr;
 
 /**
  * Base class of the download provider

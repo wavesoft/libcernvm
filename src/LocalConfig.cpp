@@ -18,7 +18,7 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include <boost/filesystem.hpp> 
+//#include <boost/filesystem.hpp> 
 
 #include <CernVM/Hypervisor.h>
 #include <CernVM/LocalConfig.h>
@@ -35,7 +35,7 @@ LocalConfigPtr LocalConfig::global() {
 
     // Ensure we have signeton
     if (!LocalConfig::globalConfigSingleton) {
-        LocalConfig::globalConfigSingleton = boost::make_shared< LocalConfig >( getAppDataPath() + "/config", "global" );
+        LocalConfig::globalConfigSingleton = std::make_shared< LocalConfig >( getAppDataPath() + "/config", "global" );
     }
 
     // Return reference
@@ -52,7 +52,7 @@ LocalConfigPtr LocalConfig::runtime() {
 
     // Ensure we have signeton
     if (!LocalConfig::runtimeConfigSingleton) {
-        LocalConfig::runtimeConfigSingleton = boost::make_shared< LocalConfig >( getAppDataPath() + "/run", "runtime" );
+        LocalConfig::runtimeConfigSingleton = std::make_shared< LocalConfig >( getAppDataPath() + "/run", "runtime" );
     }
 
     // Return reference
@@ -68,7 +68,7 @@ LocalConfigPtr LocalConfig::forRuntime( const std::string& name ) {
     CRASH_REPORT_BEGIN;
 
     // Return a shared pointer instance
-    return boost::make_shared< LocalConfig >( getAppDataPath() + "/run", name );
+    return std::make_shared< LocalConfig >( getAppDataPath() + "/run", name );
     
     CRASH_REPORT_END;
 }
@@ -85,7 +85,7 @@ LocalConfig::LocalConfig ( std::string path, std::string name ) : ParameterMap()
 
     {
         // Mutex for making this thread-safe
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+        std::unique_lock<std::mutex> lock(*parametersMutex);
 
         // Load parameters in the parameters map
         this->loadMap( name, parameters.get() );
@@ -104,30 +104,28 @@ LocalConfig::LocalConfig ( std::string path, std::string name ) : ParameterMap()
 std::vector< std::string > LocalConfig::enumFiles ( std::string prefix ) {
     CRASH_REPORT_BEGIN;
 
-    boost::filesystem::path configDir( this->configDir );
-    boost::filesystem::directory_iterator end_iter;
-
     std::vector< std::string > result;
 
-    // Start scanning configuration directory
-    if ( boost::filesystem::exists(configDir) && boost::filesystem::is_directory(configDir)) {
-        for( boost::filesystem::directory_iterator dir_iter(configDir) ; dir_iter != end_iter ; ++dir_iter) {
-            if (boost::filesystem::is_regular_file(dir_iter->status()) ) {
+	// Enumerate configuration directory
+	std::vector< EnumFile >	files = enumDirectory(this->configDir);
+	for (std::vector<EnumFile>::iterator it = files.begin(); it != files.end(); ++it) {
+			
+		// Skip directories
+		if (it->isDir) continue;
 
-                // Get the filename
-                std::string fn = dir_iter->path().filename().string();
+		// Get the filename
+		std::string fn = it->filename;
 
-                // Check if prefix and suffix matches
-                if ( ( (prefix.empty()) || (fn.substr(0, prefix.length()).compare(prefix) == 0 ) ) &&
-                     ( fn.substr(fn.length()-5, 5).compare(".conf") == 0 )   ) {
+		// Check if prefix and suffix matches
+		if (((prefix.empty()) || (fn.substr(0, prefix.length()).compare(prefix) == 0)) &&
+			(fn.substr(fn.length() - 5, 5).compare(".conf") == 0)) {
 
-                    // Return name
-                    result.push_back( fn.substr(0, fn.length()-5) );
+			// Return name
+			result.push_back(fn.substr(0, fn.length() - 5));
 
-                }
-            }
-        }
-    }
+		}
+
+	}
 
     // Return results
     return result;
@@ -535,7 +533,7 @@ bool LocalConfig::save ( ) {
 
     {
         // Mutex for making this thread-safe
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+        std::unique_lock<std::mutex> lock(*parametersMutex);
         // Save map to file
         bool ans = this->saveMap( configName, parameters.get() );
     }
@@ -567,7 +565,7 @@ bool LocalConfig::load ( ) {
 
     {
         // Mutex for making this thread-safe
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
         // Load map from file
         bool ans = this->loadMap( configName, parameters.get() );
     }
@@ -650,7 +648,7 @@ bool LocalConfig::sync ( ) {
 
     {
         // Mutex for making this thread-safe
-        boost::unique_lock<boost::mutex> lock(*parametersMutex);
+		std::unique_lock<std::mutex> lock(*parametersMutex);
 
         // Update the parameters that still exist in the config file and add new ones if they are missing.
         for (std::map<const std::string, const std::string>::iterator it = parameters->begin(); it != parameters->end(); ++it) {

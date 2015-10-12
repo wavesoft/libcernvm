@@ -71,6 +71,7 @@
 // Only for WIN32
 #ifdef _WIN32
 #include <Windows.h>
+#include <strsafe.h>
 #include <direct.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -94,6 +95,7 @@
 #include <pwd.h>
 #include <stdio.h>
 #include <libgen.h>
+#include <dirent.h>
 #endif
 
 // only for linux
@@ -212,6 +214,30 @@ public:
 };
 
 /**
+ * Directory listing items
+ */
+class EnumFile {
+public:
+
+	/**
+	 * Constructor
+	 */
+	EnumFile(std::string filename, bool isDir)
+		: filename(filename), isDir(isDir) { };
+
+	/**
+	 * The name of the file
+	 */
+	std::string					filename;
+
+	/**
+	* Becomes TRUE if the file is a directory
+	*/
+	bool						isDir;
+
+};
+
+/**
  * Allocate a new GUID
  */
 std::string                                         newGUID( );
@@ -300,6 +326,18 @@ void                                                initSysExec     ( );
 void                                                abortSysExec    ( );
 
 /**
+ * Enumerate files in directory
+ *
+ * This is a simple, cross-platform re-implementation of the BOOST
+ * filesystem enumeration implementation. Of course it's far from
+ * performant or optimal, but it's very simple and suited for our case
+ * (we are not calling this function a lot).
+ *
+ * If fullPath is set to true, the full path of each file is returned.
+ */
+std::vector< EnumFile >								enumDirectory(const std::string & directory, const bool fullPath = false);
+
+/**
  * Cross-platform function to return the temporary folder path
  */
 std::string                                         getTmpDir       ( );
@@ -332,7 +370,7 @@ template <typename T> T                             ston            ( const std:
  /**
   * Convert a numeric value to it's string representation
   */
-template <typename T> std::string                   ntos            ( T &value );
+template <typename T> std::string                   ntos            ( T value );
 
 /**
  * Split a string using a character as delimiter

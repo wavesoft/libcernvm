@@ -123,7 +123,7 @@ bool SimpleFSM::_callHandler( FSMNode * node, bool inThread ) {
 		if (node->handler)
 			node->handler();
 
-	} catch (boost::thread_interrupted &e) {
+	} catch (std::thread_interrupted &e) {
 		CVMWA_LOG("Debuf", "FSM Handler interrupted");
 
 		// Cleanup

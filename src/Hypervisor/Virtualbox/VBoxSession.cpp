@@ -24,7 +24,7 @@
 #include <CernVM/Hypervisor/Virtualbox/VBoxProbes.h>
 #include <CernVM/Utilities.h>
 
-#include <boost/filesystem.hpp> 
+//#include <boost/filesystem.hpp> 
 
 using namespace std;
 
@@ -119,32 +119,28 @@ std::string macroReplace( ParameterMapPtr mapData, std::string iString ) {
 bool cleanupFolder( const std::string& baseDir ) {
     CRASH_REPORT_BEGIN;
 
-    boost::filesystem::path readDir( baseDir );
-    boost::filesystem::directory_iterator end_iter;
+	// Remove all files inside that directory
+	vector< EnumFile > files = enumDirectory(baseDir);
+	for (vector< EnumFile >::iterator it = files.begin(); it != files.end(); ++it) {
+		std::string fn = it->filename;
+		if (it->isDir) {
+			// Remove directory only if it's not hidden
+			if (fn[0] != '.') {
+				CVMWA_LOG("Debug", "Erasing folder " << baseDir + kPathSeparator + fn);
+				cleanupFolder(baseDir + kPathSeparator + fn);
+			}
+		}
+		else  {
+			// Remove directory recursively only if it's not hidden
+			if (fn[0] != '.') {
+				CVMWA_LOG("Debug", "Erasing file " << baseDir + kPathSeparator + fn);
 
-    std::vector< std::string > result;
+				//TODO: Uncomment this!
+				//remove(fn.c_str());
+			}
 
-    // Start scanning configuration directory
-    if ( boost::filesystem::exists(readDir) && boost::filesystem::is_directory(readDir)) {
-        for( boost::filesystem::directory_iterator dir_iter(readDir) ; dir_iter != end_iter ; ++dir_iter) {
-            std::string fn = dir_iter->path().filename().string();
-            if (boost::filesystem::is_regular_file(dir_iter->status()) ) {
-
-                // Get the filename
-                if (fn[0] != '.') {
-                    CVMWA_LOG("Debug", "Erasing file " << baseDir+kPathSeparator+fn);
-                    remove(fn.c_str());
-                }
-
-            } else if (boost::filesystem::is_directory(dir_iter->status()) ) {
-
-                // Get the filename
-                if (fn[0] != '.')
-                    cleanupFolder(baseDir+kPathSeparator+fn);
-
-            }
-        }
-    }
+		}
+	}
 
     //std::cout << "[rmdir " << baseDir << "]" << std::endl;
     CVMWA_LOG("Debug", "Erasing folder " << baseDir);
@@ -1003,7 +999,7 @@ void VBoxSession::ConfigureVMBoot() {
     // ----------------------------------------------
     #ifdef GUESTADD_USE
     // Get guest additions ISO file
-    string additionsISO = boost::static_pointer_cast<VBoxInstance>(hypervisor)->hvGuestAdditions;
+    string additionsISO = std::static_pointer_cast<VBoxInstance>(hypervisor)->hvGuestAdditions;
     if ( ((flags & HVF_GUEST_ADDITIONS) != 0) && !additionsISO.empty() ) {
         
         // Mount dvddrive in guest additions controller without multi-attach
@@ -1050,7 +1046,7 @@ void VBoxSession::ReleaseVMBoot() {
 
     // If we have guest additions, unmount that ISO too
     #ifdef GUESTADD_USE
-    string additionsISO = boost::static_pointer_cast<VBoxInstance>(hypervisor)->hvGuestAdditions;
+    string additionsISO = std::static_pointer_cast<VBoxInstance>(hypervisor)->hvGuestAdditions;
     if ( ((flags & HVF_GUEST_ADDITIONS) != 0) && !additionsISO.empty() ) {
         unmountDisk( GUESTADD_CONTROLLER, GUESTADD_PORT, GUESTADD_DEVICE, T_DVD, false );
     }
@@ -2084,7 +2080,7 @@ int VBoxSession::wrapExec ( std::string cmd, std::vector<std::string> * stdoutLi
     if (isAborting) return HVE_INVALID_STATE;
 
     // Allow only a single thread to invoke a system command
-    boost::unique_lock<boost::mutex> lock(execMutex);
+    std::unique_lock<std::mutex> lock(execMutex);
     return this->hypervisor->exec(cmd, stdoutList, stderrMsg, config );
 
     CRASH_REPORT_END;
@@ -2357,7 +2353,7 @@ int VBoxSession::mountDisk ( const std::string & controller,
     // If we are doing multi-attach, try to use UUID-based mounting
     if (multiAttach) {
         // Get a list of the disks in order to properly compute multi-attach 
-        vector< map< const string, const string > > disks = boost::static_pointer_cast<VBoxInstance>(hypervisor)->getDiskList();
+        vector< map< const string, const string > > disks = std::static_pointer_cast<VBoxInstance>(hypervisor)->getDiskList();
         for (vector< map<const string, const string> >::iterator i = disks.begin(); i != disks.end(); i++) {
             map<const string, const string> disk = *i;
             // Look of the master disk of what we are using
