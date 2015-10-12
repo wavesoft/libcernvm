@@ -46,7 +46,7 @@
 
 /* Typedef for variant callbacks */
 typedef std::function<void(const std::string& event, VariantArgList& args)>		cbAnyEvent;
-typedef std::function<void(VariantArgList& args)>									cbNamedEvent;
+typedef std::function<void(VariantArgList& args)>								cbNamedEvent;
 
 //////////////////////////////////////
 // Classes and structures

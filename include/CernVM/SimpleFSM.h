@@ -69,7 +69,7 @@ struct  _FSMNode{
  	FSMRegistryAdd(id, std::bind(cb, this), __VA_ARGS__, 0);
 
 #define FSM_STATE(id,...) \
- 	FSMRegistryAdd(id, 0, __VA_ARGS__, 0);
+ 	FSMRegistryAdd(id, nullptr, __VA_ARGS__, 0);
 
 /**
  * Auto-routed Finite-State-Machine class

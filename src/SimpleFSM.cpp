@@ -119,25 +119,39 @@ bool SimpleFSM::_callHandler( FSMNode * node, bool inThread ) {
 	// Use guarded execution
 	try {
 
+		// Check if we are interrupted
+		if (fsmtInterruptRequested) {
+			CVMWA_LOG("Debuf", "FSM Handler interrupted");
+			fsmInsideHandler = false;
+			return false;
+		}
+
 		// Run the new state
 		if (node->handler)
 			node->handler();
 
-	} catch (std::thread_interrupted &e) {
-		CVMWA_LOG("Debuf", "FSM Handler interrupted");
-
-		// Cleanup
-		fsmInsideHandler = false;
-
-		if (inThread) {
-			// If we are in-thread, re-throw so it's
-			// catched with the external wrap
-			throw;
-		} else {
-			// Otherwise, return false to indicate that
-			// something failed.
+		// Check if we are interrupted
+		if (fsmtInterruptRequested) {
+			CVMWA_LOG("Debuf", "FSM Handler interrupted");
+			fsmInsideHandler = false;
 			return false;
 		}
+
+	//} catch (std::thread_interrupted &e) {
+
+	//	// Cleanup
+	//	fsmInsideHandler = false;
+	//	return false;
+
+	//	//if (inThread) {
+	//	//	// If we are in-thread, re-throw so it's
+	//	//	// catched with the external wrap
+	//	//	throw;
+	//	//} else {
+	//	//	// Otherwise, return false to indicate that
+	//	//	// something failed.
+	//	//	return false;
+	//	//}
 
 	} catch ( std::exception &e ) {
 		CVMWA_LOG("Exception", e.what() );
@@ -166,7 +180,7 @@ bool SimpleFSM::FSMContinue( bool inThread ) {
 
 	FSMNode * next;
 	{ /* mutex(fsmCurrentPath)) */
-		boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+		std::unique_lock<std::mutex> lock(fsmPathMutex);
 		// Get next action in the path
 		next = fsmCurrentPath.front();
 	    fsmCurrentPath.pop_front();
@@ -175,7 +189,7 @@ bool SimpleFSM::FSMContinue( bool inThread ) {
 
 	// Skip state nodes
     { /* mutex(fsmCurrentPath)) */
-        boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+        std::unique_lock<std::mutex> lock(fsmPathMutex);
         while ((!next->handler) && !fsmCurrentPath.empty()) {
             lock.unlock();
             FSMEnteringState( next->id, false );
@@ -262,13 +276,13 @@ void SimpleFSM::FSMGoto(int state, int stripPathComponents) {
     CRASH_REPORT_BEGIN;
 
 	// Allow only one thread to steer the FSM
-	boost::unique_lock<boost::mutex> lock(fsmGotoMutex);
+	std::unique_lock<std::mutex> lock(fsmGotoMutex);
 
     CVMWA_LOG("Debug", "Going towards " << state);
 
 	// Reset path
 	{ /* mutex(fsmCurrentPath)) */
-		boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+		std::unique_lock<std::mutex> lock(fsmPathMutex);
 		fsmCurrentPath.clear();
 	}
 
@@ -285,7 +299,7 @@ void SimpleFSM::FSMGoto(int state, int stripPathComponents) {
 
 		// Update target path and release resPath memory
 		{
-			boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+			std::unique_lock<std::mutex> lock(fsmPathMutex);
 			fsmCurrentPath.assign( resPath->begin()+stripPathComponents, resPath->end() );
 		}
 		delete resPath;
@@ -301,7 +315,7 @@ void SimpleFSM::FSMGoto(int state, int stripPathComponents) {
 
 		// Count the actual tasks in the path (skipping state nodes)
 		{ /* mutex(fsmCurrentPath)) */
-			boost::unique_lock<boost::mutex> lock(fsmPathMutex);			
+			std::unique_lock<std::mutex> lock(fsmPathMutex);
 			pathCount = 0;
 			for (std::list<FSMNode*>::iterator j= fsmCurrentPath.begin(); j!=fsmCurrentPath.end(); ++j) {
 				FSMNode* node = *j;
@@ -325,7 +339,7 @@ void SimpleFSM::FSMGoto(int state, int stripPathComponents) {
 	// Present best path
 	std::ostringstream oss;
 	{ /* mutex(fsmCurrentPath)) */
-		boost::unique_lock<boost::mutex> lock(fsmPathMutex);		
+		std::unique_lock<std::mutex> lock(fsmPathMutex);		
 	    if (!fsmCurrentPath.empty()) {
 	        for (std::list<FSMNode*>::iterator j= fsmCurrentPath.begin(); j!=fsmCurrentPath.end(); ++j) {
 			    if (!oss.str().empty()) oss << ", "; oss << (*j)->id;
@@ -346,13 +360,13 @@ void SimpleFSM::FSMJump(int state) {
     CRASH_REPORT_BEGIN;
 
 	// Allow only one thread to steer the FSM
-	boost::unique_lock<boost::mutex> lock(fsmGotoMutex);
+	std::unique_lock<std::mutex> lock(fsmGotoMutex);
 
     CVMWA_LOG("Debug", "Jumping to " << state);
 
 	// Reset path
 	{ /* mutex(fsmCurrentPath)) */
-		boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+		std::unique_lock<std::mutex> lock(fsmPathMutex);
 		fsmCurrentPath.clear();
 	}
 
@@ -402,7 +416,7 @@ void SimpleFSM::FSMSkew(int state) {
 	// Notify state change
 	bool isEmpty = false;
 	{ /* mutex(fsmCurrentPath)) */
-		boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+		std::unique_lock<std::mutex> lock(fsmPathMutex);
 		isEmpty = fsmCurrentPath.empty();		
 	}
 	FSMEnteringState( state, isEmpty );
@@ -410,7 +424,7 @@ void SimpleFSM::FSMSkew(int state) {
 	// Continue towards the active target only if the path is not empty. 
 	// Otherwise it's enough just to change the current node
 	{ /* mutex(fsmCurrentPath)) */
-		boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+		std::unique_lock<std::mutex> lock(fsmPathMutex);
 		isEmpty = fsmCurrentPath.empty();		
 	}
 	if ( !isEmpty ) {
@@ -427,43 +441,35 @@ void SimpleFSM::FSMThreadLoop() {
     CRASH_REPORT_BEGIN;
 	fsmThreadActive = true;
 
-	// Catch interruptions
-	try {
+	// Infinite thread loop
+	while (true) {
+        if (fsmtInterruptRequested) return;
+		bool res = true;
 
-		// Infinite thread loop
-		while (true) {
+		// Keep running until we run out of steps
+		while (res) {
             if (fsmtInterruptRequested) return;
-			bool res = true;
 
-			// Keep running until we run out of steps
-			while (res) {
-                if (fsmtInterruptRequested) return;
+			// Critical section
+			{
+				std::unique_lock<std::mutex> lock(fsmmThreadSafe);
+			    res = FSMContinue(true);
+			}
 
-				// Critical section
-				{
-					boost::unique_lock<boost::mutex> lock(fsmmThreadSafe);
-			        res = FSMContinue(true);
-				}
+			// Yield our time slice after executing an action
+            if (fsmtInterruptRequested) return;
 
-				// Yield our time slice after executing an action
-                if (fsmtInterruptRequested) return;
-				fsmThread->yield();
+		};
 
-			};
+		// Unlock people waiting for completion
+		fsmwWaitCond.notify_all();
 
-			// Unlock people waiting for completion
-			fsmwWaitCond.notify_all();
-
-			// After the above loop, we have drained the
-			// event queue. Enter paused state and wait
-			// to be notified when this changes.
-			_fsmPause();
-		}
-
-	} catch (boost::thread_interrupted &e) {
-		CVMWA_LOG("Debug", "Thread interrupted");
-
+		// After the above loop, we have drained the
+		// event queue. Enter paused state and wait
+		// to be notified when this changes.
+		_fsmPause();
 	}
+
 
 	// Cleanup
 	fsmThreadActive = false;
@@ -485,7 +491,6 @@ void SimpleFSM::FSMThreadStop() {
 
 	// Interrupt thread
 	fsmtInterruptRequested = true;
-	fsmThread->interrupt();
 
 	// Notify all condition variables
 	fsmwWaitCond.notify_all();
@@ -517,17 +522,13 @@ void SimpleFSM::_fsmPause() {
 	// If we are already not paused, don't
 	// do anything
 	if (fsmtPaused) {
-	    boost::unique_lock<boost::mutex> lock(fsmtPauseMutex);
+		std::unique_lock<std::mutex> lock(fsmtPauseMutex);
 	    while(fsmtPaused) {
             if (fsmtInterruptRequested) {
                 fsmtPaused = false;
                 break;
             };
-            try {
-	            fsmtPauseChanged.wait(lock);
-            } catch (boost::thread_interrupted &e) {
-                break;
-            }
+	        fsmtPauseChanged.wait(lock);
 	    }
 	}
 
@@ -545,7 +546,7 @@ void SimpleFSM::_fsmWakeup() {
     CVMWA_LOG("Debug", "Waking-up paused thread");
 
     {
-        boost::unique_lock<boost::mutex> lock(fsmtPauseMutex);
+		std::unique_lock<std::mutex> lock(fsmtPauseMutex);
         fsmtPaused = false;
     }
 
@@ -601,10 +602,10 @@ void SimpleFSM::FSMDone ( const std::string & message ) {
  * Trigger the "begin" action of the SimpleFSM progress feedback.
  * This function cannot be used when FSMDoing/FSMDone are used.
  */
-template <typename T> boost::shared_ptr<T> 
+template <typename T> std::shared_ptr<T> 
 SimpleFSM::FSMBegin( const std::string& message ) {
     CRASH_REPORT_BEGIN;
-	boost::shared_ptr<T> ptr = boost::shared_ptr<T>();
+	std::shared_ptr<T> ptr = std::shared_ptr<T>();
 	if (fsmProgress) {
 		ptr = fsmProgress->begin<T>(message);
 	}
@@ -643,19 +644,18 @@ void SimpleFSM::FSMWaitFor ( int state, int timeout ) {
 	fsmwState = &((*pt).second);
 
 	/*
-    {
-        boost::unique_lock<boost::mutex> lock(fsmwStateMutex);
-        fsmtPaused = false;
-    }
-    fsmwStateChanged.notify_all();
+	{
+	boost::unique_lock<boost::mutex> lock(fsmwStateMutex);
+	fsmtPaused = false;
+	}
+	fsmwStateChanged.notify_all();
 	*/
 
 	// Wait for state
-	
-    {
-	    boost::unique_lock<boost::mutex> lock(fsmwStateMutex);
-	    fsmwStateChanged.wait(lock);
-    }
+	{
+		std::unique_lock<std::mutex> lock(fsmwStateMutex);
+		//fsmwStateChanged.wait(lock);
+	}
 
     CRASH_REPORT_END;
 }
@@ -668,7 +668,7 @@ void SimpleFSM::FSMWaitInactive ( int timeout ) {
 
 	// Wait until we are no longer active
 	{
-	    boost::unique_lock<boost::mutex> lock(fsmwWaitMutex);		
+	    std::unique_lock<std::mutex> lock(fsmwWaitMutex);		
 		while (FSMActive()) {
 			fsmwWaitCond.wait(lock);
 		}
@@ -682,7 +682,7 @@ void SimpleFSM::FSMWaitInactive ( int timeout ) {
  */
 bool SimpleFSM::FSMActive ( ) {
     CRASH_REPORT_BEGIN;
-	boost::unique_lock<boost::mutex> lock(fsmPathMutex);
+	std::unique_lock<std::mutex> lock(fsmPathMutex);
 	return !fsmCurrentPath.empty();
     CRASH_REPORT_END;
 }
@@ -690,7 +690,7 @@ bool SimpleFSM::FSMActive ( ) {
 /**
  * Start an FSM thread
  */
-boost::thread * SimpleFSM::FSMThreadStart() {
+std::thread * SimpleFSM::FSMThreadStart() {
     CRASH_REPORT_BEGIN;
 	// If we are already running, return the thread
 	if (fsmThread != NULL)
@@ -704,7 +704,7 @@ boost::thread * SimpleFSM::FSMThreadStart() {
 	fsmtPaused = true;
 
 	// Start and return the new thread
-	fsmThread = new boost::thread(boost::bind(&SimpleFSM::FSMThreadLoop, this));
+	fsmThread = new std::thread(std::bind(&SimpleFSM::FSMThreadLoop, this));
 	return fsmThread;
     CRASH_REPORT_END;
 }
