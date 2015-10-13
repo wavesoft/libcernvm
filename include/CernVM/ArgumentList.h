@@ -40,6 +40,18 @@ public:
 	CVMVariantClass(const C & v) { c = v; };
 	CVMVariantClass(const D & v) { d = v; };
 
+	// Cast to internal types
+	operator A () const { return a; }
+	operator B () const { return b; }
+	operator C () const { return c; }
+	operator D () const { return d; }
+	
+	// Assign types
+	CVMVariantClass& operator=(A v) { a = v; return *this; };
+	CVMVariantClass& operator=(B v) { b = v; return *this; };
+	CVMVariantClass& operator=(C v) { c = v; return *this; };
+	CVMVariantClass& operator=(D v) { d = v; return *this; };
+
 private:
 
 	// Internal data

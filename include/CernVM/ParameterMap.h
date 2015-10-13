@@ -28,7 +28,8 @@
 #include <vector>
 #include <thread>
 #include <mutex>
-
+#include <memory>
+ 
 //#include <boost/enable_shared_from_this.hpp>
 //#include <boost/make_shared.hpp>
 //#include <boost/thread/mutex.hpp>

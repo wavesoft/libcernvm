@@ -44,6 +44,7 @@
 
 #include <CernVM/Hypervisor/Virtualbox/VBoxCommon.h>
 #include <CernVM/Hypervisor/Virtualbox/VBoxSession.h>
+#include <CernVM/Threads.h>
 
 using namespace std;
 
@@ -274,7 +275,7 @@ int __diskExtract( const std::string& sGZOutput, const std::string& checksum, co
         std::thread * t = NULL;
         if (pf) {
             pf->setMax(1);
-			t = new std::thread(std::bind(&__notifyDecompressStart, pf));
+			t = threads::make_interruptible( new std::thread(std::bind(&__notifyDecompressStart, pf)) );
         }
 
         // Decompress the file
@@ -285,7 +286,7 @@ int __diskExtract( const std::string& sGZOutput, const std::string& checksum, co
             // Notify error and reap notification thrad
             if (t != NULL) { 
                 pf->fail( "Unable to decompress the disk image", res );
-                t->join(); 
+                threads::join(t);
                 delete t; 
             }
 
@@ -303,7 +304,7 @@ int __diskExtract( const std::string& sGZOutput, const std::string& checksum, co
             CVMWA_LOG("Info", "Could not find the extracted file!" );
             if (t != NULL) { 
                 pf->fail( "Could not find the extracted file", res );
-                t->join(); 
+                threads::join(t);
                 delete t; 
             }
             return HVE_EXTERNAL_ERROR;

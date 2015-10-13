@@ -19,6 +19,7 @@
  */
 
 #include <CernVM/SimpleFSM.h>
+#include <CernVM/Threads.h>
 #include <cstdarg>
 #include <stdexcept>
 #include <iostream>
@@ -489,7 +490,8 @@ void SimpleFSM::FSMThreadStop() {
 		return;
 	}
 
-	// Interrupt thread
+	// Interrupt thread and wait the interrupt to be acknowledged
+	threads::interrupt( fsmThread, true );
 	fsmtInterruptRequested = true;
 
 	// Notify all condition variables
@@ -504,7 +506,7 @@ void SimpleFSM::FSMThreadStop() {
     fsmPathMutex.try_lock(); fsmPathMutex.unlock();
 
     // Join thread
-	fsmThread->join();
+    threads::join( fsmThread );
 
 	// Cleanup thread
 	fsmThread = NULL;
@@ -705,7 +707,10 @@ std::thread * SimpleFSM::FSMThreadStart() {
 
 	// Start and return the new thread
 	fsmThread = new std::thread(std::bind(&SimpleFSM::FSMThreadLoop, this));
-	return fsmThread;
+
+	// Make thread interruptable
+	return threads::make_interruptible( fsmThread );
+
     CRASH_REPORT_END;
 }
 
