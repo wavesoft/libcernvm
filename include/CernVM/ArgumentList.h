@@ -23,44 +23,12 @@
 #define ARGUMENTS_LIST_H
 
 //#include <boost/variant.hpp>
+#include <extern/mapbox/variant.hpp>
 #include <string>
 #include <vector>
 
-/**
- * Minimal implementation of boost::variant
- */
-template< typename A, typename B, typename C, typename D >
-class CVMVariantClass
-{
-public:
-
-	// Constructor
-	CVMVariantClass(const A & v) { a = v; };
-	CVMVariantClass(const B & v) { b = v; };
-	CVMVariantClass(const C & v) { c = v; };
-	CVMVariantClass(const D & v) { d = v; };
-
-	// Cast to internal types
-	operator A () const { return a; }
-	operator B () const { return b; }
-	operator C () const { return c; }
-	operator D () const { return d; }
-	
-	// Assign types
-	CVMVariantClass& operator=(A v) { a = v; return *this; };
-	CVMVariantClass& operator=(B v) { b = v; return *this; };
-	CVMVariantClass& operator=(C v) { c = v; return *this; };
-	CVMVariantClass& operator=(D v) { d = v; return *this; };
-
-private:
-
-	// Internal data
-	A a; B b; C c; D d;
-
-};
-
 /* Typedef for variant callbacks */
-typedef CVMVariantClass< float, double, int, std::string >								VariantArg;
+typedef mapbox::util::variant< float, double, int, std::string >						VariantArg;
 typedef std::vector< VariantArg >														VariantArgList;
 
 /**

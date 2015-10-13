@@ -120,6 +120,9 @@ bool SimpleFSM::_callHandler( FSMNode * node, bool inThread ) {
 	// Use guarded execution
 	try {
 
+		// Check if thread is interrupted
+		if (this_thread::is_interrupted()) return false;
+
 		// Check if we are interrupted
 		if (fsmtInterruptRequested) {
 			CVMWA_LOG("Debuf", "FSM Handler interrupted");
