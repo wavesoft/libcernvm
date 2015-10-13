@@ -2424,11 +2424,11 @@ vector< EnumFile > enumDirectory(const std::string & directory, const bool fullP
 	// Iterate over directory listing
 	if (dp != NULL)
 	{
-		while (ep = readdir(dp)) {
+		while ((ep = readdir(dp)) != NULL) {
 
 			// Cast to properties
 			std::string fName; fName = ep->d_name;
-			bool isDir = ((ep->d_type & DI_DIR) != 0);
+			bool isDir = ((ep->d_type & DT_DIR) != 0);
 
 			// Collect file
 			files.push_back(EnumFile(filenamePrefix+fName, isDir));
