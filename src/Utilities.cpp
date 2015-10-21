@@ -203,15 +203,15 @@ void flushNamedMutexes() {
 };
 
 /**
- * Allocate a new GUID using BOOST's UUID
+ * Allocate a new GUID using a minimal only random-based
+ * generator, since we are not interested in high entrophy.
  */
 std::string newGUID( ) {
     CRASH_REPORT_BEGIN;
-	static const int UUID_LEN = 10;
+	static const int UUID_LEN = 36;
 	static const char alphanum[] =
 		"0123456789"
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		"abcdefghijklmnopqrstuvwxyz";
+		"abcdef";
 
 	try {
 
@@ -223,6 +223,9 @@ std::string newGUID( ) {
 		for (int i = 0; i < UUID_LEN; ++i) {
 			uuid[i] = alphanum[rand() % (sizeof(alphanum)-1)];
 		}
+
+		// Add dashes
+		uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
 
 		// Return UUID
 		return uuid;
