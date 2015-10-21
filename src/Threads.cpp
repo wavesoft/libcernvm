@@ -74,6 +74,21 @@ namespace threads {
 	}
 
 	/**
+	* Stop managing this thread
+	*/
+	void unmanage(std::thread * thread)
+	{
+		// Find item
+		std::map< std::thread::id, ThreadDetails * >::iterator it = threadLookup.find(thread->get_id());
+		if (it == threadLookup.end()) return;
+		ThreadDetails * details = it->second;
+
+		// Delete
+		threadLookup.erase(it);
+		delete details;
+	}
+
+	/**
 	* Interrupt a specified thread
 	*/
 	void interrupt(std::thread * thread, const bool waitAck)

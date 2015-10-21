@@ -35,6 +35,11 @@ namespace threads {
      */
     std::thread *   make_interruptible( std::thread * thread );
 
+	/**
+	 * Stop managing this thread
+	 */
+	void			unmanage( std::thread * thread );
+
     /**
      * Interrupt a specified thread
      */
@@ -48,17 +53,17 @@ namespace threads {
     /**
      * Interrupt a vector of threads
      */
-    void            interrupt_all( std::vector< std::thread * > threads, const bool waitAck = false );
+	void            interrupt_all( const std::vector< std::thread * > & threads, const bool waitAck = false);
 
     /**
      * Interrupt a vector of threads
      */
-    void            join_all( std::vector< std::thread * > threads );
+	void            join_all(const std::vector< std::thread * > & threads);
 
     /**
      * Remove one thread from collection
      */
-    void            remove_one( std::vector< std::thread * > threads, std::thread * thread );
+    void            remove_one( std::vector< std::thread * > & threads, std::thread * thread );
 
 };
 

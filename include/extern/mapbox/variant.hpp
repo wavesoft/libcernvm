@@ -19,12 +19,18 @@
  #else
   #define VARIANT_INLINE __declspec(noinline)
  #endif
+ #define CONSTEXPR const
+ #define NOEXCEPT
+ #define ALIGNOF sizeof
 #else
  #ifdef NDEBUG
   #define VARIANT_INLINE inline __attribute__((always_inline))
  #else
   #define VARIANT_INLINE __attribute__((noinline))
  #endif
+ #define CONSTEXPR constexpr
+ #define NOEXCEPT noexcept
+ #define ALIGNOF alignof
 #endif
 
 #define VARIANT_MAJOR_VERSION 0
@@ -48,7 +54,7 @@ protected:
 
 namespace detail {
 
-static constexpr std::size_t invalid_value = std::size_t(-1);
+static CONSTEXPR std::size_t invalid_value = std::size_t(-1);
 
 template <typename T, typename...Types>
 struct direct_type;
@@ -56,14 +62,14 @@ struct direct_type;
 template <typename T, typename First, typename...Types>
 struct direct_type<T, First, Types...>
 {
-    static constexpr std::size_t index = std::is_same<T, First>::value
+    static CONSTEXPR std::size_t index = std::is_same<T, First>::value
         ? sizeof...(Types) : direct_type<T, Types...>::index;
 };
 
 template <typename T>
 struct direct_type<T>
 {
-    static constexpr std::size_t index = invalid_value;
+	static CONSTEXPR std::size_t index = invalid_value;
 };
 
 template <typename T, typename...Types>
@@ -72,21 +78,21 @@ struct convertible_type;
 template <typename T, typename First, typename...Types>
 struct convertible_type<T, First, Types...>
 {
-    static constexpr std::size_t index = std::is_convertible<T, First>::value
+	static CONSTEXPR std::size_t index = std::is_convertible<T, First>::value
         ? sizeof...(Types) : convertible_type<T, Types...>::index;
 };
 
 template <typename T>
 struct convertible_type<T>
 {
-    static constexpr std::size_t index = invalid_value;
+	static CONSTEXPR std::size_t index = invalid_value;
 };
 
 template <typename T, typename...Types>
 struct value_traits
 {
-    static constexpr std::size_t direct_index = direct_type<T, Types...>::index;
-    static constexpr std::size_t index =
+	static CONSTEXPR std::size_t direct_index = direct_type<T, Types...>::index;
+	static CONSTEXPR std::size_t index =
         (direct_index == invalid_value) ? convertible_type<T, Types...>::index : direct_index;
 };
 
@@ -96,7 +102,7 @@ struct is_valid_type;
 template <typename T, typename First, typename... Types>
 struct is_valid_type<T, First, Types...>
 {
-    static constexpr bool value = std::is_convertible<T, First>::value
+	static CONSTEXPR bool value = std::is_convertible<T, First>::value
         || is_valid_type<T, Types...>::value;
 };
 
@@ -494,7 +500,7 @@ template <typename Variant, typename Comp>
 class comparer
 {
 public:
-    explicit comparer(Variant const& lhs) noexcept
+	explicit comparer(Variant const& lhs) NOEXCEPT
         : lhs_(lhs) {}
     comparer& operator=(comparer const&) = delete;
     // visitor
@@ -519,7 +525,7 @@ class variant
 private:
 
     static const std::size_t data_size = static_max<sizeof(Types)...>::value;
-    static const std::size_t data_align = static_max<alignof(Types)...>::value;
+	static const std::size_t data_align = static_max<ALIGNOF(Types)...>::value;
 
     using data_type = typename std::aligned_storage<data_size, data_align>::type;
     using helper_type = variant_helper<Types...>;
@@ -541,10 +547,10 @@ public:
     // http://isocpp.org/blog/2012/11/universal-references-in-c11-scott-meyers
     template <typename T, class = typename std::enable_if<
                           detail::is_valid_type<typename std::remove_reference<T>::type, Types...>::value>::type>
-    VARIANT_INLINE variant(T && val) noexcept
+    VARIANT_INLINE variant(T && val) NOEXCEPT
         : type_index(detail::value_traits<typename std::remove_reference<T>::type, Types...>::index)
     {
-        constexpr std::size_t index = sizeof...(Types) - detail::value_traits<typename std::remove_reference<T>::type, Types...>::index - 1;
+		CONSTEXPR std::size_t index = sizeof...(Types)-detail::value_traits<typename std::remove_reference<T>::type, Types...>::index - 1;
         using target_type = typename detail::select_type<index, Types...>::type;
         new (&data) target_type(std::forward<T>(val)); // nothrow
     }
@@ -555,7 +561,7 @@ public:
         helper_type::copy(old.type_index, &old.data, &data);
     }
 
-    VARIANT_INLINE variant(variant<Types...>&& old) noexcept
+	VARIANT_INLINE variant(variant<Types...>&& old) NOEXCEPT
         : type_index(old.type_index)
     {
         helper_type::move(old.type_index, &old.data, &data);
@@ -577,7 +583,7 @@ public:
     // conversions
     // move-assign
     template <typename T>
-    VARIANT_INLINE variant<Types...>& operator=(T && rhs) noexcept
+	VARIANT_INLINE variant<Types...>& operator=(T && rhs) NOEXCEPT
     {
         variant<Types...> temp(std::forward<T>(rhs));
         swap(*this, temp);
@@ -708,7 +714,7 @@ public:
         return type_index;
     }
 
-    VARIANT_INLINE int which() const noexcept
+	VARIANT_INLINE int which() const NOEXCEPT
     {
         return static_cast<int>(sizeof...(Types) - type_index - 1);
     }
@@ -761,7 +767,7 @@ public:
         return detail::binary_dispatcher<F, V, R, Types...>::apply(v0, v1, f);
     }
 
-    ~variant() noexcept
+	~variant() NOEXCEPT
     {
         helper_type::destroy(type_index, &data);
     }

@@ -3,6 +3,12 @@
 
 #include <utility>
 
+#ifndef _MSC_VER
+#define NOEXCEPT noexcept
+#else
+#define NOEXCEPT
+#endif
+
 namespace mapbox { namespace util {
 
 template <typename T>
@@ -42,7 +48,7 @@ public:
         return *this;
     }
 
-    inline void swap(recursive_wrapper& operand) noexcept
+	inline void swap(recursive_wrapper& operand) NOEXCEPT
     {
         T* temp = operand.p_;
         operand.p_ = p_;
@@ -50,7 +56,7 @@ public:
     }
 
 
-    recursive_wrapper& operator=(recursive_wrapper&& rhs) noexcept
+    recursive_wrapper& operator=(recursive_wrapper&& rhs) NOEXCEPT
     {
         swap(rhs);
         return *this;
@@ -117,7 +123,7 @@ void recursive_wrapper<T>::assign(const T& rhs)
 }
 
 template <typename T>
-inline void swap(recursive_wrapper<T>& lhs, recursive_wrapper<T>& rhs) noexcept
+inline void swap(recursive_wrapper<T>& lhs, recursive_wrapper<T>& rhs) NOEXCEPT
 {
     lhs.swap(rhs);
 }
