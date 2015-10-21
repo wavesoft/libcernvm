@@ -2656,7 +2656,7 @@ bool waitFileOpen( string filename, bool forOpen, int waitMillis ) {
         if (isFileOpen(filename) == forOpen) return true;
 
         // Wait a bit
-        boost::this_thread::sleep( boost::posix_time::millisec( 500 ) );
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     }
 
@@ -2724,7 +2724,7 @@ bool waitPidFile( string filename, bool forAcuisition, int waitMillis ) {
         }
 
         // Wait a bit
-        boost::this_thread::sleep( boost::posix_time::millisec( 500 ) );
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     }
 
