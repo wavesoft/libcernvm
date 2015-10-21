@@ -20,7 +20,7 @@
 
 #include <CernVM/Hypervisor/Virtualbox/VBoxCommon.h>
 #include <CernVM/Hypervisor/Virtualbox/VBoxInstance.h>
-#include <CernVM/Threads.hpp>
+#include <CernVM/Threads.h>
 
 #include "CernVM/Config.h"
 #include <cerrno>
@@ -459,7 +459,7 @@ int vboxInstall( const DownloadProviderPtr & downloadProvider, DomainKeystore & 
                 installerPf->complete("Installed hypervisor");
             }
 
-            if (this_thread::is_interrupted()) {
+            if (::this_thread::is_interrupted()) {
 
                 // If operations were interrupted within this context, it most probably means
                 // that we have a residual, mounted hard disk. 

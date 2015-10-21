@@ -18,7 +18,6 @@
  * Contact: <ioannis.charalampidis[at]cern.ch>
  */
 
-#include <boost/thread.hpp>
 #include <AppKit/AppKit.h>
 #include <Cocoa/Cocoa.h>
 #include <string>
