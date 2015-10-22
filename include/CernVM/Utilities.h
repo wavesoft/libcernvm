@@ -506,12 +506,12 @@ void                                                getLinuxInfo    ( LINUX_INFO
 /**
  * Utility function to check if the file is oppened by another process
  */
-bool isFileOpen( std::string fileName );
+// bool isFileOpen( std::string fileName );
 
 /**
  * Wait for a file to be oppened within a specific time range
  */
-bool waitFileOpen( std::string filename, bool forOpen, int waitMillis );
+// bool waitFileOpen( std::string filename, bool forOpen, int waitMillis );
 
 /**
  * Wait for PID lock file to be released or acquired

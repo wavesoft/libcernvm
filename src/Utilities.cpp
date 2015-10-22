@@ -2560,111 +2560,111 @@ void getLinuxInfo ( LINUX_INFO * info ) {
     CRASH_REPORT_END;
 }
 
-/**
- * Helper to traverse the /proc/<pid>/fd descriptors
- * in order to see what points to the fileName
- */
-bool _isLinkInDir( string fileName, const fs::path& path ) {
-    CRASH_REPORT_BEGIN;
-    try {
+// /**
+//  * Helper to traverse the /proc/<pid>/fd descriptors
+//  * in order to see what points to the fileName
+//  */
+// bool _isLinkInDir( string fileName, const fs::path& path ) {
+//     CRASH_REPORT_BEGIN;
+//     try {
 
-        // Start iterating /proc/<id>/fd
-        fs::directory_iterator end_iter;
-        for ( fs::directory_iterator dir_itr( path );
-              dir_itr != end_iter;
-              ++dir_itr ) {
+//         // Start iterating /proc/<id>/fd
+//         fs::directory_iterator end_iter;
+//         for ( fs::directory_iterator dir_itr( path );
+//               dir_itr != end_iter;
+//               ++dir_itr ) {
             
-            // Resolve symlink & Check if the filename is used
-            try {
-                fs::path resolved = fs::canonical( dir_itr->path() );
-                if (resolved.string().compare( fileName ) == 0)
-                    return true;
-            } catch ( const std::exception & ex ) {
-                // Ignore errors (They are usually access denied)
-            }
+//             // Resolve symlink & Check if the filename is used
+//             try {
+//                 fs::path resolved = fs::canonical( dir_itr->path() );
+//                 if (resolved.string().compare( fileName ) == 0)
+//                     return true;
+//             } catch ( const std::exception & ex ) {
+//                 // Ignore errors (They are usually access denied)
+//             }
 
-        }
+//         }
 
-    } catch ( const std::exception & ex ) {
-        // That's usually access denied
-        return false;
-    }
+//     } catch ( const std::exception & ex ) {
+//         // That's usually access denied
+//         return false;
+//     }
 
-    // Not found
-    return false;
+//     // Not found
+//     return false;
 
-    CRASH_REPORT_END;
-};
+//     CRASH_REPORT_END;
+// };
 
-/**
- * Utility function to check if the file is oppened by another process
- */
-bool isFileOpen( string fileName ) {
-    CRASH_REPORT_BEGIN;
+// /**
+//  * Utility function to check if the file is oppened by another process
+//  */
+// bool isFileOpen( string fileName ) {
+//     CRASH_REPORT_BEGIN;
     
-    // Get access to /proc
-    fs::path full_path( fs::initial_path<fs::path>() );
-    full_path = fs::system_complete( fs::path( "/proc" ) );
+//     // Get access to /proc
+//     fs::path full_path( fs::initial_path<fs::path>() );
+//     full_path = fs::system_complete( fs::path( "/proc" ) );
 
-    // Start iterating /proc
-    fs::directory_iterator end_iter;
-    for ( fs::directory_iterator dir_itr( full_path );
-          dir_itr != end_iter;
-          ++dir_itr ) {
+//     // Start iterating /proc
+//     fs::directory_iterator end_iter;
+//     for ( fs::directory_iterator dir_itr( full_path );
+//           dir_itr != end_iter;
+//           ++dir_itr ) {
 
-      // Ensure no error occurs
-      try {
-        if ( fs::is_directory( dir_itr->status() ) ) {
+//       // Ensure no error occurs
+//       try {
+//         if ( fs::is_directory( dir_itr->status() ) ) {
 
-            // Check the /fd directory
-            string sPath = dir_itr->path().string() + "/fd";
-            fs::path subPath = fs::system_complete( fs::path( sPath ) );
+//             // Check the /fd directory
+//             string sPath = dir_itr->path().string() + "/fd";
+//             fs::path subPath = fs::system_complete( fs::path( sPath ) );
 
-            // Check if the subPath is directory
-            if ( fs::is_directory( subPath ) ) {
+//             // Check if the subPath is directory
+//             if ( fs::is_directory( subPath ) ) {
 
-                // Check if the filename is inside the /proc/<pid>/fd descriptors
-                if (_isLinkInDir( fileName, subPath ))
-                    return true;
+//                 // Check if the filename is inside the /proc/<pid>/fd descriptors
+//                 if (_isLinkInDir( fileName, subPath ))
+//                     return true;
 
-            }
+//             }
 
-        }
+//         }
 
-      }
-      catch ( const std::exception & ex ) {
-          // Ignore errors (They are usually access denied)
-      }
-    }
+//       }
+//       catch ( const std::exception & ex ) {
+//           // Ignore errors (They are usually access denied)
+//       }
+//     }
 
-    // Link was not found in the directory
-    return false;
-    CRASH_REPORT_END;
-}
+//     // Link was not found in the directory
+//     return false;
+//     CRASH_REPORT_END;
+// }
 
-/**
- * Wait for a file to be oppened within a specific time range
- */
-bool waitFileOpen( string filename, bool forOpen, int waitMillis ) {
-    CRASH_REPORT_BEGIN;
+// /**
+//  * Wait for a file to be oppened within a specific time range
+//  */
+// bool waitFileOpen( string filename, bool forOpen, int waitMillis ) {
+//     CRASH_REPORT_BEGIN;
 
-    // Wait for waitMillis
-    unsigned long sTime = getMillis() + waitMillis;
-    while (getMillis() < sTime ) {
+//     // Wait for waitMillis
+//     unsigned long sTime = getMillis() + waitMillis;
+//     while (getMillis() < sTime ) {
 
-        // Wait until isFileOpen matches forOpen
-        if (isFileOpen(filename) == forOpen) return true;
+//         // Wait until isFileOpen matches forOpen
+//         if (isFileOpen(filename) == forOpen) return true;
 
-        // Wait a bit
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+//         // Wait a bit
+//         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    }
+//     }
 
-    // Timeout occured
-    return false;
+//     // Timeout occured
+//     return false;
 
-    CRASH_REPORT_END;
-}
+//     CRASH_REPORT_END;
+// }
 
 
 /**
