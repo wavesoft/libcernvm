@@ -203,6 +203,19 @@ void flushNamedMutexes() {
 };
 
 /**
+ * Check if the specified file is directory
+ */
+bool isDir( const char * filename )
+{
+    struct stat st_buf;
+    // Get stat of specified file
+    if (stat(filename, &st_buf) != 0)
+        return false;
+    // Check if this file is directory
+    return S_ISDIR(st_buf.st_mode);
+}
+
+/**
  * Allocate a new GUID using a minimal only random-based
  * generator, since we are not interested in high entrophy.
  */
@@ -2256,7 +2269,7 @@ bool isPIDAlive( int pid ) {
             if (errno == EPERM) {
                 std::ostringstream oss;
                 oss << "/proc/" << pid;
-                return fs::is_directory( oss.str() );
+                return isDir( oss.str() );
             }
         }
         return (ret == 0);
