@@ -205,11 +205,11 @@ void flushNamedMutexes() {
 /**
  * Check if the specified file is directory
  */
-bool isDir( const char * filename )
+bool isDir( const string & filename )
 {
     struct stat st_buf;
     // Get stat of specified file
-    if (stat(filename, &st_buf) != 0)
+    if (stat(filename.c_str(), &st_buf) != 0)
         return false;
     // Check if this file is directory
     return S_ISDIR(st_buf.st_mode);

@@ -20,6 +20,7 @@
 
 #include <CernVM/Threads.h>
 #include <map>
+#include <algorithm>
 
 /**
  * Thread details class
