@@ -29,6 +29,9 @@ option(SYSTEM_OPENSSL "Set to ON to use openssl from the system" OFF)
 option(SYSTEM_CURL "Set to ON to use CURL from the system" OFF)
 option(COVERITY_RUN "Set to ON when running this application with coverity" OFF)
 
+# Overridable C++11 parameters
+set(CXX11_FLAGS "" CACHE STRING "Override the C++11 compiler flag(s)" )
+
 set(TARGET_ARCH "${GUESS_ARCH}" CACHE STRING "Override the identified target architecture (x86_64 or i386)" )
 set(BUILD_ID "" CACHE STRING "A build ID which is used to address different library configuration")
 
@@ -333,17 +336,26 @@ endif()
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-	add_compile_flags( ${PROJECT_NAME} -std=c++11 )
-elseif(COMPILER_SUPPORTS_CXX0X)
-	add_compile_flags( ${PROJECT_NAME} -std=c++0x )
-else()
-        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
-endif()
+if (CXX11_FLAGS STREQUAL "")
 
-# On apple, add -stdlib=libc++
-if (APPLE)
-	add_compile_flags( ${PROJECT_NAME} -stdlib=libc++ )
+	# Check what compiler flags to add
+	if(COMPILER_SUPPORTS_CXX11)
+		add_compile_flags( ${PROJECT_NAME} -std=c++11 )
+	elseif(COMPILER_SUPPORTS_CXX0X)
+		add_compile_flags( ${PROJECT_NAME} -std=c++0x )
+	else()
+		if ((NOT DEFINED MSVC_VERSION) OR (MSVC_VERSION LESS 1800))
+			message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+		endif()
+	endif()
+
+	# On apple, add -stdlib=libc++
+	if (APPLE)
+		add_compile_flags( ${PROJECT_NAME} -stdlib=libc++ )
+	endif()
+
+else()
+	add_compile_flags( ${PROJECT_NAME} ${CXX11_FLAGS} )
 endif()
 
 # Libraries
