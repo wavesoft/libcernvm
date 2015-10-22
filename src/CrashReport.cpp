@@ -100,7 +100,7 @@ string crashReportBuildString() {
  * Register log entry to the crash report scroll-back buffer 
  */
 void crashReportStoreLog( ostringstream & oss ) {
-	std::unique_lock objectLock(scrollbackAccessMutex, std::try_to_lock);
+	std::unique_lock<std::mutex> objectLock(scrollbackAccessMutex, std::try_to_lock);
 
     const std::string ossstr = oss.str();
     size_t strLength = ossstr.length();
@@ -125,7 +125,7 @@ void crashReportStoreLog( ostringstream & oss ) {
  * Pretty-print the stack trace to the response string given
  */
 std::string crashReportBuildStackTrace() {
-	std::unique_lock objectLock(scrollbackAccessMutex, std::try_to_lock);
+	std::unique_lock<std::mutex> objectLock(scrollbackAccessMutex, std::try_to_lock);
     try {
 	    // Allocate space
 	    string cBuffer = "";
@@ -193,7 +193,7 @@ static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp) 
  * Transmit the crash report
  */
 void crashSendReport( const char * function, const char * message, std::string stackTrace ) { 
-	std::unique_lock objectLock(scrollbackAccessMutex, std::try_to_lock);
+	std::unique_lock<std::mutex> objectLock(scrollbackAccessMutex, std::try_to_lock);
 	CURL *curl;
 	CURLcode res;
 
