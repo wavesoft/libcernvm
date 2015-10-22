@@ -43,7 +43,7 @@ endif()
 
 # CernVM Library
 project ( libcernvm )
-set(VERSION "2.0.12")
+set(VERSION "2.0.13")
 
 #############################################################
 # HELPER FUNCTIONS 
