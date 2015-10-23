@@ -56,9 +56,9 @@ class VBoxSession : public SimpleFSM, public HVSession {
 public:
 
     VBoxSession( ParameterMapPtr param, HVInstancePtr hv ) 
-        : SimpleFSM(), HVSession(param, hv), dataPath(""), isAborting(false), errorCode(0), errorMessage(""),
-          errorCode(0), errorTimestamp(0), lastMachineInfo(), lastMachineInfoTimestamp(0), lastLogTime(0), 
-          execMutex(), updateMutex(), execConfig() 
+        : SimpleFSM(), HVSession(param, hv), dataPath(""), isAborting(false), errorMessage(""), errorCode(0), 
+          errorTimestamp(0), lastMachineInfo(), lastMachineInfoTimestamp(0), lastLogTime(0), execMutex(), 
+          updateMutex(), execConfig() 
     {
         CRASH_REPORT_BEGIN;
 
