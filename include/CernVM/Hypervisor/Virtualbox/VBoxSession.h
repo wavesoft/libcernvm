@@ -55,7 +55,11 @@ enum VBoxDiskType {
 class VBoxSession : public SimpleFSM, public HVSession {
 public:
 
-    VBoxSession( ParameterMapPtr param, HVInstancePtr hv ) : SimpleFSM(), HVSession(param, hv), execConfig() {
+    VBoxSession( ParameterMapPtr param, HVInstancePtr hv ) 
+        : SimpleFSM(), HVSession(param, hv), dataPath(""), isAborting(false), errorCode(0), errorMessage(""),
+          errorCode(0), errorTimestamp(0), lastMachineInfo(), lastMachineInfoTimestamp(0), lastLogTime(0), 
+          execMutex(), updateMutex(), execConfig() 
+    {
         CRASH_REPORT_BEGIN;
 
         FSM_REGISTRY(1,             // Entry point is on '1'
@@ -268,7 +272,7 @@ protected:
     ////////////////////////////////////
     // Local variables
     ////////////////////////////////////
-    
+
     std::string             dataPath;
     bool                    isAborting;
 
@@ -288,6 +292,9 @@ protected:
 
     // For having only a single system command running
     std::mutex				execMutex;
+
+    // For having only a single update command running
+    std::mutex              updateMutex;
 
     /*  Default sysExecConfig */
     SysExecConfig           execConfig;

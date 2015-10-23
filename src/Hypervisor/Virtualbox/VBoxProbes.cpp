@@ -83,7 +83,7 @@ void VBoxLogProbe::analyze() {
     }
 
     // Start scanning
-    while (!fIn.eof()) {
+    while (!fIn.eof() && !fIn.fail()) {
 
         // Read line
         fIn.getline( inBuffer, 1023 );

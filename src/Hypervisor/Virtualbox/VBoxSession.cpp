@@ -1873,6 +1873,9 @@ int VBoxSession::update ( bool waitTillInactive ) {
     FSMWaitInactive();
     if (isAborting) return HVE_INVALID_STATE;
 
+    // Only one instance should access the update function at a time
+    std::unique_lock<std::mutex> lock(updateMutex);
+
     // Get current state
     int lastState = local->getNum<int>("state", 0);
     int newState = lastState;
