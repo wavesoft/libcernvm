@@ -202,6 +202,7 @@ void flushNamedMutexes() {
 
 };
 
+#ifdef __linux__
 /**
  * Check if the specified file is directory
  */
@@ -214,6 +215,7 @@ bool isDir( const string & filename )
     // Check if this file is directory
     return S_ISDIR(st_buf.st_mode);
 }
+#endif
 
 /**
  * Allocate a new GUID using a minimal only random-based
