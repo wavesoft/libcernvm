@@ -1078,7 +1078,7 @@ void VBoxSession::ConfigureVMScratch() {
         }
 
         // Create a hard disk for this VM
-        string vmDisk = getTmpFile(".vdi", this->getDataFolder());
+		string vmDisk = getTmpFile(".vdi", local->get("baseFolder"));
 
         // (4) Create disk
         args.str("");
