@@ -566,7 +566,12 @@ HVSessionPtr VBoxInstance::sessionOpen ( const ParameterMapPtr& parameters, cons
 
     // Call parent function to open session
     HVSessionPtr  sess = HVInstance::sessionOpen(parameters,pf);
-    VBoxSessionPtr vbs = std::static_pointer_cast<VBoxSession>( sess );
+	VBoxSessionPtr vbs = std::static_pointer_cast<VBoxSession>(sess);
+
+	// If we didn't manage to open it, return void
+	if (!vbs) {
+		return vbs;
+	}
 
     // Set progress feedack object
     vbs->FSMUseProgress( pf, "Updating VM information" );
