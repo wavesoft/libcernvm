@@ -107,6 +107,9 @@ enum HVFailures {
 #define HVF_DUAL_NIC           64       // Use secondary adapter instead of creating a NAT rule on the first one
 #define HVF_SERIAL_LOGFILE    128       // Use ttyS0 as external logfile.
 
+/* Default I/O operation retries */
+#define HV_DEFAULT_IO_RETRIES   2
+
 /**
  * Shared Pointer Definition
  */
@@ -561,19 +564,19 @@ public:
      * Download an arbitrary file and validate it against a checksum
      * file, both provided as URLs
      */
-    int                     downloadFileURL     ( const std::string & fileURL, const std::string & checksumURL, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = 2, const DownloadProviderPtr & customDownloadProvider = DownloadProviderPtr() );
+    int                     downloadFileURL     ( const std::string & fileURL, const std::string & checksumURL, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = HV_DEFAULT_IO_RETRIES, const DownloadProviderPtr & customDownloadProvider = DownloadProviderPtr() );
 
     /**
      * Download an arbitrary file and validate it against a checksum
      * string specified in parameter
      */
-    int                     downloadFile        ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = 2, const DownloadProviderPtr & customDownloadProvider = DownloadProviderPtr() );
+    int                     downloadFile        ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = HV_DEFAULT_IO_RETRIES, const DownloadProviderPtr & customDownloadProvider = DownloadProviderPtr() );
     
     /**
      * Download a gzip-compressed arbitrary file and validate it's extracted
      * contents against a checksum string specified in parameter
      */
-    int                     downloadFileGZ      ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = 2, const DownloadProviderPtr & customDownloadProvider = DownloadProviderPtr() );
+    int                     downloadFileGZ      ( const std::string & fileURL, const std::string & checksumString, std::string * filename, const FiniteTaskPtr & pf = FiniteTaskPtr(), const int retries = HV_DEFAULT_IO_RETRIES, const DownloadProviderPtr & customDownloadProvider = DownloadProviderPtr() );
 
     /**
      * Download a specific version of CernVM and return the path where it was saved.
@@ -658,7 +661,7 @@ int                             installHypervisor   ( const DownloadProviderPtr 
                                                       DomainKeystore & keystore,
                                                       const UserInteractionPtr & ui = UserInteractionPtr(), 
                                                       const FiniteTaskPtr & pf = FiniteTaskPtr(), 
-                                                      int retries = 4 );
+                                                      int retries = HV_DEFAULT_IO_RETRIES );
 
 /**
  * Return the string representation of a hypervisor error code
