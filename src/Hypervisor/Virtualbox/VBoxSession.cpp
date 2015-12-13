@@ -886,13 +886,6 @@ void VBoxSession::DownloadMedia() {
             machineArch = "i386";
         }
 
-        // URL Filename
-        string urlFilename = URL_CERNVM_RELEASES "/ucernvm-images." + parameters->get("cernvmVersion", DEFAULT_CERNVM_VERSION)  \
-                                + ".cernvm." + machineArch \
-                                + "/ucernvm-" + parameters->get("cernvmFlavor", "devel") \
-                                + "." + parameters->get("cernvmVersion", DEFAULT_CERNVM_VERSION) \
-                                + ".cernvm." + machineArch + ".iso";
-
         // Get the version of CernVM to fetch
         string cernvmVersion = parameters->get("cernvmVersion", DEFAULT_CERNVM_VERSION);
 

@@ -422,6 +422,12 @@ public:
      */
     virtual void            wait() = 0;
 
+    /**
+     * Return boot medium checksum (SHA256), used by launchers to verify
+     * the authenticity of the virtual machine.
+     */
+     virtual int             getBootChecksum     ( std::string * checksum, const FiniteTaskPtr & pf, const DownloadProviderPtr& downloadProvider );
+
 };
 
 

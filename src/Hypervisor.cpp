@@ -421,174 +421,6 @@ int getLatestCernVMVersion( std::string * version, const FiniteTaskPtr & pf, con
 
 }
 
-/////////////////////////////////////
-/////////////////////////////////////
-////
-//// HVSession Implementation
-////
-/////////////////////////////////////
-/////////////////////////////////////
-
-/**
- * Try to connect to the API port and check if it succeeded
- */
-
-bool HVSession::isAPIAlive( unsigned char handshake, int timeoutSec ) {
-    CRASH_REPORT_BEGIN;
-    std::string ip = this->getAPIHost();
-    if (ip.empty()) return false;
-    return isPortOpen( ip.c_str(), this->getAPIPort(), handshake, timeoutSec );
-    CRASH_REPORT_END;
-}
-
-/**
- * Change the default download provider
- */
-void HVSession::setDownloadProvider( DownloadProviderPtr p ) { 
-    CRASH_REPORT_BEGIN;
-    this->downloadProvider = p;
-    CRASH_REPORT_END;
-};
-
-/////////////////////////////////////
-/////////////////////////////////////
-////
-//// Hypervisor Implementation
-////
-/////////////////////////////////////
-/////////////////////////////////////
-
-/**
- * Get boot medium checksum
- */
-std::string HVInstance::getBootChecksum() {
-
-}
-
-/**
- * Measure the resources from the sessions
- */
-int HVInstance::getUsage( HVINFO_RES * resCount ) { 
-    CRASH_REPORT_BEGIN;
-    resCount->memory = 0;
-    resCount->cpus = 0;
-    resCount->disk = 0;
-    for (std::map< std::string,HVSessionPtr >::iterator i = this->sessions.begin(); i != this->sessions.end(); i++) {
-        HVSessionPtr sess = (*i).second;
-        resCount->memory += sess->parameters->getNum<int>( "memory" );
-        resCount->cpus += sess->parameters->getNum<int>( "cpus" );
-        resCount->disk += sess->parameters->getNum<int>( "disk" );
-    }
-    return HVE_OK;
-    CRASH_REPORT_END;
-}
-
-/**
- * Use LibcontextISO to create a cd-rom for this VM
- */
-int HVInstance::buildContextISO ( std::string userData, std::string * filename, const std::string folder ) {
-    CRASH_REPORT_BEGIN;
-    ofstream isoFile;
-    string iso = getTmpFile(".iso", folder);
-    
-    string ctxFileContents = base64_encode( userData );
-    ctxFileContents = "EC2_USER_DATA=\"" +ctxFileContents + "\"\nONE_CONTEXT_PATH=\"/var/lib/amiconfig\"\n";
-    const char * fData = ctxFileContents.c_str();
-    
-    char * data = build_simple_cdrom( "CONTEXT_INFO", "CONTEXT.SH", fData, ctxFileContents.length() );
-    isoFile.open( iso.c_str(), std::ios_base::out | std::ios_base::binary );
-    if (!isoFile.fail()) {
-        isoFile.write( data, CONTEXTISO_CDROM_SIZE );
-        isoFile.close();
-        *filename = iso;
-        return HVE_OK;
-    } else {
-        return HVE_IO_ERROR;
-    }
-    CRASH_REPORT_END;
-};
-
-/**
- * Use FloppyIO to create a configuration disk for this VM
- */
-int HVInstance::buildFloppyIO ( std::string userData, std::string * filename, const std::string folder ) {
-    CRASH_REPORT_BEGIN;
-    ofstream isoFile;
-    string floppy = getTmpFile(".img", folder);
-    
-    /* Write data (don't wait for sync) */
-    FloppyIO * fio = new FloppyIO( floppy.c_str() );
-    fio->send( userData );
-    delete fio;
-    
-    /* Store the filename */
-    *filename = floppy;
-    return HVE_OK;
-    CRASH_REPORT_END;
-};
-
-/**
- * Extract the CernVM version from the filename specified
- */
-std::string HVInstance::cernVMVersion( std::string filename ) {
-    CRASH_REPORT_BEGIN;
-    std::string base = this->dirDataCache + "/ucernvm-";
-    if (filename.substr(0,base.length()).compare(base) != 0) return ""; // Invalid
-    return filename.substr(base.length(), filename.length()-base.length()-4); // Strip extension
-    CRASH_REPORT_END;
-};
-
-
-/**
- * Check if the given CernVM version is cached
- * This function optionally updates the filename pointer specified
- */
-int HVInstance::cernVMCached( std::string version, std::string * filename ) {
-    CRASH_REPORT_BEGIN;
-    string sOutput = this->dirDataCache + "/ucernvm-" + version + ".iso";
-    if (file_exists(sOutput)) {
-        if (filename != NULL) *filename = sOutput;
-        return 1;
-    } else {
-        if (filename != NULL) *filename = "";
-        return 0;
-    }
-    CRASH_REPORT_END;
-}
-
-/**
- * Download a particular version of the CernVM ISO
- */
-int HVInstance::cernVMDownload( std::string& version, const std::string flavor, const std::string machineArch, std::string * toFilename,
-                                const FiniteTaskPtr & pf, const int retries, const DownloadProviderPtr& downloadProvider ) {
-    int ret;
-
-    // Check for latest version
-    if (version.compare("latest") == 0) {
-        ret = getLatestCernVMVersion( &version, pf, retries, downloadProvider );
-        if (ret != HVE_OK) return ret;
-    }
-
-    // Form CernVM iso URL
-    std::string urlFilename = URL_CERNVM_RELEASES "/ucernvm-images." + version  \
-                            + ".cernvm." + machineArch \
-                            + "/ucernvm-" + flavor \
-                            + "." + version \
-                            + ".cernvm." + machineArch + ".iso";
-
-    // Download file
-    pf->doing("Downloading CernVM");
-    return this->downloadFileURL(
-        urlFilename,
-        urlFilename + ".sha256",
-        toFilename,
-        pf,
-        retries,
-        downloadProvider
-    );
-
-}
-
 /**
  * Reusable chunk of code to download a SHA256 checksum file
  */
@@ -754,6 +586,235 @@ int __downloadFile( const std::string & fileURL, const std::string & sOutFilenam
     CRASH_REPORT_END;
 }
 
+/////////////////////////////////////
+/////////////////////////////////////
+////
+//// HVSession Implementation
+////
+/////////////////////////////////////
+/////////////////////////////////////
+
+/**
+ * Try to connect to the API port and check if it succeeded
+ */
+
+bool HVSession::isAPIAlive( unsigned char handshake, int timeoutSec ) {
+    CRASH_REPORT_BEGIN;
+    std::string ip = this->getAPIHost();
+    if (ip.empty()) return false;
+    return isPortOpen( ip.c_str(), this->getAPIPort(), handshake, timeoutSec );
+    CRASH_REPORT_END;
+}
+
+/**
+ * Change the default download provider
+ */
+void HVSession::setDownloadProvider( DownloadProviderPtr p ) { 
+    CRASH_REPORT_BEGIN;
+    this->downloadProvider = p;
+    CRASH_REPORT_END;
+};
+
+/**
+ * Get boot medium checksum
+ */
+int HVSession::getBootChecksum( std::string * checksum, const FiniteTaskPtr & pf, const DownloadProviderPtr& downloadProvider ) {
+    int ans;
+    int flags = parameters->getNum<int>("flags", 0);
+    if ((flags & HVF_DEPLOYMENT_HDD) != 0) {
+
+        // (1) We are using HDD Deployment
+
+        // Just read the checksum provided
+        *checksum = parameters->get("diskChecksum", "");
+        if (checksum->empty()) {
+            return HVE_NOT_VALIDATED;
+        }
+
+        // We are good
+        return HVE_OK;
+
+    } else {
+
+        // (2) We are using CernVM Deployment
+
+        // Pick architecture depending on the machine architecture
+        string machineArch = "x86_64";
+        if ((flags & HVF_SYSTEM_64BIT) == 0) {
+            machineArch = "i386";
+        }
+
+        // Get CernVM Flavor
+        string cernvmFlavor = parameters->get("cernvmFlavor",  DEFAULT_CERNVM_FLAVOR);
+
+        // Get CernVM Version Specified
+        string cernvmVersion = parameters->get("cernvmVersion", DEFAULT_CERNVM_VERSION);
+
+        // If we are using 'latest' as string, resolve to latest version
+        ans = getLatestCernVMVersion( &cernvmVersion, pf, HV_DEFAULT_IO_RETRIES, downloadProvider );
+        if (ans != HVE_OK) return ans;
+
+        // Form CernVM iso checksum URL
+        std::string fileURL = URL_CERNVM_RELEASES "/ucernvm-images." + cernvmVersion  \
+                                + ".cernvm." + machineArch \
+                                + "/ucernvm-" + cernvmFlavor \
+                                + "." + cernvmVersion \
+                                + ".cernvm." + machineArch + ".iso";
+
+        // Calculate filename and full URL hash
+        std::string     sOutFilenameHash;
+        std::string     sOutFilename = getURLFilename(fileURL);
+        sha256_buffer( fileURL, &sOutFilenameHash );
+
+        // Calculate full path for the output file
+        sOutFilename = this->hypervisor->dirDataCache + "/" + sOutFilenameHash + "-" + sOutFilename;
+
+        // Calculate full path for the checksum file
+        std::string     sOutChecksum = sOutFilename + ".sha256";
+
+        // Download (or use locally cached) checksum value
+        ans = __downloadChecksum(
+                fileURL+".sha256", sOutChecksum, VariableTaskPtr(), pf, downloadProvider,
+                HV_DEFAULT_IO_RETRIES, checksum
+            );
+        if (ans != HVE_OK) return ans;
+
+    }
+}
+
+/////////////////////////////////////
+/////////////////////////////////////
+////
+//// Hypervisor Implementation
+////
+/////////////////////////////////////
+/////////////////////////////////////
+
+/**
+ * Measure the resources from the sessions
+ */
+int HVInstance::getUsage( HVINFO_RES * resCount ) { 
+    CRASH_REPORT_BEGIN;
+    resCount->memory = 0;
+    resCount->cpus = 0;
+    resCount->disk = 0;
+    for (std::map< std::string,HVSessionPtr >::iterator i = this->sessions.begin(); i != this->sessions.end(); i++) {
+        HVSessionPtr sess = (*i).second;
+        resCount->memory += sess->parameters->getNum<int>( "memory" );
+        resCount->cpus += sess->parameters->getNum<int>( "cpus" );
+        resCount->disk += sess->parameters->getNum<int>( "disk" );
+    }
+    return HVE_OK;
+    CRASH_REPORT_END;
+}
+
+/**
+ * Use LibcontextISO to create a cd-rom for this VM
+ */
+int HVInstance::buildContextISO ( std::string userData, std::string * filename, const std::string folder ) {
+    CRASH_REPORT_BEGIN;
+    ofstream isoFile;
+    string iso = getTmpFile(".iso", folder);
+    
+    string ctxFileContents = base64_encode( userData );
+    ctxFileContents = "EC2_USER_DATA=\"" +ctxFileContents + "\"\nONE_CONTEXT_PATH=\"/var/lib/amiconfig\"\n";
+    const char * fData = ctxFileContents.c_str();
+    
+    char * data = build_simple_cdrom( "CONTEXT_INFO", "CONTEXT.SH", fData, ctxFileContents.length() );
+    isoFile.open( iso.c_str(), std::ios_base::out | std::ios_base::binary );
+    if (!isoFile.fail()) {
+        isoFile.write( data, CONTEXTISO_CDROM_SIZE );
+        isoFile.close();
+        *filename = iso;
+        return HVE_OK;
+    } else {
+        return HVE_IO_ERROR;
+    }
+    CRASH_REPORT_END;
+};
+
+/**
+ * Use FloppyIO to create a configuration disk for this VM
+ */
+int HVInstance::buildFloppyIO ( std::string userData, std::string * filename, const std::string folder ) {
+    CRASH_REPORT_BEGIN;
+    ofstream isoFile;
+    string floppy = getTmpFile(".img", folder);
+    
+    /* Write data (don't wait for sync) */
+    FloppyIO * fio = new FloppyIO( floppy.c_str() );
+    fio->send( userData );
+    delete fio;
+    
+    /* Store the filename */
+    *filename = floppy;
+    return HVE_OK;
+    CRASH_REPORT_END;
+};
+
+/**
+ * Extract the CernVM version from the filename specified
+ */
+std::string HVInstance::cernVMVersion( std::string filename ) {
+    CRASH_REPORT_BEGIN;
+    std::string base = this->dirDataCache + "/ucernvm-";
+    if (filename.substr(0,base.length()).compare(base) != 0) return ""; // Invalid
+    return filename.substr(base.length(), filename.length()-base.length()-4); // Strip extension
+    CRASH_REPORT_END;
+};
+
+
+/**
+ * Check if the given CernVM version is cached
+ * This function optionally updates the filename pointer specified
+ */
+int HVInstance::cernVMCached( std::string version, std::string * filename ) {
+    CRASH_REPORT_BEGIN;
+    string sOutput = this->dirDataCache + "/ucernvm-" + version + ".iso";
+    if (file_exists(sOutput)) {
+        if (filename != NULL) *filename = sOutput;
+        return 1;
+    } else {
+        if (filename != NULL) *filename = "";
+        return 0;
+    }
+    CRASH_REPORT_END;
+}
+
+/**
+ * Download a particular version of the CernVM ISO
+ */
+int HVInstance::cernVMDownload( std::string& version, const std::string flavor, const std::string machineArch, std::string * toFilename,
+                                const FiniteTaskPtr & pf, const int retries, const DownloadProviderPtr& downloadProvider ) {
+    int ret;
+
+    // Check for latest version
+    if (version.compare("latest") == 0) {
+        ret = getLatestCernVMVersion( &version, pf, retries, downloadProvider );
+        if (ret != HVE_OK) return ret;
+    }
+
+    // Form CernVM iso URL
+    std::string urlFilename = URL_CERNVM_RELEASES "/ucernvm-images." + version  \
+                            + ".cernvm." + machineArch \
+                            + "/ucernvm-" + flavor \
+                            + "." + version \
+                            + ".cernvm." + machineArch + ".iso";
+
+    // Download file
+    pf->doing("Downloading CernVM");
+    return this->downloadFileURL(
+        urlFilename,
+        urlFilename + ".sha256",
+        toFilename,
+        pf,
+        retries,
+        downloadProvider
+    );
+
+}
+
+
 /**
  * Download an arbitrary file and validate it against a checksum
  * file, both provided as URLs
@@ -772,7 +833,7 @@ int HVInstance::downloadFileURL ( const std::string & fileURL, const std::string
     sha256_buffer( fileURL, &sOutFilenameHash );
 
     // Calculate full path for the output file
-    sOutFilename = dirData + "/cache/" + sOutFilenameHash + "-" + sOutFilename;
+    sOutFilename = dirDataCache + "/" + sOutFilenameHash + "-" + sOutFilename;
 
     // Calculate full path for the checksum file
     std::string     sOutChecksum = sOutFilename + ".sha256";
@@ -780,7 +841,7 @@ int HVInstance::downloadFileURL ( const std::string & fileURL, const std::string
 
     // Prepare progress objects
     VariableTaskPtr   pfDownload;
-    if (pf) pf->setMax(5);
+    if (pf) pf->setMax(2);
 
     // Download checksum
     pfDownload = pf->begin<VariableTask>("Downloading Checksum");    
@@ -825,7 +886,7 @@ int HVInstance::downloadFile ( const std::string & fileURL, const std::string & 
     sha256_buffer( fileURL, &sOutFilenameHash );
 
     // Calculate full path for the output file
-    sOutFilename = dirData + "/cache/" + sOutFilenameHash + "-" + sOutFilename;
+    sOutFilename = dirDataCache + "/" + sOutFilenameHash + "-" + sOutFilename;
 
     // Prepare progress objects
     VariableTaskPtr   pfDownload;
@@ -872,8 +933,8 @@ int HVInstance::downloadFileGZ ( const std::string & fileURL, const std::string 
         sExtractedFilename = sExtractedFilename.substr(0, gzPos);
 
     // Calculate full path for the output and extract file
-    sOutFilename = dirData + "/cache/" + sOutFilenameHash + "-" + sOutFilename;
-    sExtractedFilename = dirData + "/cache/" + sOutFilenameHash + "-" + sExtractedFilename;
+    sOutFilename = dirDataCache + "/" + sOutFilenameHash + "-" + sOutFilename;
+    sExtractedFilename = dirDataCache + "/" + sOutFilenameHash + "-" + sExtractedFilename;
 
     // Prepare progress objects
     VariableTaskPtr pfDownload;
@@ -1004,7 +1065,7 @@ HVInstance::HVInstance() : version(""), openSessions(), sessions(), downloadProv
     
     // Pick a system folder to store persistent information
     this->dirData = getAppDataPath();
-    this->dirDataCache = this->dirData + "/cache";
+    this->dirDataCache = this->dirDataCache + "";
     
     // Unless overriden use the default downloadProvider and 
     // userInteraction pointers
