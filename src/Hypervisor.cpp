@@ -373,6 +373,54 @@ int __diskExtract( const std::string& sGZOutput, const std::string& checksum, co
     CRASH_REPORT_END;
 }
 
+/**
+ * Get latest version of CernVM
+ */
+int getLatestCernVMVersion( std::string * version, const FiniteTaskPtr & pf, const int retries, const DownloadProviderPtr& downloadProvider ) {
+
+    // Buffer holder
+    std::string latestVersion = "";
+
+    // Download latest version information
+    for (int tries = 0; tries < retries; tries++) {
+
+        // Try to download the latest version information
+        if (pf) pf->doing("Looking for latest CernVM Version");
+        int ans = downloadProvider->downloadText(
+            URL_CERNVM_RELEASES "/latest",
+            &latestVersion
+        );
+
+        // If we found it, break
+        if (ans == HVE_OK) {
+
+            // Remove whitespaces
+            latestVersion.erase( 
+                std::remove_if( latestVersion.begin(), latestVersion.end(), 
+                    ::isspace ), 
+                latestVersion.end() 
+            );
+
+            // Verify sanity of the version string
+            if (!isSanitized(&latestVersion, SAFE_VERSION_CHARS))
+                return HVE_NOT_VALIDATED;
+
+            // We now have a version!
+            break;
+
+        }
+
+    }
+
+    // Empty version? We could not get anything
+    if (latestVersion.empty())
+        return HVE_IO_ERROR;
+
+    // Replace version with latestVersion
+    *version = latestVersion;
+
+}
+
 /////////////////////////////////////
 /////////////////////////////////////
 ////
@@ -409,6 +457,13 @@ void HVSession::setDownloadProvider( DownloadProviderPtr p ) {
 ////
 /////////////////////////////////////
 /////////////////////////////////////
+
+/**
+ * Get boot medium checksum
+ */
+std::string HVInstance::getBootChecksum() {
+
+}
 
 /**
  * Measure the resources from the sessions
@@ -506,51 +561,12 @@ int HVInstance::cernVMCached( std::string version, std::string * filename ) {
  */
 int HVInstance::cernVMDownload( std::string& version, const std::string flavor, const std::string machineArch, std::string * toFilename,
                                 const FiniteTaskPtr & pf, const int retries, const DownloadProviderPtr& downloadProvider ) {
+    int ret;
 
     // Check for latest version
     if (version.compare("latest") == 0) {
-
-        // Buffer holder
-        std::string latestVersion = "";
-
-        // Download latest version information
-        for (int tries = 0; tries < retries; tries++) {
-
-            // Try to download the latest version information
-            pf->doing("Looking for latest CernVM Version");
-            int ans = downloadProvider->downloadText(
-                URL_CERNVM_RELEASES "/latest",
-                &latestVersion
-            );
-
-            // If we found it, break
-            if (ans == HVE_OK) {
-
-                // Remove whitespaces
-                latestVersion.erase( 
-                    std::remove_if( latestVersion.begin(), latestVersion.end(), 
-                        ::isspace ), 
-                    latestVersion.end() 
-                );
-
-                // Verify sanity of the version string
-                if (!isSanitized(&latestVersion, SAFE_VERSION_CHARS))
-                    return HVE_NOT_VALIDATED;
-
-                // We now have a version!
-                break;
-
-            }
-
-        }
-
-        // Empty version? We could not get anything
-        if (latestVersion.empty())
-            return HVE_IO_ERROR;
-
-        // Replace version with latestVersion
-        version = latestVersion;
-
+        ret = getLatestCernVMVersion( &version, pf, retries, downloadProvider );
+        if (ret != HVE_OK) return ret;
     }
 
     // Form CernVM iso URL
