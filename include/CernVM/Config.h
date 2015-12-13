@@ -49,6 +49,11 @@
 #define 	URL_CERNVM_RELEASES				"http://cernvm.cern.ch/releases"
 
 /**
+ * The base URL for authenticity validation
+ */
+#define 	URL_AUTH_BADGE_SERVER			"http://127.0.0.1/webapi-badge/index.php?key="
+
+/**
  * The URL of the trusted domain list
  */
 #define 	URL_CRYPTO_STORE            	"http://cernvm.cern.ch/releases/webapi/keystore/domainkeys.lst"

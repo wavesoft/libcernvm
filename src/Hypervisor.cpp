@@ -417,8 +417,11 @@ int getLatestCernVMVersion( std::string * version, const FiniteTaskPtr & pf, con
         return HVE_IO_ERROR;
 
     // Replace version with latestVersion
+    CVMWA_LOG("Debug", "Latest CernVM Version is " << latestVersion );
     *version = latestVersion;
 
+    // Success
+    return HVE_OK;
 }
 
 /**
@@ -614,73 +617,6 @@ void HVSession::setDownloadProvider( DownloadProviderPtr p ) {
     this->downloadProvider = p;
     CRASH_REPORT_END;
 };
-
-/**
- * Get boot medium checksum
- */
-int HVSession::getBootChecksum( std::string * checksum, const FiniteTaskPtr & pf, const DownloadProviderPtr& downloadProvider ) {
-    int ans;
-    int flags = parameters->getNum<int>("flags", 0);
-    if ((flags & HVF_DEPLOYMENT_HDD) != 0) {
-
-        // (1) We are using HDD Deployment
-
-        // Just read the checksum provided
-        *checksum = parameters->get("diskChecksum", "");
-        if (checksum->empty()) {
-            return HVE_NOT_VALIDATED;
-        }
-
-        // We are good
-        return HVE_OK;
-
-    } else {
-
-        // (2) We are using CernVM Deployment
-
-        // Pick architecture depending on the machine architecture
-        string machineArch = "x86_64";
-        if ((flags & HVF_SYSTEM_64BIT) == 0) {
-            machineArch = "i386";
-        }
-
-        // Get CernVM Flavor
-        string cernvmFlavor = parameters->get("cernvmFlavor",  DEFAULT_CERNVM_FLAVOR);
-
-        // Get CernVM Version Specified
-        string cernvmVersion = parameters->get("cernvmVersion", DEFAULT_CERNVM_VERSION);
-
-        // If we are using 'latest' as string, resolve to latest version
-        ans = getLatestCernVMVersion( &cernvmVersion, pf, HV_DEFAULT_IO_RETRIES, downloadProvider );
-        if (ans != HVE_OK) return ans;
-
-        // Form CernVM iso checksum URL
-        std::string fileURL = URL_CERNVM_RELEASES "/ucernvm-images." + cernvmVersion  \
-                                + ".cernvm." + machineArch \
-                                + "/ucernvm-" + cernvmFlavor \
-                                + "." + cernvmVersion \
-                                + ".cernvm." + machineArch + ".iso";
-
-        // Calculate filename and full URL hash
-        std::string     sOutFilenameHash;
-        std::string     sOutFilename = getURLFilename(fileURL);
-        sha256_buffer( fileURL, &sOutFilenameHash );
-
-        // Calculate full path for the output file
-        sOutFilename = this->hypervisor->dirDataCache + "/" + sOutFilenameHash + "-" + sOutFilename;
-
-        // Calculate full path for the checksum file
-        std::string     sOutChecksum = sOutFilename + ".sha256";
-
-        // Download (or use locally cached) checksum value
-        ans = __downloadChecksum(
-                fileURL+".sha256", sOutChecksum, VariableTaskPtr(), pf, downloadProvider,
-                HV_DEFAULT_IO_RETRIES, checksum
-            );
-        if (ans != HVE_OK) return ans;
-
-    }
-}
 
 /////////////////////////////////////
 /////////////////////////////////////
@@ -1065,7 +1001,7 @@ HVInstance::HVInstance() : version(""), openSessions(), sessions(), downloadProv
     
     // Pick a system folder to store persistent information
     this->dirData = getAppDataPath();
-    this->dirDataCache = this->dirDataCache + "";
+    this->dirDataCache = this->dirData + "/cache";
     
     // Unless overriden use the default downloadProvider and 
     // userInteraction pointers
@@ -1121,6 +1057,130 @@ int HVInstance::sessionValidate ( const ParameterMapPtr& parameters ) {
     }
 
     CRASH_REPORT_END;
+}
+
+/**
+ * Get session authentication checksum that will be used by the user interface
+ * to display additional authenticity information when prompting for session.
+ */
+int HVInstance::sessionAuthBadge( const ParameterMapPtr& parameters, int * authLevel, std::string * authBadge, const DownloadProviderPtr& downloadProvider, const FiniteTaskPtr & pf ) {
+    int ans;
+    std::string authChecksum;
+    if (pf) pf->doing("Getting boot medium checksum");
+
+    // Check flags
+    int flags = parameters->getNum<int>("flags", 0);
+    if ((flags & HVF_DEPLOYMENT_HDD) != 0) {
+
+        // (1) We are using HDD Deployment
+
+        // Just read the checksum provided
+        authChecksum = parameters->get("diskChecksum", "");
+        CVMWA_LOG("Debug", "Auth Badge: HDD=" << authChecksum );
+        if (authChecksum.empty()) {
+            return HVE_NOT_VALIDATED;
+        }
+
+    } else {
+
+        // (2) We are using CernVM Deployment
+
+        // Pick architecture depending on the machine architecture
+        string machineArch = "x86_64";
+        if ((flags & HVF_SYSTEM_64BIT) == 0) {
+            machineArch = "i386";
+        }
+
+        // Get CernVM Flavor
+        string cernvmFlavor = parameters->get("cernvmFlavor",  DEFAULT_CERNVM_FLAVOR);
+
+        // Get CernVM Version Specified
+        string cernvmVersion = parameters->get("cernvmVersion", DEFAULT_CERNVM_VERSION);
+
+        // If we are using 'latest' as string, resolve to latest version
+        if (downloadProvider) {
+            ans = getLatestCernVMVersion( &cernvmVersion, pf, HV_DEFAULT_IO_RETRIES, downloadProvider );
+        } else {
+            ans = getLatestCernVMVersion( &cernvmVersion, pf, HV_DEFAULT_IO_RETRIES, DownloadProvider::Default() );
+        }
+        if (ans != HVE_OK) return ans;
+
+        // Form CernVM iso checksum URL
+        std::string fileURL = URL_CERNVM_RELEASES "/ucernvm-images." + cernvmVersion  \
+                                + ".cernvm." + machineArch \
+                                + "/ucernvm-" + cernvmFlavor \
+                                + "." + cernvmVersion \
+                                + ".cernvm." + machineArch + ".iso";
+
+        // Calculate filename and full URL hash
+        std::string     sOutFilenameHash;
+        std::string     sOutFilename = getURLFilename(fileURL);
+        sha256_buffer( fileURL, &sOutFilenameHash );
+
+        // Calculate full path for the output file
+        sOutFilename = this->dirDataCache + "/" + sOutFilenameHash + "-" + sOutFilename;
+
+        // Calculate full path for the checksum file
+        std::string     sOutChecksum = sOutFilename + ".sha256";
+
+        // Download (or use locally cached) checksum value
+        if (downloadProvider) {
+            ans = __downloadChecksum(
+                    fileURL+".sha256", sOutChecksum, VariableTaskPtr(), pf, downloadProvider,
+                    HV_DEFAULT_IO_RETRIES, &authChecksum
+                );
+        } else {
+            ans = __downloadChecksum(
+                    fileURL+".sha256", sOutChecksum, VariableTaskPtr(), pf, DownloadProvider::Default(),
+                    HV_DEFAULT_IO_RETRIES, &authChecksum
+                );
+        }
+        if (ans != HVE_OK) return ans;
+
+        CVMWA_LOG("Debug", "Auth Badge: CernVM=" << authChecksum << ", version=" << cernvmVersion );
+
+    }
+
+    // Calculate user-data checksum because that also defines what the
+    // final VM will eventually become (be aware that we are *NOT* replacing
+    // macros and therefore we still give some flexibility to the end user)
+    std::string bufferChecksum;
+    if (pf) pf->doing("Getting context checksum");
+    sha256_buffer( parameters->get("userData", ""), &bufferChecksum );
+    CVMWA_LOG("Debug", "Auth Badge: Context=" << bufferChecksum );
+
+    // Receive badge through the badge server
+    if (pf) pf->doing("Contacting authenticity provider to verify VM");
+    ans = downloadProvider->downloadText(
+            URL_AUTH_BADGE_SERVER + authChecksum + "-" + bufferChecksum,
+            &authChecksum
+    );
+    CVMWA_LOG("Debug", "Auth Badge: Server replied with '" << authChecksum << "'" );
+    if (ans != HVE_OK) return ans;
+
+    // Split response code/text
+    std::string resCode, resText;
+    getKV( authChecksum, &resCode, &resText, ':', 0 );
+
+    // Check for server errors
+    if (resCode.compare("OK") != 0) {
+        CVMWA_LOG("Debug", "Auth Badge: Server error: " << resText );
+        *authBadge = resText;
+        return HVE_NOT_VALIDATED;
+    }
+
+    // Check auth level
+    getKV( resText, &resCode, &resText, ':', 0 );
+
+    // Get level and text
+    CVMWA_LOG("Debug", "Auth Badge: level=" << resCode << ", text=" << resText );
+    *authLevel = ston<int>( resCode );
+    *authBadge = resText;
+    if (pf) pf->doing("Virtual Machine authenticity information obtained");
+
+    // Success
+    return HVE_OK;
+
 }
 
 /**

@@ -422,12 +422,6 @@ public:
      */
     virtual void            wait() = 0;
 
-    /**
-     * Return boot medium checksum (SHA256), used by launchers to verify
-     * the authenticity of the virtual machine.
-     */
-     virtual int             getBootChecksum     ( std::string * checksum, const FiniteTaskPtr & pf, const DownloadProviderPtr& downloadProvider );
-
 };
 
 
@@ -509,6 +503,11 @@ public:
      * Validate a session using the specified input parameters
      */
     virtual int             sessionValidate     ( const ParameterMapPtr& parameters );
+
+    /**
+     * Return session authentication badge
+     */
+     virtual int            sessionAuthBadge    ( const ParameterMapPtr& parameters, int * authLevel, std::string * authBadge, const DownloadProviderPtr& downloadProvider = DownloadProviderPtr(), const FiniteTaskPtr & pf = FiniteTaskPtr() );
 
     /**
      * Check if for any reason the environment has changed and the hypervisor
