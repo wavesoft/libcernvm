@@ -60,15 +60,6 @@ using namespace std;
 /////////////////////////////////////
 
 /**
- * Prepare regular expression for version parsing
- * Parses version strings in the following format:
- *
- *  <major>.<minor>[.revision>][-other]
- *
- */
-std::regex reVersionParse("(\\d+)\\.(\\d+)(?:\\.(\\d+))?(?:[\\.\\-\\w](\\d+))?(?:[\\.\\-\\w]([\\w\\.\\-]+))?"); 
-
-/**
  * Constructor of version class
  */
 HypervisorVersion::HypervisorVersion( const std::string& verString ) {
@@ -86,6 +77,9 @@ HypervisorVersion::HypervisorVersion( const std::string& verString ) {
  */
 void HypervisorVersion::set( const std::string & version ) {
     CRASH_REPORT_BEGIN;
+    const string NUMBER     = "0123456789";
+    const string REV_SEP    = "rv-";
+    size_t pDot, pOffset;
 
     // Reset values
     this->major = 0;
@@ -96,30 +90,90 @@ void HypervisorVersion::set( const std::string & version ) {
     this->verString = "";
     this->isDefined = false;
 
-    // Try to match the expression
-    std::smatch matches;
-    if (std::regex_match(version, matches, reVersionParse)) {
+    // Find first non-numeric
+    pOffset = 0;
+    pDot = version.find_first_not_of(NUMBER, pOffset);
+    if (pDot == string::npos) return;
 
-        // Get the entire matched string
-        this->verString = matches[0].str();
+    // Make sure we have a dot on that point
+    if (version.at(pDot) != '.') return;
 
-        // Get major/minor
-        this->major = ston<int>( matches[1].str() );
-        this->minor = ston<int>( matches[2].str() );
+    // Keep major
+    this->major = ston<int>( version.substr(0, pDot) );
+    pOffset = pDot + 1;
 
-        // Get build
-        this->build = ston<int>( matches[3].str() );
+    // Find next non-numeric
+    pDot = version.find_first_not_of(NUMBER, pOffset);
+    if (pDot == string::npos) pDot = version.length();
 
-        // Get revision
-        this->revision = ston<int>( matches[4].str() );
+    // Get minor
+    this->minor = ston<int>( version.substr(pOffset, pDot-pOffset) );
+    this->verString = version.substr( 0, pDot );
+    pOffset = pDot + 1;
 
-        // Get misc
-        this->misc = matches[5].str();
-
-        // Mark as defined
+    // Check for EOF
+    if (pDot == version.length()) {
         this->isDefined = true;
-
+        return;
     }
+
+    // If we have a build separator, continue with build
+    if (version.at(pDot) == '.') {
+        goto parse_build;
+
+    // If we have a revision separator, parse revision
+    } else if (REV_SEP.find(version.at(pDot)) != string::npos) {
+        goto parse_rev;
+
+    // Otherwise the rest is misc, exit
+    } else {
+        this->misc = version.substr( pOffset, pDot-pOffset );
+        this->isDefined = true;
+        return;
+    }
+
+parse_build:
+
+    // Find next non-numeric
+    pDot = version.find_first_not_of(NUMBER, pOffset);
+    if (pDot == string::npos) pDot = version.length();
+
+    // Get build
+    this->build = ston<int>( version.substr(pOffset, pDot-pOffset) );
+    this->verString = version.substr( 0, pDot );
+    pOffset = pDot + 1;
+
+    // Check for EOF
+    if (pDot == version.length()) {
+        this->isDefined = true;
+        return;
+    }
+
+    // If the next is not a revision separator, that's misc
+    if (REV_SEP.find(version.at(pDot)) == string::npos) {
+        this->misc = version.substr( pOffset, pDot-pOffset );
+        this->isDefined = true;
+        return;
+    }
+
+parse_rev:
+
+    // Find next non-numeric
+    pDot = version.find_first_not_of(NUMBER, pOffset);
+    if (pDot == string::npos) pDot = version.length();
+
+    // Get revision
+    this->revision = ston<int>( version.substr(pOffset, pDot-pOffset) );
+    this->verString = version.substr( 0, pDot );
+    pOffset = pDot + 1;
+
+    // Check for misc
+    if (pDot < version.length()) {
+        this->misc = version.substr( pOffset, version.length()-pOffset );
+    }
+
+    // We are defined
+    this->isDefined = true;
 
     CRASH_REPORT_END;
 }
